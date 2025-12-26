@@ -61,9 +61,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const body: Partial<RetreatInsert> = await request.json()
 
+    // Remove 'rooms' from body as it's a relation, not a column
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { rooms, ...updateData } = body as Partial<RetreatInsert> & { rooms?: unknown }
+
     const { data, error } = await supabase
       .from('retreats')
-      .update(body)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()
