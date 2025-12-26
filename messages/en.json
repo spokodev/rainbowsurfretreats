@@ -291,5 +291,19 @@
     "allowTestimonial": "I give permission to use my testimonial",
     "thankYou": "Thank You!",
     "thankYouDescription": "Your feedback means the world to us."
+  },
+  "retreatDetail": {
+    "aboutRetreat": "About This Retreat",
+    "highlights": "Highlights",
+    "whatsIncluded": "What's Included",
+    "notIncluded": "Not Included",
+    "roomOptions": "Room Options",
+    "location": "Location",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "readyToJoin": "Ready to Join?",
+    "secureSpot": "Secure your spot now and start your surf adventure!",
+    "bookNow": "Book Now",
+    "earlyBird": "Early Bird"
   }
 }

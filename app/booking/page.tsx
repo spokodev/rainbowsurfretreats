@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import Link from "next/link";
@@ -28,7 +28,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getRetreatById, getRetreatBySlug, RetreatRoom } from "@/lib/data";
+
+interface RetreatRoom {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  deposit_price: number;
+  capacity: number;
+  available: number;
+  is_sold_out: boolean;
+  sort_order: number;
+}
+
+interface Retreat {
+  id: string;
+  slug: string;
+  destination: string;
+  location: string;
+  image_url: string;
+  level: string;
+  duration: string;
+  participants: string;
+  food: string;
+  type: string;
+  gear: string;
+  price: number;
+  early_bird_price: number | null;
+  start_date: string;
+  end_date: string;
+  rooms: RetreatRoom[];
+}
 
 interface BookingStep {
   step: number;
@@ -41,33 +71,15 @@ const steps: BookingStep[] = [
   { step: 3, title: "Payment" },
 ];
 
-const defaultRooms: RetreatRoom[] = [
-  {
-    id: "1",
-    name: "Shared Dorm",
-    price: 599,
-    depositPrice: 299.5,
-    available: 8,
-    soldOut: false,
-    description: "Budget • Shared bathroom • Locker • Wi-Fi • Fan",
-  },
-  {
-    id: "2",
-    name: "Private Room",
-    price: 799,
-    depositPrice: 399.5,
-    available: 4,
-    soldOut: false,
-    description: "Standard • Private bathroom • AC • Wi-Fi • Balcony",
-  },
-];
-
 function BookingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const retreatSlug = searchParams.get("slug");
-  const retreatId = searchParams.get("retreatId"); // Legacy support
   const roomId = searchParams.get("roomId");
+
+  const [retreat, setRetreat] = useState<Retreat | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,14 +97,44 @@ function BookingContent() {
     newsletter: false,
   });
 
-  // Support both slug (new) and retreatId (legacy)
-  const retreat = retreatSlug
-    ? getRetreatBySlug(retreatSlug)
-    : retreatId
-      ? getRetreatById(Number(retreatId))
-      : null;
-  const rooms = retreat?.rooms || defaultRooms;
-  const selectedRoom = rooms.find((r) => r.id === roomId) || rooms[0];
+  useEffect(() => {
+    async function fetchRetreat() {
+      if (!retreatSlug) {
+        setFetchError("No retreat selected");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/retreats?slug=${retreatSlug}`);
+        const data = await response.json();
+
+        if (data.error) {
+          setFetchError(data.error);
+        } else {
+          setRetreat(data.data);
+        }
+      } catch {
+        setFetchError("Failed to load retreat");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchRetreat();
+  }, [retreatSlug]);
+
+  const formatDate = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const options: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
+    const yearOptions: Intl.DateTimeFormatOptions = { year: "numeric" };
+    return `${start.toLocaleDateString("en-US", options)} - ${end.toLocaleDateString("en-US", options)}, ${end.toLocaleDateString("en-US", yearOptions)}`;
+  };
+
+  const rooms = retreat?.rooms || [];
+  const sortedRooms = [...rooms].sort((a, b) => a.sort_order - b.sort_order);
+  const selectedRoom = sortedRooms.find((r) => r.id === roomId) || sortedRooms[0];
 
   const handleNext = () => {
     if (currentStep < 3) setCurrentStep(currentStep + 1);
@@ -118,8 +160,8 @@ function BookingContent() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          retreatSlug: retreat?.slug, // Use slug to lookup in Supabase
-          roomId: roomId || undefined,
+          retreatSlug: retreat?.slug,
+          roomId: roomId || selectedRoom?.id || undefined,
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
@@ -128,7 +170,7 @@ function BookingContent() {
           city: formData.city || undefined,
           postalCode: formData.postalCode || undefined,
           country: formData.country,
-          paymentType: "scheduled", // Multi-stage payment
+          paymentType: "scheduled",
           acceptTerms: formData.acceptTerms,
           newsletterOptIn: formData.newsletter,
           language: navigator.language?.split("-")[0] || "en",
@@ -141,7 +183,6 @@ function BookingContent() {
         throw new Error(data.error || "Failed to create checkout session");
       }
 
-      // Redirect to Stripe Checkout
       if (data.url) {
         window.location.href = data.url;
       } else {
@@ -153,8 +194,10 @@ function BookingContent() {
     }
   };
 
-  const totalPrice = selectedRoom?.price || 599;
-  const earlyBirdDiscount = Math.floor(totalPrice * 0.1);
+  const totalPrice = selectedRoom?.price || retreat?.price || 599;
+  const earlyBirdDiscount = retreat?.early_bird_price
+    ? totalPrice - retreat.early_bird_price
+    : Math.floor(totalPrice * 0.1);
   const finalPrice = totalPrice - earlyBirdDiscount;
   const depositAmount = (finalPrice * 0.5).toFixed(2);
 
@@ -164,16 +207,27 @@ function BookingContent() {
     parseFloat(depositAmount) + parseFloat(vatAmount)
   ).toFixed(2);
 
-  if (!retreat) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-ochre flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-[#2C7A7B] mx-auto mb-4" />
+          <p className="text-gray-600">Loading booking...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError || !retreat) {
     return (
       <div className="min-h-screen bg-gradient-ochre flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-4xl mb-4">Retreat Not Found</h1>
           <p className="text-gray-600 mb-6">
-            Please select a retreat to book.
+            {fetchError || "Please select a retreat to book."}
           </p>
           <Button asChild>
-            <Link href="/#retreats">Browse Retreats</Link>
+            <Link href="/retreats">Browse Retreats</Link>
           </Button>
         </div>
       </div>
@@ -195,7 +249,7 @@ function BookingContent() {
           </Button>
           <h1 className="text-3xl md:text-4xl mb-2">Complete Your Booking</h1>
           <p className="text-gray-600">
-            {retreat.destination} Surf Retreat • {retreat.date}
+            {retreat.destination} Surf Retreat • {formatDate(retreat.start_date, retreat.end_date)}
           </p>
         </div>
 
@@ -604,7 +658,9 @@ function BookingContent() {
                   <div className="font-semibold">
                     {retreat.destination} Surf Retreat
                   </div>
-                  <div className="text-sm text-gray-600">{retreat.date}</div>
+                  <div className="text-sm text-gray-600">
+                    {formatDate(retreat.start_date, retreat.end_date)}
+                  </div>
                   <div className="text-sm text-gray-600">
                     {selectedRoom?.name || "Standard Room"}
                   </div>
@@ -613,13 +669,15 @@ function BookingContent() {
 
               <div className="space-y-2 text-sm mb-6">
                 <div className="flex justify-between">
-                  <span>Retreat price:</span>
+                  <span>Room price:</span>
                   <span>€{totalPrice}</span>
                 </div>
-                <div className="flex justify-between text-green-600">
-                  <span>Early bird discount:</span>
-                  <span>-€{earlyBirdDiscount}</span>
-                </div>
+                {earlyBirdDiscount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Early bird discount:</span>
+                    <span>-€{earlyBirdDiscount}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-semibold pt-2 border-t">
                   <span>Subtotal:</span>
                   <span>€{finalPrice}</span>

@@ -2,16 +2,45 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import type { Retreat, RetreatInsert, ApiResponse } from '@/lib/types/database'
 
-// GET /api/retreats - List all retreats
+// GET /api/retreats - List all retreats or get single by slug
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { searchParams } = new URL(request.url)
 
+    const slug = searchParams.get('slug')
     const published = searchParams.get('published')
     const limit = searchParams.get('limit')
     const offset = searchParams.get('offset')
 
+    // If slug is provided, return single retreat
+    if (slug) {
+      const { data, error } = await supabase
+        .from('retreats')
+        .select(`
+          *,
+          rooms:retreat_rooms(*)
+        `)
+        .eq('slug', slug)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return NextResponse.json<ApiResponse<null>>(
+            { error: 'Retreat not found' },
+            { status: 404 }
+          )
+        }
+        return NextResponse.json<ApiResponse<null>>(
+          { error: error.message },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json<ApiResponse<Retreat>>({ data: data as Retreat })
+    }
+
+    // Otherwise, list all retreats
     let query = supabase
       .from('retreats')
       .select(`
@@ -35,7 +64,7 @@ export async function GET(request: NextRequest) {
       query = query.range(parseInt(offset), parseInt(offset) + (parseInt(limit || '10') - 1))
     }
 
-    const { data, error, count } = await query
+    const { data, error } = await query
 
     if (error) {
       return NextResponse.json<ApiResponse<null>>(

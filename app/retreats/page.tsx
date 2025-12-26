@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'motion/react'
@@ -15,6 +15,7 @@ import {
   Tag,
   Filter,
   SlidersHorizontal,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -26,11 +27,62 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { retreats } from '@/lib/data'
+
+interface RetreatRoom {
+  id: string
+  name: string
+  price: number
+  capacity: number
+  available: number
+  is_sold_out: boolean
+}
+
+interface Retreat {
+  id: string
+  slug: string
+  destination: string
+  location: string
+  image_url: string
+  level: string
+  duration: string
+  participants: string
+  food: string
+  type: string
+  gear: string
+  price: number
+  early_bird_price: number | null
+  start_date: string
+  end_date: string
+  availability_status: 'available' | 'sold_out' | 'few_spots'
+  rooms: RetreatRoom[]
+}
 
 export default function RetreatsPage() {
   const t = useTranslations('retreats')
   const tCommon = useTranslations('common')
+
+  const [retreats, setRetreats] = useState<Retreat[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchRetreats() {
+      try {
+        const response = await fetch('/api/retreats?published=true')
+        const data = await response.json()
+        if (data.error) {
+          setError(data.error)
+        } else {
+          setRetreats(data.data || [])
+        }
+      } catch {
+        setError('Failed to load retreats')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchRetreats()
+  }, [])
 
   const levels = [
     { value: 'All Levels', label: t('filters.allLevels') },
@@ -57,6 +109,18 @@ export default function RetreatsPage() {
   const [typeFilter, setTypeFilter] = useState('All Types')
   const [sortBy, setSortBy] = useState('date-asc')
 
+  const formatDate = (startDate: string, endDate: string) => {
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
+    const yearOptions: Intl.DateTimeFormatOptions = { year: 'numeric' }
+    return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}, ${end.toLocaleDateString('en-US', yearOptions)}`
+  }
+
+  const formatPrice = (price: number) => {
+    return `€${price.toLocaleString()}`
+  }
+
   const filteredRetreats = useMemo(() => {
     let result = [...retreats]
 
@@ -72,24 +136,21 @@ export default function RetreatsPage() {
 
     // Sort
     result.sort((a, b) => {
-      const priceA = parseFloat(a.price.replace(/[^0-9.]/g, ''))
-      const priceB = parseFloat(b.price.replace(/[^0-9.]/g, ''))
-
       switch (sortBy) {
         case 'price-asc':
-          return priceA - priceB
+          return a.price - b.price
         case 'price-desc':
-          return priceB - priceA
+          return b.price - a.price
         case 'date-desc':
-          return b.id - a.id
+          return new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
         case 'date-asc':
         default:
-          return a.id - b.id
+          return new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
       }
     })
 
     return result
-  }, [levelFilter, typeFilter, sortBy])
+  }, [retreats, levelFilter, typeFilter, sortBy])
 
   const clearFilters = () => {
     setLevelFilter('All Levels')
@@ -108,6 +169,22 @@ export default function RetreatsPage() {
   const getTypeLabel = (value: string) => {
     const type = types.find(t => t.value === value)
     return type ? type.label : value
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--primary-teal)]" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-500">{error}</p>
+      </div>
+    )
   }
 
   return (
@@ -213,7 +290,7 @@ export default function RetreatsPage() {
                   <Card className="overflow-hidden h-full flex flex-col group hover:shadow-xl transition-shadow duration-300 bg-white border-0">
                     <div className="relative aspect-[4/3] overflow-hidden">
                       <Image
-                        src={retreat.image}
+                        src={retreat.image_url}
                         alt={retreat.destination}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -229,6 +306,11 @@ export default function RetreatsPage() {
                           {getTypeLabel(retreat.type)}
                         </Badge>
                       </div>
+                      {retreat.availability_status === 'sold_out' && (
+                        <div className="absolute top-3 right-3">
+                          <Badge variant="destructive">Sold Out</Badge>
+                        </div>
+                      )}
                     </div>
 
                     <CardContent className="flex-1 pt-4">
@@ -244,7 +326,7 @@ export default function RetreatsPage() {
 
                       <div className="flex items-center text-sm text-muted-foreground mb-4">
                         <Calendar className="size-4 mr-1" />
-                        {retreat.date}
+                        {formatDate(retreat.start_date, retreat.end_date)}
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 text-sm">
@@ -270,18 +352,20 @@ export default function RetreatsPage() {
                         <div className="flex items-baseline justify-between">
                           <div>
                             <span className="text-2xl font-bold">
-                              {retreat.price}
+                              {formatPrice(retreat.price)}
                             </span>
                             <span className="text-muted-foreground text-sm ml-1">
                               / {tCommon('perPerson')}
                             </span>
                           </div>
-                          <div className="flex items-center text-sm">
-                            <Tag className="size-4 mr-1 text-green-600" />
-                            <span className="text-green-600 font-medium">
-                              {t('earlyBird')}: {retreat.earlyBird}
-                            </span>
-                          </div>
+                          {retreat.early_bird_price && (
+                            <div className="flex items-center text-sm">
+                              <Tag className="size-4 mr-1 text-green-600" />
+                              <span className="text-green-600 font-medium">
+                                {t('earlyBird')}: {formatPrice(retreat.early_bird_price)}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -290,8 +374,11 @@ export default function RetreatsPage() {
                       <Button
                         asChild
                         className="w-full bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]"
+                        disabled={retreat.availability_status === 'sold_out'}
                       >
-                        <Link href={`/retreats/${retreat.id}`}>{t('bookNow')}</Link>
+                        <Link href={`/retreats/${retreat.slug}`}>
+                          {retreat.availability_status === 'sold_out' ? 'Sold Out' : t('bookNow')}
+                        </Link>
                       </Button>
                     </CardFooter>
                   </Card>
