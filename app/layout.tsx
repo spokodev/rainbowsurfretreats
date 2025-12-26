@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
+import { headers } from 'next/headers'
 import './globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -22,18 +23,23 @@ export default async function RootLayout({
   const locale = await getLocale()
   const messages = await getMessages()
 
+  // Check if we're on admin or login pages
+  const headersList = await headers()
+  const pathname = headersList.get('x-pathname') || ''
+  const isAdminOrLogin = pathname.startsWith('/admin') || pathname.startsWith('/login')
+
   return (
     <html lang={locale}>
       <body>
         <NextIntlClientProvider messages={messages}>
-          <Header />
+          {!isAdminOrLogin && <Header />}
           <main>
             {children}
           </main>
-          <Footer />
-          <WhatsAppButton />
-          <CookieConsent />
-          <NewsletterPopup />
+          {!isAdminOrLogin && <Footer />}
+          {!isAdminOrLogin && <WhatsAppButton />}
+          {!isAdminOrLogin && <CookieConsent />}
+          {!isAdminOrLogin && <NewsletterPopup />}
         </NextIntlClientProvider>
       </body>
     </html>
