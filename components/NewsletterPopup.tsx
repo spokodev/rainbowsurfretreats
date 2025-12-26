@@ -126,7 +126,7 @@ export default function NewsletterPopup() {
             <div className="bg-gradient-ocean h-32 flex items-center justify-center">
               <div className="text-center text-white">
                 <Sparkles className="w-10 h-10 mx-auto mb-2" />
-                <p className="text-sm font-medium">Get 10% Off Your First Retreat</p>
+                <p className="text-sm font-medium">Stay in the Loop</p>
               </div>
             </div>
 
@@ -138,7 +138,7 @@ export default function NewsletterPopup() {
                   </div>
                   <h3 className="text-xl font-bold mb-2">You&apos;re In!</h3>
                   <p className="text-gray-600">
-                    Check your email to confirm and receive your discount code.
+                    Check your email to confirm your subscription.
                   </p>
                 </div>
               ) : (
@@ -194,7 +194,7 @@ export default function NewsletterPopup() {
                           Subscribing...
                         </>
                       ) : (
-                        'Get My Discount'
+                        'Subscribe'
                       )}
                     </Button>
                   </form>
