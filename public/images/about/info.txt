@@ -1,0 +1,57 @@
+ABOUT PAGE - IMAGES
+===================
+URL: https://rainbowsurfretreats.com/about
+
+Картинки сторінки "Про нас".
+Всього: 7 файлів (~7.5 MB)
+
+---
+
+1. about-surfers-posing-beach.jpg
+   Розмір: 1.8 MB
+   Опис: Серфери позують на пляжі
+   Alt: "Image of surfers posing on the beach"
+   Блок: About page content
+   Оригінальний ID: 11062b_51cabe76600c487883fc2bcb70e8e926~mv2.jpg
+
+2. about-aerial-view-surfers.jpeg
+   Розмір: 183 KB
+   Опис: Вид зверху на серферів
+   Alt: "Aerial View of Surfers"
+   Блок: About page content
+   Оригінальний ID: 41cc34_5e33c9bb30194b4c95de32f3aeed4373~mv2.jpeg
+
+3. about-whatsapp-image-1.jpeg
+   Розмір: 195 KB
+   Опис: Фото з WhatsApp
+   Alt: "WhatsApp Image 2025-01-04 at 03.30.36.jpeg"
+   Блок: About page content
+   Оригінальний ID: 41cc34_3657f095785a408aa1aaed44bc346d19~mv2.jpeg
+
+4. about-whatsapp-image-2.jpg
+   Розмір: 3.5 MB
+   Опис: Фото з WhatsApp
+   Alt: "WhatsApp Image 2025-01-04 at 03.30.36 (3).jpeg"
+   Блок: About page content
+   Оригінальний ID: 11062b_c2b35eecf8974f979019c6830b0b4964~mv2.jpg
+
+5. about-splash-of-water.jpg
+   Розмір: 121 KB
+   Опис: Бризки води
+   Alt: "Splash of Water"
+   Блок: About page content
+   Оригінальний ID: 3f71c4_53973a719bf74c24a382509712146e2a~mv2.jpg
+
+6. about-ambassador.jpg
+   Розмір: 298 KB
+   Опис: Фото одного з амбасадорів
+   Alt: "Image of one of the ambassadors"
+   Блок: About page - ambassadors section
+   Оригінальний ID: 3f71c4_7d853c65b55a47c189142ed033bb87e8~mv2.jpg
+
+7. about-og-image.jpg
+   Розмір: 1.2 MB
+   Опис: OpenGraph зображення для соцмереж
+   Alt: N/A (meta image)
+   Блок: og:image та twitter:image
+   Оригінальний ID: 3f71c4_d29fda746c954b86b9395982ef974e0f~mv2.jpg

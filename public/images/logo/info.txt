@@ -1,0 +1,15 @@
+LOGO - GLOBAL
+=============
+URL: Використовується на всіх сторінках сайту
+
+Логотип та favicon сайту.
+Всього: 1 файл (~707 KB)
+
+---
+
+1. logo.png
+   Розмір: 707 KB
+   Опис: Логотип Rainbow Surf Retreats
+   Alt: N/A (favicon/logo)
+   Блок: Header/favicon на всіх сторінках
+   Оригінальний ID: 41cc34_4c22ad72e4ba4ba3b73d64bd7b0b5fa3~mv2.png

@@ -1,0 +1,29 @@
+BLOG PAGE - IMAGES
+==================
+URL: https://rainbowsurfretreats.com/blog
+
+Картинки сторінки "Блог" - мініатюри статей.
+Всього: 3 файли (~5.4 MB)
+
+---
+
+1. blog-surfing-in-france.jpg
+   Розмір: 3.2 MB
+   Опис: Стаття про серфінг у Франції
+   Alt: "10 Things You Need to Know Before You Go Surfing in France"
+   Блок: Blog page - article thumbnail
+   Оригінальний ID: 41cc34_ed59b8f4d4474571b5bda3fdd864bbaa~mv2.jpg
+
+2. blog-surf-trip-essentials.png
+   Розмір: 1.7 MB
+   Опис: Стаття про необхідні речі для серф-подорожі
+   Alt: "The 13 Absolute Essentials You Need for Every Surf Trip"
+   Блок: Blog page - article thumbnail
+   Оригінальний ID: 41cc34_611e555a084a48fa9392764d522d1ed5~mv2.png
+
+3. blog-gay-surf-retreat.jpeg
+   Розмір: 552 KB
+   Опис: Стаття про причини поїхати на гей серф-ретріт
+   Alt: "10 Reasons to Go on a Gay Surf Retreat"
+   Блок: Blog page - article thumbnail
+   Оригінальний ID: 41cc34_cda86adf06eb479f845fa35afe04386a~mv2.jpeg

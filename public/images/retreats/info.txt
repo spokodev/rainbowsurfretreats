@@ -1,0 +1,57 @@
+RETREATS PAGE - IMAGES
+======================
+URL: https://rainbowsurfretreats.com/retreats
+
+Картинки сторінки "Ретріти" - зображення для карток ретрітів.
+Всього: 7 файлів (~14.4 MB)
+
+---
+
+1. retreats-siargao-philippines.jpg
+   Розмір: 1.8 MB
+   Опис: Ретріт на Сіаргао, Філіппіни
+   Alt: "Siargao, Philippines, 25 Jan - 1 Feb 2026"
+   Блок: Retreats page - retreat card
+   Оригінальний ID: 41cc34_b6cc0b8d04df44fbb17e9065f878e7dd~mv2.jpg
+
+2. retreats-morocco.jpg
+   Розмір: 900 KB
+   Опис: Ретріт в Марокко
+   Alt: "Morocco, March 21-28 2026"
+   Блок: Retreats page - retreat card
+   Оригінальний ID: 41cc34_895850a413a24b149f8d788b5912dd29~mv2.jpg
+
+3. retreats-indonesia.jpg
+   Розмір: 2.4 MB
+   Опис: Ретріт в Індонезії
+   Alt: "Indonesia, 16-23 May 2026"
+   Блок: Retreats page - retreat card
+   Оригінальний ID: 41cc34_c56b3d6171834a0889bda6cf56aa55cb~mv2.jpg
+
+4. retreats-france.jpg
+   Розмір: 463 KB
+   Опис: Ретріт у Франції
+   Alt: "France 6-13 June 2026"
+   Блок: Retreats page - retreat card
+   Оригінальний ID: 41cc34_bac048e3cb214e7f831f430e58dda417~mv2.jpg
+
+5. retreats-bali.jpg
+   Розмір: 5.3 MB
+   Опис: Ретріт на Балі
+   Alt: "Bali, Sept 11-21, 2026"
+   Блок: Retreats page - retreat card
+   Оригінальний ID: 41cc34_32be6a9538fc4d429e58ad8f502dd6be~mv2.jpg
+
+6. retreats-portugal.jpg
+   Розмір: 1.7 MB
+   Опис: Ретріт в Португалії
+   Alt: "Portugal 10-17 Oct 2026"
+   Блок: Retreats page - retreat card
+   Оригінальний ID: 41cc34_113e5d1c441e4e67ae4466c7960962de~mv2.jpg
+
+7. retreats-panama.jpg
+   Розмір: 1.3 MB
+   Опис: Ретріт в Панамі
+   Alt: "Panama, 29 Nov - 7 Dec, 2026"
+   Блок: Retreats page - retreat card
+   Оригінальний ID: 41cc34_f8fcfe1da13a451f9b980d0a2afe9dfd~mv2.jpg

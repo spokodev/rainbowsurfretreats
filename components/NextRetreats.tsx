@@ -1,0 +1,132 @@
+"use client";
+
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "motion/react";
+import { retreats } from "@/lib/data";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  Utensils,
+  Waves,
+  Tag,
+} from "lucide-react";
+
+export default function NextRetreats() {
+  return (
+    <section className="py-16 md:py-24">
+      <div className="container mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Upcoming Retreats
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Join us for an unforgettable surf adventure. Choose from our
+            carefully curated retreats around the world.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {retreats.map((retreat, index) => (
+            <motion.div
+              key={retreat.id}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <Card className="overflow-hidden h-full flex flex-col group hover:shadow-lg transition-shadow duration-300">
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <Image
+                    src={retreat.image}
+                    alt={retreat.destination}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-3 left-3 flex gap-2">
+                    <Badge variant="secondary" className="bg-white/90 text-foreground">
+                      {retreat.level}
+                    </Badge>
+                    <Badge className="bg-primary/90">
+                      {retreat.type}
+                    </Badge>
+                  </div>
+                </div>
+
+                <CardContent className="flex-1 pt-4">
+                  <div className="mb-3">
+                    <h3 className="text-xl font-semibold mb-1">
+                      {retreat.destination}
+                    </h3>
+                    <div className="flex items-center text-muted-foreground text-sm">
+                      <MapPin className="size-4 mr-1" />
+                      {retreat.location}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center text-sm text-muted-foreground mb-4">
+                    <Calendar className="size-4 mr-1" />
+                    {retreat.date}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex items-center text-muted-foreground">
+                      <Users className="size-4 mr-2 shrink-0" />
+                      <span>{retreat.participants} people</span>
+                    </div>
+                    <div className="flex items-center text-muted-foreground">
+                      <Clock className="size-4 mr-2 shrink-0" />
+                      <span>{retreat.duration}</span>
+                    </div>
+                    <div className="flex items-center text-muted-foreground">
+                      <Utensils className="size-4 mr-2 shrink-0" />
+                      <span>{retreat.food}</span>
+                    </div>
+                    <div className="flex items-center text-muted-foreground">
+                      <Waves className="size-4 mr-2 shrink-0" />
+                      <span>{retreat.gear}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex items-baseline justify-between">
+                      <div>
+                        <span className="text-2xl font-bold">{retreat.price}</span>
+                        <span className="text-muted-foreground text-sm ml-1">
+                          / person
+                        </span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <Tag className="size-4 mr-1 text-green-600" />
+                        <span className="text-green-600 font-medium">
+                          Early Bird: {retreat.earlyBird}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+
+                <CardFooter className="pt-0">
+                  <Button asChild className="w-full">
+                    <Link href={`/retreats/${retreat.id}`}>Book Now</Link>
+                  </Button>
+                </CardFooter>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}

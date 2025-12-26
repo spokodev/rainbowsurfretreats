@@ -1,0 +1,29 @@
+HOME PAGE - SLIDER IMAGES
+=========================
+URL: https://rainbowsurfretreats.com/
+
+Картинки головного слайдера на домашній сторінці.
+Всього: 3 файли (~753 KB)
+
+---
+
+1. home-slider-silhouette-sunset-beach.jpg
+   Розмір: 240 KB
+   Опис: Силуети людей на заході сонця на пляжі
+   Alt: "silhouette of people at sunset by the beach"
+   Блок: Homepage slider
+   Оригінальний ID: 41cc34_343b51e0eebe496aad7e3fc2fcd9b26d~mv2.jpg
+
+2. home-slider-surfers-staring-sunset.jpg
+   Розмір: 175 KB
+   Опис: Серфери у воді дивляться на захід сонця
+   Alt: "Surfers in the water staring at the sunset"
+   Блок: Homepage slider
+   Оригінальний ID: 41cc34_41af186aa0934bf7864f80736d292bae~mv2.jpg
+
+3. home-slider-surfers-looking-waves.jpg
+   Розмір: 339 KB
+   Опис: Серфери дивляться на хвилі
+   Alt: "surfers looking out to the waves"
+   Блок: Homepage slider
+   Оригінальний ID: 41cc34_0289daf6ded44665b69dda4b1b68f72d~mv2.jpg
