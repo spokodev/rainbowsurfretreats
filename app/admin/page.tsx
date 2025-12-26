@@ -109,9 +109,15 @@ async function getDashboardData(): Promise<{
     .order("start_date", { ascending: true })
     .limit(4);
 
+  // Transform Supabase response - joined tables are returned as arrays
+  const transformedBookings = (recentBookings || []).map((b) => ({
+    ...b,
+    retreat: Array.isArray(b.retreat) ? b.retreat[0] : b.retreat,
+  })) as RecentBooking[];
+
   return {
     stats,
-    recentBookings: (recentBookings as RecentBooking[]) || [],
+    recentBookings: transformedBookings,
     upcomingRetreats: (upcomingRetreats as UpcomingRetreat[]) || [],
   };
 }

@@ -89,7 +89,13 @@ async function getBookings(): Promise<{
     };
   }
 
-  const bookingsList = (bookings as Booking[]) || [];
+  // Transform Supabase response to match Booking type
+  // Supabase returns joined tables as arrays, we need to extract first item
+  const bookingsList = (bookings || []).map((b) => ({
+    ...b,
+    retreat: Array.isArray(b.retreat) ? b.retreat[0] : b.retreat,
+    room: Array.isArray(b.room) ? b.room[0] : b.room,
+  })) as Booking[];
 
   const stats = {
     confirmed: bookingsList.filter((b) => b.status === "confirmed").length,

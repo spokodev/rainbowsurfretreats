@@ -234,8 +234,8 @@ function formatContent(content: string): string {
     .replace(/<p><h/g, '<h')
     .replace(/<\/h2><\/p>/g, '</h2>')
     .replace(/<\/h3><\/p>/g, '</h3>')
-    // Wrap lists
-    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+    // Wrap lists (using [\s\S] instead of 's' flag for compatibility)
+    .replace(/(<li>[\s\S]*<\/li>)/g, '<ul>$1</ul>')
     // Horizontal rules
     .replace(/^---$/gim, '<hr />')
 }
