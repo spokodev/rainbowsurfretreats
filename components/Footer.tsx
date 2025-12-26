@@ -1,26 +1,11 @@
+'use client';
+
 import Link from 'next/link';
 import { Instagram, Facebook, Youtube } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Logo } from '@/components/Logo';
 
-const destinations = [
-  { href: '/retreats/bali', label: 'Bali' },
-  { href: '/retreats/morocco', label: 'Morocco' },
-  { href: '/retreats/portugal', label: 'Portugal' },
-  { href: '/retreats/sri-lanka', label: 'Sri Lanka' },
-  { href: '/retreats/costa-rica', label: 'Costa Rica' },
-];
-
-const companyLinks = [
-  { href: '/about', label: 'About Us' },
-  { href: '/blog', label: 'Blog' },
-  { href: '/contact', label: 'Contact' },
-];
-
-const legalLinks = [
-  { href: '/policies', label: 'Policies' },
-  { href: '/privacy', label: 'Privacy Policy' },
-  { href: '/terms', label: 'Terms of Service' },
-];
+const destinationKeys = ['bali', 'morocco', 'portugal', 'sriLanka', 'panama'] as const;
 
 const socialLinks = [
   {
@@ -41,7 +26,21 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const t = useTranslations('footer');
+  const tDestinations = useTranslations('destinations');
   const currentYear = new Date().getFullYear();
+
+  const companyLinks = [
+    { href: '/about', labelKey: 'aboutUs' },
+    { href: '/blog', labelKey: 'blog' },
+    { href: '/contact', labelKey: 'contact' },
+  ];
+
+  const legalLinks = [
+    { href: '/policies', labelKey: 'policies' },
+    { href: '/privacy', labelKey: 'privacyPolicy' },
+    { href: '/terms', labelKey: 'termsOfService' },
+  ];
 
   return (
     <footer className="bg-gray-900 text-gray-300">
@@ -53,8 +52,7 @@ export default function Footer() {
               <Logo variant="dark" className="w-40 h-auto" />
             </Link>
             <p className="text-sm text-gray-400 mb-6 max-w-xs">
-              Transformative surf and wellness retreats in the world&apos;s most
-              beautiful destinations. Find your wave, find yourself.
+              {t('tagline')}
             </p>
             {/* Social Links */}
             <div className="flex items-center space-x-4">
@@ -75,15 +73,15 @@ export default function Footer() {
 
           {/* Destinations */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Destinations</h3>
+            <h3 className="text-white font-semibold mb-4">{t('destinations')}</h3>
             <ul className="space-y-2">
-              {destinations.map((destination) => (
-                <li key={destination.href}>
+              {destinationKeys.map((key) => (
+                <li key={key}>
                   <Link
-                    href={destination.href}
+                    href={`/retreats/${key.toLowerCase().replace('lanka', '-lanka')}`}
                     className="text-sm text-gray-400 hover:text-white transition-colors"
                   >
-                    {destination.label}
+                    {tDestinations(key)}
                   </Link>
                 </li>
               ))}
@@ -92,7 +90,7 @@ export default function Footer() {
 
           {/* Company */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Company</h3>
+            <h3 className="text-white font-semibold mb-4">{t('company')}</h3>
             <ul className="space-y-2">
               {companyLinks.map((link) => (
                 <li key={link.href}>
@@ -100,7 +98,7 @@ export default function Footer() {
                     href={link.href}
                     className="text-sm text-gray-400 hover:text-white transition-colors"
                   >
-                    {link.label}
+                    {t(link.labelKey)}
                   </Link>
                 </li>
               ))}
@@ -109,7 +107,7 @@ export default function Footer() {
 
           {/* Legal */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Legal</h3>
+            <h3 className="text-white font-semibold mb-4">{t('legal')}</h3>
             <ul className="space-y-2">
               {legalLinks.map((link) => (
                 <li key={link.href}>
@@ -117,7 +115,7 @@ export default function Footer() {
                     href={link.href}
                     className="text-sm text-gray-400 hover:text-white transition-colors"
                   >
-                    {link.label}
+                    {t(link.labelKey)}
                   </Link>
                 </li>
               ))}
@@ -129,26 +127,26 @@ export default function Footer() {
         <div className="mt-12 pt-8 border-t border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-500">
-              &copy; {currentYear} Rainbow Surf Retreats. All rights reserved.
+              {t('copyright', { year: currentYear })}
             </p>
             <div className="flex items-center space-x-6">
               <Link
                 href="/privacy"
                 className="text-sm text-gray-500 hover:text-white transition-colors"
               >
-                Privacy
+                {t('privacy')}
               </Link>
               <Link
                 href="/terms"
                 className="text-sm text-gray-500 hover:text-white transition-colors"
               >
-                Terms
+                {t('terms')}
               </Link>
               <Link
                 href="/cookies"
                 className="text-sm text-gray-500 hover:text-white transition-colors"
               >
-                Cookies
+                {t('cookies')}
               </Link>
             </div>
           </div>

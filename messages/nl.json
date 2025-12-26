@@ -30,7 +30,11 @@
     "from": "Vanaf",
     "perPerson": "per persoon",
     "spotsLeft": "plekken over",
-    "soldOut": "Uitverkocht"
+    "soldOut": "Uitverkocht",
+    "people": "personen",
+    "days": "dagen",
+    "clearFilters": "Filters wissen",
+    "contactUs": "Contact"
   },
   "nav": {
     "retreats": "Retreats",
@@ -41,20 +45,51 @@
     "bookNow": "Boek nu"
   },
   "hero": {
-    "title": "Pak de perfecte golf",
-    "subtitle": "LGBTQ+ Surf Retreats",
-    "description": "Word lid van onze inclusieve community voor onvergetelijke surfavonturen wereldwijd. Alle niveaus welkom.",
-    "cta": "Ontdek retreats",
-    "watchVideo": "Bekijk video"
+    "title": "Pak golven, maak herinneringen",
+    "subtitle": "Sluit je aan bij LGBTQ+ surfavonturen op 's werelds mooiste stranden",
+    "cta": "Boek je retreat",
+    "explore": "Ontdek bestemmingen",
+    "watchVideo": "Bekijk video",
+    "stats": {
+      "retreats": "Retreats",
+      "countries": "Landen",
+      "surfers": "Blije surfers"
+    }
   },
   "retreats": {
     "title": "Onze retreats",
-    "subtitle": "Kies je volgende avontuur",
-    "nextRetreats": "Volgende retreats",
+    "subtitle": "Ontdek je perfecte surfavontuur",
+    "nextRetreats": "Aankomende retreats",
+    "nextRetreatsSubtitle": "Sluit je aan bij onze aankomende surfavonturen op geweldige bestemmingen wereldwijd",
     "viewRetreat": "Bekijk retreat",
     "bookRetreat": "Boek deze retreat",
+    "bookNow": "Boek nu",
     "startingFrom": "Vanaf",
     "spotsAvailable": "{count} plekken beschikbaar",
+    "showing": "{count} retreats weergegeven",
+    "noResults": "Geen retreats gevonden die aan je criteria voldoen",
+    "earlyBird": "Vroegboek",
+    "filters": {
+      "allLevels": "Alle niveaus",
+      "beginners": "Beginners",
+      "intermediate": "Gevorderd",
+      "advanced": "Expert",
+      "allTypes": "Alle types",
+      "budget": "Budget",
+      "standard": "Standaard",
+      "premium": "Premium",
+      "sortBy": "Sorteer op",
+      "dateAsc": "Datum (Dichtstbij)",
+      "dateDesc": "Datum (Verst)",
+      "priceAsc": "Prijs (Laag naar hoog)",
+      "priceDesc": "Prijs (Hoog naar laag)"
+    },
+    "cta": {
+      "title": "Kun je de perfecte retreat niet vinden?",
+      "subtitle": "Neem rechtstreeks contact met ons op en we helpen je het perfecte avontuur te vinden, of schrijf je in voor onze nieuwsbrief.",
+      "contact": "Contact",
+      "newsletter": "Inschrijven"
+    },
     "details": {
       "surfLevel": "Surfniveau",
       "beginner": "Beginner",
@@ -130,25 +165,106 @@
   },
   "newsletter": {
     "title": "Blijf op de hoogte",
-    "description": "Abonneer je op onze nieuwsbrief voor exclusieve retreat-updates, surftips en vroege toegang tot nieuwe bestemmingen.",
+    "subtitle": "Exclusieve toegang tot vroegboekaanbiedingen, surftips en community-updates",
     "placeholder": "Je e-mailadres",
-    "subscribe": "Inschrijven",
+    "button": "Inschrijven",
+    "subscribing": "Bezig met inschrijven...",
     "success": "Je staat op de lijst!",
-    "successDescription": "Bedankt voor je inschrijving. Maak je klaar voor geweldige surfverhalen!",
+    "successMessage": "Bedankt voor je inschrijving. Maak je klaar voor geweldige surfverhalen!",
+    "confirmMessage": "Check je e-mail om je inschrijving te bevestigen.",
     "terms": "Ik ga akkoord met het ontvangen van nieuwsbrieven en accepteer het",
-    "noSpam": "Geen spam, altijd opzegbaar. Sluit je aan bij 2.000+ surfliefhebbers."
+    "privacyPolicy": "Privacybeleid",
+    "noSpam": "Geen spam, altijd opzegbaar. Sluit je aan bij 2.000+ surfliefhebbers.",
+    "popupTitle": "Word lid van de Rainbow Surf familie",
+    "errors": {
+      "required": "E-mail is verplicht",
+      "invalid": "Voer een geldig e-mailadres in",
+      "terms": "Accepteer de voorwaarden",
+      "generic": "Er ging iets mis. Probeer het opnieuw."
+    }
+  },
+  "features": {
+    "title": "Waarom Rainbow Surf Retreats kiezen?",
+    "subtitle": "Ervaar de perfecte mix van avontuur, community en persoonlijke groei",
+    "safe": {
+      "title": "LGBTQ+ veilige ruimte",
+      "description": "Surf in een gastvrije omgeving waar je jezelf kunt zijn"
+    },
+    "instructors": {
+      "title": "Expert instructeurs",
+      "description": "Leer van gecertificeerde surfcoaches gespecialiseerd in alle niveaus"
+    },
+    "destinations": {
+      "title": "Geweldige bestemmingen",
+      "description": "Ontdek wereldklasse surfspots op zorgvuldig geselecteerde locaties"
+    },
+    "community": {
+      "title": "Levendige community",
+      "description": "Maak contact met gelijkgestemden van over de hele wereld"
+    },
+    "wellness": {
+      "title": "Wellness focus",
+      "description": "Combineer je surfen met yoga, meditatie en gezonde keuken"
+    },
+    "inclusive": {
+      "title": "Alle niveaus welkom",
+      "description": "Van beginners tot ervaren surfers, iedereen is welkom"
+    }
+  },
+  "blog": {
+    "title": "Surf Blog",
+    "subtitle": "Verhalen, tips en inspiratie uit de surfwereld",
+    "search": "Artikelen zoeken...",
+    "noResults": "Geen artikelen gevonden die aan je criteria voldoen.",
+    "clearFilters": "Filters wissen",
+    "loadMore": "Meer artikelen laden",
+    "categories": {
+      "all": "Alle",
+      "destinations": "Bestemmingen",
+      "travelTips": "Reistips",
+      "lgbtq": "LGBTQ+",
+      "wellness": "Wellness",
+      "environment": "Milieu"
+    }
+  },
+  "cookies": {
+    "title": "Wij respecteren je privacy",
+    "description": "We gebruiken cookies om je ervaring te verbeteren, verkeer te analyseren en content te personaliseren. Door op \"Alles accepteren\" te klikken, ga je akkoord met het gebruik van cookies.",
+    "learnMore": "Meer info",
+    "accept": "Alles accepteren",
+    "necessary": "Alleen noodzakelijk",
+    "customize": "Aanpassen",
+    "preferences": {
+      "title": "Cookie-instellingen",
+      "necessary": {
+        "title": "Noodzakelijk",
+        "description": "Vereist voor het goed functioneren van de website"
+      },
+      "analytics": {
+        "title": "Analytisch",
+        "description": "Helpen ons te begrijpen hoe bezoekers onze site gebruiken"
+      },
+      "marketing": {
+        "title": "Marketing",
+        "description": "Gebruikt om gepersonaliseerde advertenties te tonen"
+      }
+    },
+    "save": "Voorkeuren opslaan"
   },
   "footer": {
-    "tagline": "Pak de perfecte golf, vind je innerlijke rust",
-    "quickLinks": "Snellinks",
-    "support": "Ondersteuning",
+    "tagline": "Transformatieve surf- en wellness-retreats op 's werelds mooiste bestemmingen. Vind je golf, vind jezelf.",
+    "destinations": "Bestemmingen",
+    "company": "Bedrijf",
     "legal": "Juridisch",
-    "followUs": "Volg ons",
-    "privacyPolicy": "Privacybeleid",
-    "termsConditions": "Algemene voorwaarden",
-    "cookiePolicy": "Cookiebeleid",
-    "faq": "FAQ",
-    "contactUs": "Contact",
+    "aboutUs": "Over ons",
+    "blog": "Blog",
+    "contact": "Contact",
+    "policies": "Beleid",
+    "privacyPolicy": "Privacy",
+    "termsOfService": "Servicevoorwaarden",
+    "privacy": "Privacy",
+    "terms": "Voorwaarden",
+    "cookies": "Cookies",
     "copyright": "© {year} Rainbow Surf Retreats. Alle rechten voorbehouden."
   },
   "destinations": {

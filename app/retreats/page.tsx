@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'motion/react'
+import { useTranslations } from 'next-intl'
 import {
   Calendar,
   MapPin,
@@ -27,16 +28,31 @@ import {
 } from '@/components/ui/select'
 import { retreats } from '@/lib/data'
 
-const levels = ['All Levels', 'Beginners', 'Intermediate', 'Advanced']
-const types = ['All Types', 'Budget', 'Standard', 'Premium']
-const sortOptions = [
-  { value: 'date-asc', label: 'Date (Earliest)' },
-  { value: 'date-desc', label: 'Date (Latest)' },
-  { value: 'price-asc', label: 'Price (Low to High)' },
-  { value: 'price-desc', label: 'Price (High to Low)' },
-]
-
 export default function RetreatsPage() {
+  const t = useTranslations('retreats')
+  const tCommon = useTranslations('common')
+
+  const levels = [
+    { value: 'All Levels', label: t('filters.allLevels') },
+    { value: 'Beginners', label: t('filters.beginners') },
+    { value: 'Intermediate', label: t('filters.intermediate') },
+    { value: 'Advanced', label: t('filters.advanced') },
+  ]
+
+  const types = [
+    { value: 'All Types', label: t('filters.allTypes') },
+    { value: 'Budget', label: t('filters.budget') },
+    { value: 'Standard', label: t('filters.standard') },
+    { value: 'Premium', label: t('filters.premium') },
+  ]
+
+  const sortOptions = [
+    { value: 'date-asc', label: t('filters.dateAsc') },
+    { value: 'date-desc', label: t('filters.dateDesc') },
+    { value: 'price-asc', label: t('filters.priceAsc') },
+    { value: 'price-desc', label: t('filters.priceDesc') },
+  ]
+
   const [levelFilter, setLevelFilter] = useState('All Levels')
   const [typeFilter, setTypeFilter] = useState('All Types')
   const [sortBy, setSortBy] = useState('date-asc')
@@ -84,6 +100,16 @@ export default function RetreatsPage() {
   const hasActiveFilters =
     levelFilter !== 'All Levels' || typeFilter !== 'All Types'
 
+  const getLevelLabel = (value: string) => {
+    const level = levels.find(l => l.value === value)
+    return level ? level.label : value
+  }
+
+  const getTypeLabel = (value: string) => {
+    const type = types.find(t => t.value === value)
+    return type ? type.label : value
+  }
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -95,11 +121,11 @@ export default function RetreatsPage() {
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
-              Our <span className="text-gradient-rainbow">Retreats</span>
+              {t('title').split(' ')[0]}{' '}
+              <span className="text-gradient-rainbow">{t('title').split(' ').slice(1).join(' ') || 'Retreats'}</span>
             </h1>
             <p className="text-white/90 text-lg md:text-xl max-w-2xl mx-auto">
-              Discover your perfect surf adventure. From beginner-friendly beaches
-              to challenging breaks, we have something for everyone.
+              {t('subtitle')}
             </p>
           </motion.div>
         </div>
@@ -112,21 +138,19 @@ export default function RetreatsPage() {
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Filter className="w-4 h-4" />
               <span>
-                Showing{' '}
-                <strong className="text-gray-900">{filteredRetreats.length}</strong>{' '}
-                retreats
+                {t('showing', { count: filteredRetreats.length })}
               </span>
             </div>
 
             <div className="flex flex-wrap gap-3 items-center">
               <Select value={levelFilter} onValueChange={setLevelFilter}>
                 <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Level" />
+                  <SelectValue placeholder={tCommon('level')} />
                 </SelectTrigger>
                 <SelectContent>
                   {levels.map((level) => (
-                    <SelectItem key={level} value={level}>
-                      {level}
+                    <SelectItem key={level.value} value={level.value}>
+                      {level.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -138,8 +162,8 @@ export default function RetreatsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {types.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -148,7 +172,7 @@ export default function RetreatsPage() {
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[170px]">
                   <SlidersHorizontal className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Sort by" />
+                  <SelectValue placeholder={t('filters.sortBy')} />
                 </SelectTrigger>
                 <SelectContent>
                   {sortOptions.map((option) => (
@@ -166,7 +190,7 @@ export default function RetreatsPage() {
                   onClick={clearFilters}
                   className="text-[var(--primary-teal)]"
                 >
-                  Clear filters
+                  {tCommon('clearFilters')}
                 </Button>
               )}
             </div>
@@ -199,10 +223,10 @@ export default function RetreatsPage() {
                           variant="secondary"
                           className="bg-white/90 text-foreground"
                         >
-                          {retreat.level}
+                          {getLevelLabel(retreat.level)}
                         </Badge>
                         <Badge className="bg-[var(--primary-teal)]">
-                          {retreat.type}
+                          {getTypeLabel(retreat.type)}
                         </Badge>
                       </div>
                     </div>
@@ -226,7 +250,7 @@ export default function RetreatsPage() {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="flex items-center text-muted-foreground">
                           <Users className="size-4 mr-2 shrink-0" />
-                          <span>{retreat.participants} people</span>
+                          <span>{retreat.participants} {tCommon('people')}</span>
                         </div>
                         <div className="flex items-center text-muted-foreground">
                           <Clock className="size-4 mr-2 shrink-0" />
@@ -249,13 +273,13 @@ export default function RetreatsPage() {
                               {retreat.price}
                             </span>
                             <span className="text-muted-foreground text-sm ml-1">
-                              / person
+                              / {tCommon('perPerson')}
                             </span>
                           </div>
                           <div className="flex items-center text-sm">
                             <Tag className="size-4 mr-1 text-green-600" />
                             <span className="text-green-600 font-medium">
-                              Early Bird: {retreat.earlyBird}
+                              {t('earlyBird')}: {retreat.earlyBird}
                             </span>
                           </div>
                         </div>
@@ -267,7 +291,7 @@ export default function RetreatsPage() {
                         asChild
                         className="w-full bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]"
                       >
-                        <Link href={`/retreats/${retreat.id}`}>Book Now</Link>
+                        <Link href={`/retreats/${retreat.id}`}>{t('bookNow')}</Link>
                       </Button>
                     </CardFooter>
                   </Card>
@@ -277,10 +301,10 @@ export default function RetreatsPage() {
           ) : (
             <div className="text-center py-16">
               <p className="text-gray-500 text-lg mb-4">
-                No retreats found matching your criteria.
+                {t('noResults')}
               </p>
               <Button variant="outline" onClick={clearFilters}>
-                Clear filters
+                {tCommon('clearFilters')}
               </Button>
             </div>
           )}
@@ -291,22 +315,20 @@ export default function RetreatsPage() {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            Can&apos;t Find Your Perfect Retreat?
+            {t('cta.title')}
           </h2>
           <p className="text-gray-600 max-w-xl mx-auto mb-6">
-            We&apos;re always planning new adventures. Contact us to discuss
-            custom retreat options or join our mailing list to be the first to
-            know about new destinations.
+            {t('cta.subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               asChild
               className="bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]"
             >
-              <Link href="/contact">Contact Us</Link>
+              <Link href="/contact">{t('cta.contact')}</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/#newsletter">Join Newsletter</Link>
+              <Link href="/#newsletter">{t('cta.newsletter')}</Link>
             </Button>
           </div>
         </div>

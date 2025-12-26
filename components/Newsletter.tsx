@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { Mail, Send, Loader2, CheckCircle2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 type SubmitStatus = 'idle' | 'loading' | 'success' | 'error';
 
 export default function Newsletter() {
+  const t = useTranslations('newsletter');
   const [email, setEmail] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [emailError, setEmailError] = useState('');
@@ -32,18 +34,18 @@ export default function Newsletter() {
 
     // Validate email
     if (!email.trim()) {
-      setEmailError('Email is required');
+      setEmailError(t('errors.required'));
       return;
     }
 
     if (!validateEmail(email)) {
-      setEmailError('Please enter a valid email address');
+      setEmailError(t('errors.invalid'));
       return;
     }
 
     // Validate terms
     if (!termsAccepted) {
-      setTermsError('You must agree to the terms');
+      setTermsError(t('errors.terms'));
       return;
     }
 
@@ -117,11 +119,10 @@ export default function Newsletter() {
 
           {/* Heading */}
           <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">
-            Stay in the Loop
+            {t('title')}
           </h2>
           <p className="mb-8 text-lg text-white/90">
-            Subscribe to our newsletter for exclusive retreat updates, surf tips,
-            and early access to new destinations.
+            {t('subtitle')}
           </p>
 
           {/* Form */}
@@ -133,10 +134,10 @@ export default function Newsletter() {
             >
               <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-green-300" />
               <h3 className="mb-2 text-xl font-semibold text-white">
-                You&apos;re on the list!
+                {t('success')}
               </h3>
               <p className="text-white/90">
-                Thanks for subscribing. Get ready for some amazing surf stories!
+                {t('successMessage')}
               </p>
             </motion.div>
           ) : (
@@ -153,7 +154,7 @@ export default function Newsletter() {
                 <div className="flex-1">
                   <Input
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder={t('placeholder')}
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
@@ -177,11 +178,11 @@ export default function Newsletter() {
                   {status === 'loading' ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Subscribing...
+                      {t('subscribing')}
                     </>
                   ) : (
                     <>
-                      Subscribe
+                      {t('button')}
                       <Send className="ml-2 h-4 w-4" />
                     </>
                   )}
@@ -206,19 +207,12 @@ export default function Newsletter() {
                     htmlFor="terms"
                     className="text-left text-sm leading-relaxed text-white/90"
                   >
-                    I agree to receive newsletters and accept the{' '}
-                    <Link
-                      href="/policies"
-                      className="font-medium text-white underline underline-offset-2 hover:no-underline"
-                    >
-                      Policies
-                    </Link>{' '}
-                    and{' '}
+                    {t('terms')}{' '}
                     <Link
                       href="/privacy-policy"
                       className="font-medium text-white underline underline-offset-2 hover:no-underline"
                     >
-                      Privacy Policy
+                      {t('privacyPolicy')}
                     </Link>
                     .
                   </label>
@@ -237,7 +231,7 @@ export default function Newsletter() {
                   animate={{ opacity: 1 }}
                   className="text-sm text-red-300"
                 >
-                  Something went wrong. Please try again.
+                  {t('errors.generic')}
                 </motion.p>
               )}
             </motion.form>
@@ -251,7 +245,7 @@ export default function Newsletter() {
             transition={{ duration: 0.6, delay: 0.5 }}
             className="mt-6 text-sm text-white/70"
           >
-            No spam, unsubscribe anytime. Join 2,000+ surf enthusiasts.
+            {t('noSpam')}
           </motion.p>
         </motion.div>
       </div>

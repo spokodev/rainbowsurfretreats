@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { X, Cookie, Settings } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -31,6 +32,8 @@ const defaultPreferences: CookiePreferences = {
 }
 
 export function CookieConsent() {
+  const t = useTranslations('cookies')
+  const tCommon = useTranslations('common')
   const [showBanner, setShowBanner] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [preferences, setPreferences] = useState<CookiePreferences>(defaultPreferences)
@@ -98,12 +101,11 @@ export function CookieConsent() {
             <div className="flex items-start gap-3 flex-1">
               <Cookie className="h-6 w-6 text-primary shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-lg mb-1">We value your privacy</h3>
+                <h3 className="font-semibold text-lg mb-1">{t('title')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  We use cookies to enhance your browsing experience, analyze site traffic, and personalize content.
-                  By clicking &quot;Accept All&quot;, you consent to our use of cookies.{" "}
+                  {t('description')}{" "}
                   <Link href="/privacy-policy" className="text-primary hover:underline">
-                    Learn more
+                    {t('learnMore')}
                   </Link>
                 </p>
               </div>
@@ -116,7 +118,7 @@ export function CookieConsent() {
                 className="flex-1 md:flex-none"
               >
                 <Settings className="h-4 w-4 mr-2" />
-                Customize
+                {t('customize')}
               </Button>
               <Button
                 variant="outline"
@@ -124,14 +126,14 @@ export function CookieConsent() {
                 onClick={acceptNecessary}
                 className="flex-1 md:flex-none"
               >
-                Necessary Only
+                {t('necessary')}
               </Button>
               <Button
                 size="sm"
                 onClick={acceptAll}
                 className="flex-1 md:flex-none"
               >
-                Accept All
+                {t('accept')}
               </Button>
             </div>
             <Button
@@ -141,7 +143,7 @@ export function CookieConsent() {
               onClick={acceptNecessary}
             >
               <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{tCommon('close')}</span>
             </Button>
           </div>
         </div>
@@ -151,9 +153,9 @@ export function CookieConsent() {
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Cookie Preferences</DialogTitle>
+            <DialogTitle>{t('preferences.title')}</DialogTitle>
             <DialogDescription>
-              Manage your cookie preferences. You can enable or disable different types of cookies below.
+              {t('description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -161,9 +163,9 @@ export function CookieConsent() {
             {/* Necessary Cookies */}
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <Label className="text-base font-medium">Necessary Cookies</Label>
+                <Label className="text-base font-medium">{t('preferences.necessary.title')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Required for the website to function properly. Cannot be disabled.
+                  {t('preferences.necessary.description')}
                 </p>
               </div>
               <Switch checked={true} disabled />
@@ -172,9 +174,9 @@ export function CookieConsent() {
             {/* Analytics Cookies */}
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <Label className="text-base font-medium">Analytics Cookies</Label>
+                <Label className="text-base font-medium">{t('preferences.analytics.title')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Help us understand how visitors interact with our website by collecting anonymous information.
+                  {t('preferences.analytics.description')}
                 </p>
               </div>
               <Switch
@@ -188,9 +190,9 @@ export function CookieConsent() {
             {/* Marketing Cookies */}
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <Label className="text-base font-medium">Marketing Cookies</Label>
+                <Label className="text-base font-medium">{t('preferences.marketing.title')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Used to track visitors across websites to display relevant advertisements.
+                  {t('preferences.marketing.description')}
                 </p>
               </div>
               <Switch
@@ -204,9 +206,9 @@ export function CookieConsent() {
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setShowSettings(false)}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
-            <Button onClick={savePreferences}>Save Preferences</Button>
+            <Button onClick={savePreferences}>{t('save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

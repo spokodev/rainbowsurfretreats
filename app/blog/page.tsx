@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Search, ArrowRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -9,8 +10,21 @@ import { BlogCard } from '@/components/BlogCard'
 import { blogPosts, blogCategories } from '@/lib/blog-data'
 
 export default function BlogPage() {
+  const t = useTranslations('blog')
   const [activeCategory, setActiveCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+
+  const getCategoryLabel = (slug: string) => {
+    const categoryMap: Record<string, string> = {
+      'all': t('categories.all'),
+      'destinations': t('categories.destinations'),
+      'travel-tips': t('categories.travelTips'),
+      'lgbtq': t('categories.lgbtq'),
+      'wellness': t('categories.wellness'),
+      'environment': t('categories.environment'),
+    }
+    return categoryMap[slug] || slug
+  }
 
   const filteredPosts = useMemo(() => {
     let posts = blogPosts
@@ -40,10 +54,10 @@ export default function BlogPage() {
       <section className="bg-gradient-teal py-16 md:py-24">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
-            Surf Blog
+            {t('title')}
           </h1>
           <p className="text-white/90 text-lg md:text-xl max-w-2xl mx-auto mb-8">
-            Stories, tips, and inspiration from the world of surfing
+            {t('subtitle')}
           </p>
 
           {/* Search Bar */}
@@ -51,7 +65,7 @@ export default function BlogPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <Input
               type="text"
-              placeholder="Search articles..."
+              placeholder={t('search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-12 pr-4 py-6 text-lg bg-white/95 border-0 shadow-lg rounded-full"
@@ -76,7 +90,7 @@ export default function BlogPage() {
                   value={category.slug}
                   className="px-6 py-2.5 rounded-full data-[state=active]:bg-[var(--primary-teal)] data-[state=active]:text-white bg-white shadow-sm border-0 text-gray-700 hover:bg-gray-50 transition-all"
                 >
-                  {category.name}
+                  {getCategoryLabel(category.slug)}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -92,7 +106,7 @@ export default function BlogPage() {
           ) : (
             <div className="text-center py-16">
               <p className="text-gray-500 text-lg mb-4">
-                No articles found matching your criteria.
+                {t('noResults')}
               </p>
               <Button
                 variant="outline"
@@ -101,7 +115,7 @@ export default function BlogPage() {
                   setSearchQuery('')
                 }}
               >
-                Clear filters
+                {t('clearFilters')}
               </Button>
             </div>
           )}
@@ -114,7 +128,7 @@ export default function BlogPage() {
                 size="lg"
                 className="px-8 border-[var(--primary-teal)] text-[var(--primary-teal)] hover:bg-[var(--primary-teal)] hover:text-white"
               >
-                Load More Articles
+                {t('loadMore')}
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </div>

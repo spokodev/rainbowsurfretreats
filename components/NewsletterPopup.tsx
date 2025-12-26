@@ -6,6 +6,7 @@ import { X, Mail, Loader2, CheckCircle, Sparkles } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 
 const POPUP_DELAY = 15000 // 15 seconds
@@ -13,6 +14,7 @@ const POPUP_STORAGE_KEY = 'newsletter_popup_dismissed'
 const POPUP_EXPIRY_DAYS = 7
 
 export default function NewsletterPopup() {
+  const t = useTranslations('newsletter')
   const [isOpen, setIsOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [accepted, setAccepted] = useState(false)
@@ -49,12 +51,12 @@ export default function NewsletterPopup() {
     setError('')
 
     if (!email || !email.includes('@')) {
-      setError('Please enter a valid email')
+      setError(t('errors.invalid'))
       return
     }
 
     if (!accepted) {
-      setError('Please accept the terms')
+      setError(t('errors.terms'))
       return
     }
 
@@ -86,7 +88,7 @@ export default function NewsletterPopup() {
       }, 3000)
     } catch (err) {
       setStatus('error')
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setError(err instanceof Error ? err.message : t('errors.generic'))
     }
   }
 
@@ -126,7 +128,7 @@ export default function NewsletterPopup() {
             <div className="bg-gradient-ocean h-32 flex items-center justify-center">
               <div className="text-center text-white">
                 <Sparkles className="w-10 h-10 mx-auto mb-2" />
-                <p className="text-sm font-medium">Stay in the Loop</p>
+                <p className="text-sm font-medium">{t('title')}</p>
               </div>
             </div>
 
@@ -136,18 +138,18 @@ export default function NewsletterPopup() {
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <CheckCircle className="w-8 h-8 text-green-600" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">You&apos;re In!</h3>
+                  <h3 className="text-xl font-bold mb-2">{t('success')}</h3>
                   <p className="text-gray-600">
-                    Check your email to confirm your subscription.
+                    {t('confirmMessage')}
                   </p>
                 </div>
               ) : (
                 <>
                   <h2 id="newsletter-popup-title" className="text-2xl font-bold text-center mb-2">
-                    Join the Rainbow Surf Family
+                    {t('popupTitle')}
                   </h2>
                   <p className="text-gray-600 text-center mb-6">
-                    Subscribe and get exclusive access to early bird offers, surf tips, and community updates.
+                    {t('subtitle')}
                   </p>
 
                   <form onSubmit={handleSubmit} className="space-y-4">
@@ -155,7 +157,7 @@ export default function NewsletterPopup() {
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
                         type="email"
-                        placeholder="Your email address"
+                        placeholder={t('placeholder')}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="pl-10 h-12"
@@ -172,9 +174,9 @@ export default function NewsletterPopup() {
                         className="mt-1"
                       />
                       <label htmlFor="popup-terms" className="text-sm text-gray-600">
-                        I agree to receive newsletters and accept the{' '}
+                        {t('terms')}{' '}
                         <Link href="/privacy-policy" className="text-[#2C7A7B] underline" onClick={handleClose}>
-                          Privacy Policy
+                          {t('privacyPolicy')}
                         </Link>
                       </label>
                     </div>
@@ -191,16 +193,16 @@ export default function NewsletterPopup() {
                       {status === 'loading' ? (
                         <>
                           <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                          Subscribing...
+                          {t('subscribing')}
                         </>
                       ) : (
-                        'Subscribe'
+                        t('button')
                       )}
                     </Button>
                   </form>
 
                   <p className="text-xs text-gray-500 text-center mt-4">
-                    No spam, ever. Unsubscribe anytime.
+                    {t('noSpam')}
                   </p>
                 </>
               )}

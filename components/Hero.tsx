@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, Calendar, Compass } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { HOME_SLIDER } from '@/lib/images';
 import { Button } from '@/components/ui/button';
@@ -16,13 +17,14 @@ const sliderImages = [
   { src: HOME_SLIDER.surfersWaves, alt: 'Surfers riding waves' },
 ];
 
-const stats = [
-  { value: 500, suffix: '+', label: 'Happy Surfers' },
-  { value: 5, suffix: '', label: 'Destinations' },
-  { value: 10, suffix: '+', label: 'Years Experience' },
-];
-
 export default function Hero() {
+  const t = useTranslations('hero');
+
+  const stats = [
+    { value: 500, suffix: '+', labelKey: 'stats.surfers' },
+    { value: 5, suffix: '', labelKey: 'stats.countries' },
+    { value: 10, suffix: '+', labelKey: 'stats.retreats' },
+  ];
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // Auto-advance slider
@@ -91,9 +93,9 @@ export default function Hero() {
         >
           {/* Main Heading */}
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-            Catch Waves,{' '}
+            {t('title').split(',')[0]},{' '}
             <span className="bg-gradient-to-r from-red-500 via-yellow-400 via-green-500 to-blue-500 bg-clip-text text-transparent italic">
-              Make Memories
+              {t('title').split(',')[1]?.trim() || t('title')}
             </span>
           </h1>
 
@@ -103,7 +105,7 @@ export default function Hero() {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="mx-auto mb-8 max-w-2xl text-lg text-white/90 sm:text-xl"
           >
-            Join LGBTQ+ surf adventures across the world&apos;s most beautiful beaches 🌈
+            {t('subtitle')} 🌈
           </motion.p>
 
           {/* CTA Buttons */}
@@ -120,7 +122,7 @@ export default function Hero() {
             >
               <Link href="/retreats" className="flex items-center">
                 <Calendar className="mr-2 h-5 w-5" />
-                Book Your Retreat
+                {t('cta')}
               </Link>
             </Button>
             <Button
@@ -131,7 +133,7 @@ export default function Hero() {
             >
               <Link href="/destinations" className="flex items-center">
                 <Compass className="mr-2 h-5 w-5" />
-                Explore Destinations
+                {t('explore')}
               </Link>
             </Button>
           </motion.div>
@@ -145,7 +147,7 @@ export default function Hero() {
           className="mt-16 grid grid-cols-3 gap-8 sm:gap-16"
         >
           {stats.map((stat) => (
-            <div key={stat.label} className="text-center">
+            <div key={stat.labelKey} className="text-center">
               <div className="text-3xl font-bold sm:text-4xl md:text-5xl">
                 <AnimatedCounter
                   value={stat.value}
@@ -154,7 +156,7 @@ export default function Hero() {
                 />
               </div>
               <div className="mt-1 text-sm text-white/80 sm:text-base">
-                {stat.label}
+                {t(stat.labelKey)}
               </div>
             </div>
           ))}

@@ -30,7 +30,11 @@
     "from": "Ab",
     "perPerson": "pro Person",
     "spotsLeft": "Plätze übrig",
-    "soldOut": "Ausverkauft"
+    "soldOut": "Ausverkauft",
+    "people": "Personen",
+    "days": "Tage",
+    "clearFilters": "Filter zurücksetzen",
+    "contactUs": "Kontakt"
   },
   "nav": {
     "retreats": "Retreats",
@@ -41,20 +45,51 @@
     "bookNow": "Jetzt buchen"
   },
   "hero": {
-    "title": "Fang die perfekte Welle",
-    "subtitle": "LGBTQ+ Surf Retreats",
-    "description": "Werde Teil unserer inklusiven Community für unvergessliche Surfabenteuer weltweit. Alle Levels willkommen.",
-    "cta": "Retreats entdecken",
-    "watchVideo": "Video ansehen"
+    "title": "Wellen fangen, Erinnerungen schaffen",
+    "subtitle": "Erlebe LGBTQ+ Surf-Abenteuer an den schönsten Stränden der Welt",
+    "cta": "Retreat buchen",
+    "explore": "Reiseziele entdecken",
+    "watchVideo": "Video ansehen",
+    "stats": {
+      "retreats": "Retreats",
+      "countries": "Länder",
+      "surfers": "Glückliche Surfer"
+    }
   },
   "retreats": {
     "title": "Unsere Retreats",
-    "subtitle": "Wähle dein nächstes Abenteuer",
-    "nextRetreats": "Nächste Retreats",
+    "subtitle": "Entdecke dein perfektes Surfabenteuer",
+    "nextRetreats": "Kommende Retreats",
+    "nextRetreatsSubtitle": "Erlebe unsere kommenden Surf-Abenteuer an fantastischen Orten weltweit",
     "viewRetreat": "Retreat ansehen",
     "bookRetreat": "Dieses Retreat buchen",
+    "bookNow": "Jetzt buchen",
     "startingFrom": "Ab",
     "spotsAvailable": "{count} Plätze verfügbar",
+    "showing": "Zeige {count} Retreats",
+    "noResults": "Keine Retreats gefunden, die deinen Kriterien entsprechen",
+    "earlyBird": "Frühbucher",
+    "filters": {
+      "allLevels": "Alle Levels",
+      "beginners": "Anfänger",
+      "intermediate": "Fortgeschritten",
+      "advanced": "Experte",
+      "allTypes": "Alle Typen",
+      "budget": "Budget",
+      "standard": "Standard",
+      "premium": "Premium",
+      "sortBy": "Sortieren nach",
+      "dateAsc": "Datum (Früheste)",
+      "dateDesc": "Datum (Späteste)",
+      "priceAsc": "Preis (Niedrig zu Hoch)",
+      "priceDesc": "Preis (Hoch zu Niedrig)"
+    },
+    "cta": {
+      "title": "Kannst du dein perfektes Retreat nicht finden?",
+      "subtitle": "Kontaktiere uns direkt und wir helfen dir, das perfekte Abenteuer zu finden, oder melde dich für unseren Newsletter an.",
+      "contact": "Kontakt",
+      "newsletter": "Newsletter abonnieren"
+    },
     "details": {
       "surfLevel": "Surf-Level",
       "beginner": "Anfänger",
@@ -130,25 +165,106 @@
   },
   "newsletter": {
     "title": "Bleib auf dem Laufenden",
-    "description": "Abonniere unseren Newsletter für exklusive Retreat-Updates, Surftipps und Early Access zu neuen Reisezielen.",
+    "subtitle": "Erhalte exklusiven Zugang zu Frühbucher-Angeboten, Surftipps und Community-Updates",
     "placeholder": "Deine E-Mail-Adresse",
-    "subscribe": "Abonnieren",
+    "button": "Abonnieren",
+    "subscribing": "Wird abonniert...",
     "success": "Du bist dabei!",
-    "successDescription": "Danke fürs Abonnieren. Freue dich auf tolle Surf-Geschichten!",
+    "successMessage": "Danke fürs Abonnieren. Freue dich auf tolle Surf-Geschichten!",
+    "confirmMessage": "Prüfe deine E-Mail, um dein Abonnement zu bestätigen.",
     "terms": "Ich stimme dem Erhalt von Newslettern zu und akzeptiere die",
-    "noSpam": "Kein Spam, jederzeit abmelden. Schließe dich 2.000+ Surf-Enthusiasten an."
+    "privacyPolicy": "Datenschutzerklärung",
+    "noSpam": "Kein Spam, jederzeit abmelden. Schließe dich 2.000+ Surf-Enthusiasten an.",
+    "popupTitle": "Werde Teil der Rainbow Surf Familie",
+    "errors": {
+      "required": "E-Mail ist erforderlich",
+      "invalid": "Bitte gib eine gültige E-Mail-Adresse ein",
+      "terms": "Bitte akzeptiere die Bedingungen",
+      "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+    }
+  },
+  "features": {
+    "title": "Warum Rainbow Surf Retreats wählen",
+    "subtitle": "Erlebe die perfekte Mischung aus Abenteuer, Gemeinschaft und persönlichem Wachstum",
+    "safe": {
+      "title": "LGBTQ+ Safe Space",
+      "description": "Surfe in einer einladenden Umgebung, in der du du selbst sein kannst"
+    },
+    "instructors": {
+      "title": "Erfahrene Instruktoren",
+      "description": "Lerne von zertifizierten Surfcoaches, die auf alle Levels spezialisiert sind"
+    },
+    "destinations": {
+      "title": "Traumhafte Reiseziele",
+      "description": "Entdecke erstklassige Surfspots an wunderschönen, sorgfältig ausgewählten Orten"
+    },
+    "community": {
+      "title": "Lebendige Community",
+      "description": "Verbinde dich mit Gleichgesinnten aus der ganzen Welt"
+    },
+    "wellness": {
+      "title": "Wellness-Fokus",
+      "description": "Ergänze dein Surfen mit Yoga, Meditation und gesunder Küche"
+    },
+    "inclusive": {
+      "title": "Alle Levels willkommen",
+      "description": "Vom Anfänger bis zum erfahrenen Wellenreiter – jeder gehört dazu"
+    }
+  },
+  "blog": {
+    "title": "Surf Blog",
+    "subtitle": "Geschichten, Tipps und Inspiration aus der Welt des Surfens",
+    "search": "Artikel suchen...",
+    "noResults": "Keine Artikel gefunden, die deinen Kriterien entsprechen.",
+    "clearFilters": "Filter zurücksetzen",
+    "loadMore": "Mehr Artikel laden",
+    "categories": {
+      "all": "Alle",
+      "destinations": "Reiseziele",
+      "travelTips": "Reisetipps",
+      "lgbtq": "LGBTQ+",
+      "wellness": "Wellness",
+      "environment": "Umwelt"
+    }
+  },
+  "cookies": {
+    "title": "Wir respektieren deine Privatsphäre",
+    "description": "Wir verwenden Cookies, um dein Browsererlebnis zu verbessern, den Seitenverkehr zu analysieren und Inhalte zu personalisieren. Durch Klicken auf \"Alle akzeptieren\" stimmst du der Verwendung von Cookies zu.",
+    "learnMore": "Mehr erfahren",
+    "accept": "Alle akzeptieren",
+    "necessary": "Nur notwendige",
+    "customize": "Anpassen",
+    "preferences": {
+      "title": "Cookie-Einstellungen",
+      "necessary": {
+        "title": "Notwendig",
+        "description": "Erforderlich für das ordnungsgemäße Funktionieren der Website"
+      },
+      "analytics": {
+        "title": "Analyse",
+        "description": "Helfen uns zu verstehen, wie Besucher mit unserer Website interagieren"
+      },
+      "marketing": {
+        "title": "Marketing",
+        "description": "Werden verwendet, um personalisierte Werbung zu schalten"
+      }
+    },
+    "save": "Einstellungen speichern"
   },
   "footer": {
-    "tagline": "Fang die perfekte Welle, finde deinen inneren Frieden",
-    "quickLinks": "Schnelllinks",
-    "support": "Support",
+    "tagline": "Transformative Surf- und Wellness-Retreats an den schönsten Orten der Welt. Finde deine Welle, finde dich selbst.",
+    "destinations": "Reiseziele",
+    "company": "Unternehmen",
     "legal": "Rechtliches",
-    "followUs": "Folge uns",
+    "aboutUs": "Über uns",
+    "blog": "Blog",
+    "contact": "Kontakt",
+    "policies": "Richtlinien",
     "privacyPolicy": "Datenschutz",
-    "termsConditions": "AGB",
-    "cookiePolicy": "Cookie-Richtlinie",
-    "faq": "FAQ",
-    "contactUs": "Kontakt",
+    "termsOfService": "Nutzungsbedingungen",
+    "privacy": "Datenschutz",
+    "terms": "AGB",
+    "cookies": "Cookies",
     "copyright": "© {year} Rainbow Surf Retreats. Alle Rechte vorbehalten."
   },
   "destinations": {
