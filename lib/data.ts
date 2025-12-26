@@ -12,6 +12,7 @@ export interface RetreatRoom {
 
 export interface Retreat {
   id: number;
+  slug: string;
   destination: string;
   location: string;
   image: string;
@@ -50,6 +51,7 @@ export interface Retreat {
 export const retreats: Retreat[] = [
   {
     id: 1,
+    slug: "siargao-philippines-jan-2026",
     destination: "Siargao, Philippines",
     location: "Cloud 9",
     image: RETREAT_IMAGES.siargao,
@@ -120,6 +122,7 @@ export const retreats: Retreat[] = [
   },
   {
     id: 2,
+    slug: "morocco-march-2026",
     destination: "Morocco",
     location: "Taghazout",
     image: RETREAT_IMAGES.morocco,
@@ -160,6 +163,7 @@ export const retreats: Retreat[] = [
   },
   {
     id: 3,
+    slug: "indonesia-may-2026",
     destination: "Indonesia",
     location: "Bali / Lombok",
     image: RETREAT_IMAGES.indonesia,
@@ -200,6 +204,7 @@ export const retreats: Retreat[] = [
   },
   {
     id: 4,
+    slug: "france-june-2026",
     destination: "France",
     location: "Hossegor / Biarritz",
     image: RETREAT_IMAGES.france,
@@ -240,6 +245,7 @@ export const retreats: Retreat[] = [
   },
   {
     id: 5,
+    slug: "bali-september-2026",
     destination: "Bali",
     location: "Canggu",
     image: RETREAT_IMAGES.bali,
@@ -281,6 +287,7 @@ export const retreats: Retreat[] = [
   },
   {
     id: 6,
+    slug: "portugal-october-2026",
     destination: "Portugal",
     location: "Ericeira",
     image: RETREAT_IMAGES.portugal,
@@ -321,6 +328,7 @@ export const retreats: Retreat[] = [
   },
   {
     id: 7,
+    slug: "panama-december-2026",
     destination: "Panama",
     location: "Santa Catalina",
     image: RETREAT_IMAGES.panama,
@@ -363,4 +371,8 @@ export const retreats: Retreat[] = [
 
 export function getRetreatById(id: number): Retreat | undefined {
   return retreats.find((retreat) => retreat.id === id);
+}
+
+export function getRetreatBySlug(slug: string): Retreat | undefined {
+  return retreats.find((retreat) => retreat.slug === slug);
 }

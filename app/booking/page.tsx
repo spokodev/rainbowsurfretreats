@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getRetreatById, RetreatRoom } from "@/lib/data";
+import { getRetreatById, getRetreatBySlug, RetreatRoom } from "@/lib/data";
 
 interface BookingStep {
   step: number;
@@ -65,7 +65,8 @@ const defaultRooms: RetreatRoom[] = [
 function BookingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const retreatId = searchParams.get("retreatId");
+  const retreatSlug = searchParams.get("slug");
+  const retreatId = searchParams.get("retreatId"); // Legacy support
   const roomId = searchParams.get("roomId");
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -84,7 +85,12 @@ function BookingContent() {
     newsletter: false,
   });
 
-  const retreat = retreatId ? getRetreatById(Number(retreatId)) : null;
+  // Support both slug (new) and retreatId (legacy)
+  const retreat = retreatSlug
+    ? getRetreatBySlug(retreatSlug)
+    : retreatId
+      ? getRetreatById(Number(retreatId))
+      : null;
   const rooms = retreat?.rooms || defaultRooms;
   const selectedRoom = rooms.find((r) => r.id === roomId) || rooms[0];
 
@@ -112,7 +118,7 @@ function BookingContent() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          retreatId: retreatId,
+          retreatSlug: retreat?.slug, // Use slug to lookup in Supabase
           roomId: roomId || undefined,
           firstName: formData.firstName,
           lastName: formData.lastName,

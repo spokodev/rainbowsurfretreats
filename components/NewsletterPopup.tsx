@@ -11,7 +11,7 @@ import Link from 'next/link'
 
 const POPUP_DELAY = 15000 // 15 seconds
 const POPUP_STORAGE_KEY = 'newsletter_popup_dismissed'
-const POPUP_EXPIRY_DAYS = 7
+const POPUP_EXPIRY_DAYS = 30
 
 export default function NewsletterPopup() {
   const t = useTranslations('newsletter')

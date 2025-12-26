@@ -5,7 +5,8 @@ import { calculatePaymentSchedule, isEligibleForEarlyBird } from '@/lib/payment-
 import type { ApiResponse, BookingInsert } from '@/lib/types/database'
 
 interface CheckoutRequest {
-  retreatId: string
+  retreatId?: string // Legacy support (UUID)
+  retreatSlug?: string // New: lookup by slug
   roomId?: string
   firstName: string
   lastName: string
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     const body: CheckoutRequest = await request.json()
 
     // Validate required fields
-    if (!body.retreatId || !body.firstName || !body.lastName || !body.email || !body.country) {
+    if ((!body.retreatId && !body.retreatSlug) || !body.firstName || !body.lastName || !body.email || !body.country) {
       return NextResponse.json<ApiResponse<null>>(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -44,16 +45,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Fetch retreat data
-    const { data: retreat, error: retreatError } = await supabase
+    // Fetch retreat data - support both slug (new) and id (legacy)
+    let retreatQuery = supabase
       .from('retreats')
       .select(`
         *,
         rooms:retreat_rooms(*)
       `)
-      .eq('id', body.retreatId)
       .eq('is_published', true)
-      .single()
+
+    // Use slug if provided, otherwise use id
+    if (body.retreatSlug) {
+      retreatQuery = retreatQuery.eq('slug', body.retreatSlug)
+    } else if (body.retreatId) {
+      retreatQuery = retreatQuery.eq('id', body.retreatId)
+    }
+
+    const { data: retreat, error: retreatError } = await retreatQuery.single()
 
     if (retreatError || !retreat) {
       return NextResponse.json<ApiResponse<null>>(
@@ -123,7 +131,7 @@ export async function POST(request: NextRequest) {
 
     // Create booking record
     const bookingData: BookingInsert = {
-      retreat_id: body.retreatId,
+      retreat_id: retreat.id,
       room_id: body.roomId || null,
       first_name: body.firstName,
       last_name: body.lastName,
@@ -256,7 +264,7 @@ export async function POST(request: NextRequest) {
       ],
       metadata: {
         booking_id: booking.id,
-        retreat_id: body.retreatId,
+        retreat_id: retreat.id,
         room_id: body.roomId || '',
         payment_type: body.paymentType,
         payment_number: '1',
@@ -265,7 +273,7 @@ export async function POST(request: NextRequest) {
         language: body.language || 'en',
       },
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${booking.id}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/booking?retreat_id=${body.retreatId}${body.roomId ? `&room_id=${body.roomId}` : ''}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/booking?slug=${retreat.slug}${body.roomId ? `&room_id=${body.roomId}` : ''}`,
     }
 
     // If scheduled payments, we need to save the payment method for future charges

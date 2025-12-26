@@ -174,7 +174,7 @@ test.describe('Rainbow Surf Retreats - Full E2E Tests', () => {
       const bookButton = page.locator('a[href*="/retreats/"], button:has-text("Book")').first();
       await bookButton.click();
 
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Look for booking button on retreat detail page
       const bookNowBtn = page.locator('button:has-text("Book"), a:has-text("Book")').first();
@@ -186,16 +186,88 @@ test.describe('Rainbow Surf Retreats - Full E2E Tests', () => {
       await page.screenshot({ path: 'test-results/booking-start.png', fullPage: true });
     });
 
-    test('should access booking page directly', async ({ page }) => {
-      // Try to access booking page with retreat ID
+    test('should complete booking form and redirect to Stripe', async ({ page }) => {
+      // Helper to close popups
+      const closePopups = async () => {
+        // Close newsletter popup
+        const newsletterClose = page.locator('button:has(svg.lucide-x), [aria-label="Close"]').first();
+        if (await newsletterClose.isVisible({ timeout: 1000 }).catch(() => false)) {
+          await newsletterClose.click();
+          await page.waitForTimeout(300);
+        }
+        // Accept cookies
+        const acceptCookies = page.locator('button:has-text("Accept All")').first();
+        if (await acceptCookies.isVisible({ timeout: 500 }).catch(() => false)) {
+          await acceptCookies.click();
+          await page.waitForTimeout(300);
+        }
+      };
+
+      // Go directly to booking page
       await page.goto(`${BASE_URL}/booking?retreatId=1`);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
+      await page.waitForTimeout(3000); // Wait for popups to appear
+      await closePopups();
 
-      await page.screenshot({ path: 'test-results/booking-page.png', fullPage: true });
+      await page.screenshot({ path: 'test-results/booking-form-1.png', fullPage: true });
 
-      // Check for booking form elements
-      const formExists = await page.locator('form, input[name="email"], input[name="firstName"]').first().isVisible();
-      console.log('Booking form exists:', formExists);
+      // Fill Step 1: Personal Info
+      await page.fill('input#firstName', 'Test');
+      await page.fill('input#lastName', 'User');
+      await page.fill('input#email', 'test@example.com');
+      await page.fill('input#phone', '+49123456789');
+
+      // Click Continue
+      await page.click('button:has-text("Continue")');
+      await page.waitForTimeout(500);
+      await closePopups();
+
+      await page.screenshot({ path: 'test-results/booking-form-2.png', fullPage: true });
+
+      // Fill Step 2: Billing Details - use correct IDs from the form
+      await page.fill('input#address', 'Test Street 123');
+      await page.fill('input#city', 'Berlin');
+      await page.fill('input#postal', '10115');
+
+      // Click Continue again
+      await page.click('button:has-text("Continue")');
+      await page.waitForTimeout(500);
+      await closePopups();
+
+      await page.screenshot({ path: 'test-results/booking-form-3.png', fullPage: true });
+
+      // Close popup again if it appeared
+      await closePopups();
+
+      // Step 3: Accept terms - click on the checkbox button
+      const termsCheckbox = page.locator('button[role="checkbox"]').first();
+      await termsCheckbox.click();
+
+      await page.screenshot({ path: 'test-results/booking-ready.png', fullPage: true });
+
+      // Intercept API calls
+      page.on('response', response => {
+        if (response.url().includes('/api/stripe/checkout')) {
+          console.log('Stripe API response:', response.status());
+        }
+      });
+
+      // Click Pay button (it shows "Pay €XX.XX")
+      const payButton = page.locator('button:has-text("Pay")').first();
+      await payButton.click();
+
+      // Wait for redirect to Stripe
+      await page.waitForTimeout(8000);
+
+      await page.screenshot({ path: 'test-results/booking-checkout.png', fullPage: true });
+
+      // Check if redirected to Stripe checkout
+      const currentUrl = page.url();
+      console.log('After checkout URL:', currentUrl);
+
+      if (currentUrl.includes('checkout.stripe.com')) {
+        console.log('SUCCESS: Redirected to Stripe Checkout!');
+      }
     });
   });
 

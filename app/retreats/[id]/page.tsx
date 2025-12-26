@@ -119,7 +119,7 @@ export default async function RetreatPage({ params }: PageProps) {
                 </div>
               </div>
               <Button asChild size="lg">
-                <Link href={`/booking?retreatId=${retreat.id}`}>Book Now</Link>
+                <Link href={`/booking?slug=${retreat.slug}`}>Book Now</Link>
               </Button>
             </div>
           </div>
