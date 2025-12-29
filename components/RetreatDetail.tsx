@@ -457,32 +457,6 @@ export default function RetreatDetail({ retreat }: RetreatDetailProps) {
                     ))}
                   </div>
 
-                  {retreat.checkInTime && retreat.checkOutTime && (
-                    <Card className="bg-muted/50">
-                      <CardContent className="pt-6">
-                        <div className="flex flex-wrap gap-6">
-                          <div className="flex items-center">
-                            <Clock className="size-5 mr-2 text-primary" />
-                            <div>
-                              <p className="font-medium">Check-in</p>
-                              <p className="text-sm text-muted-foreground">
-                                {retreat.checkInTime}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center">
-                            <Clock className="size-5 mr-2 text-primary" />
-                            <div>
-                              <p className="font-medium">Check-out</p>
-                              <p className="text-sm text-muted-foreground">
-                                {retreat.checkOutTime}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
                 </TabsContent>
 
                 {/* FAQ Tab */}

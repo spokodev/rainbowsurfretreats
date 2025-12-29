@@ -43,8 +43,6 @@ export interface Retreat {
   end_date: string
   description: string | null
   intro_text: string | null
-  check_in_time: string | null
-  check_out_time: string | null
   exact_address: string | null
   address_note: string | null
   pricing_note: string | null
@@ -102,8 +100,6 @@ export interface RetreatInsert {
   end_date: string
   description?: string | null
   intro_text?: string | null
-  check_in_time?: string | null
-  check_out_time?: string | null
   exact_address?: string | null
   address_note?: string | null
   pricing_note?: string | null

@@ -65,8 +65,6 @@ const retreatSchema = z.object({
   end_date: z.string().min(1, 'End date is required'),
   description: z.string().nullable().optional(),
   intro_text: z.string().nullable().optional(),
-  check_in_time: z.string().nullable().optional(),
-  check_out_time: z.string().nullable().optional(),
   exact_address: z.string().nullable().optional(),
   address_note: z.string().nullable().optional(),
   pricing_note: z.string().nullable().optional(),
@@ -118,8 +116,6 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
     end_date: retreat?.end_date || '',
     description: retreat?.description || null,
     intro_text: retreat?.intro_text || null,
-    check_in_time: retreat?.check_in_time || '14:00',
-    check_out_time: retreat?.check_out_time || '10:00',
     exact_address: retreat?.exact_address || null,
     address_note: retreat?.address_note || null,
     pricing_note: retreat?.pricing_note || null,
@@ -943,27 +939,6 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
               />
             </div>
 
-            <Separator />
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="check_in_time">Check-in Time</Label>
-                <Input
-                  id="check_in_time"
-                  type="time"
-                  {...register('check_in_time')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="check_out_time">Check-out Time</Label>
-                <Input
-                  id="check_out_time"
-                  type="time"
-                  {...register('check_out_time')}
-                />
-              </div>
-            </div>
           </AccordionContent>
         </AccordionItem>
 

@@ -45,14 +45,14 @@
     "bookNow": "Boek nu"
   },
   "hero": {
-    "title": "Pak golven, maak herinneringen",
+    "title": "Wereldwijde Gay Surf Vakanties",
     "subtitle": "Sluit je aan bij LGBTQ+ surfavonturen op 's werelds mooiste stranden",
-    "cta": "Boek je retreat",
+    "cta": "Wie zijn wij?",
     "explore": "Ontdek bestemmingen",
     "watchVideo": "Bekijk video",
     "stats": {
-      "retreats": "Retreats",
-      "countries": "Landen",
+      "experience": "Jaar Ervaring",
+      "destinations": "Bestemmingen",
       "surfers": "Blije surfers"
     }
   },
@@ -291,5 +291,16 @@
     "allowTestimonial": "Ik geef toestemming om mijn testimonial te gebruiken",
     "thankYou": "Bedankt!",
     "thankYouDescription": "Je feedback betekent heel veel voor ons."
+  },
+  "retreatDetail": {
+    "aboutRetreat": "Over deze Retreat",
+    "highlights": "Hoogtepunten",
+    "whatsIncluded": "Wat is inbegrepen",
+    "notIncluded": "Niet inbegrepen",
+    "roomOptions": "Kameropties",
+    "location": "Locatie",
+    "bookNow": "Nu boeken",
+    "book": "Boeken",
+    "earlyBird": "Vroegboekkorting"
   }
 }

@@ -30,8 +30,6 @@ export interface Retreat {
   included?: string[];
   notIncluded?: string[];
   introText?: string;
-  checkInTime?: string;
-  checkOutTime?: string;
   exactAddress?: string;
   addressNote?: string;
   aboutSections?: {
@@ -90,8 +88,6 @@ export const retreats: Retreat[] = [
       "Additional activities outside the program",
     ],
     introText: "Welcome to Siargao, a tropical paradise known for its world-class waves and vibrant LGBTQ+ community.",
-    checkInTime: "14:00",
-    checkOutTime: "10:00",
     exactAddress: "Cloud 9, Siargao Island, Philippines",
     rooms: [
       {

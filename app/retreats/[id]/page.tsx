@@ -45,8 +45,6 @@ interface Retreat {
   included: string[]
   not_included: string[]
   exact_address: string
-  check_in_time: string
-  check_out_time: string
   latitude: number | null
   longitude: number | null
   availability_status: 'available' | 'sold_out' | 'few_spots'
@@ -100,13 +98,6 @@ export default function RetreatPage() {
 
   const formatPrice = (price: number) => {
     return `€${price.toLocaleString()}`
-  }
-
-  const formatTime = (time: string) => {
-    if (!time) return ''
-    // Handle both "15:00:00" and "15:00" formats
-    const [hours, minutes] = time.split(':')
-    return `${hours}:${minutes}`
   }
 
   if (loading) {
@@ -320,11 +311,24 @@ export default function RetreatPage() {
                           <span className="text-lg font-bold">{formatPrice(room.price)}</span>
                           <span className="text-sm text-muted-foreground ml-1">/ {tCommon('perPerson')}</span>
                         </div>
-                        {!room.is_sold_out && room.available > 0 && (
-                          <span className="text-sm text-green-600">
-                            {room.available} {room.available === 1 ? 'spot' : 'spots'} left
-                          </span>
-                        )}
+                        {!room.is_sold_out && room.available > 0 ? (
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-green-600">
+                              {room.available} {room.available === 1 ? 'spot' : 'spots'} left
+                            </span>
+                            <Button asChild size="sm">
+                              <Link href={`/booking?slug=${retreat.slug}&roomId=${room.id}`}>
+                                {t('book')}
+                              </Link>
+                            </Button>
+                          </div>
+                        ) : !room.is_sold_out ? (
+                          <Button asChild size="sm">
+                            <Link href={`/booking?slug=${retreat.slug}&roomId=${room.id}`}>
+                              {t('book')}
+                            </Link>
+                          </Button>
+                        ) : null}
                       </div>
                     </div>
                   ))}
@@ -345,38 +349,6 @@ export default function RetreatPage() {
                   address={retreat.exact_address}
                 />
 
-                {/* Check-in/out times */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  {retreat.check_in_time && (
-                    <div>
-                      <span className="text-muted-foreground">{t('checkIn')}:</span>
-                      <p className="font-medium">{formatTime(retreat.check_in_time)}</p>
-                    </div>
-                  )}
-                  {retreat.check_out_time && (
-                    <div>
-                      <span className="text-muted-foreground">{t('checkOut')}:</span>
-                      <p className="font-medium">{formatTime(retreat.check_out_time)}</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Book Now Card */}
-            <Card className="bg-[var(--primary-teal)] text-white">
-              <CardContent className="pt-6">
-                <h3 className="text-xl font-bold mb-2">{t('readyToJoin')}</h3>
-                <p className="text-white/90 mb-4">{t('secureSpot')}</p>
-                <Button
-                  asChild
-                  className="w-full bg-white text-[var(--primary-teal)] hover:bg-white/90"
-                  disabled={retreat.availability_status === 'sold_out'}
-                >
-                  <Link href={`/booking?slug=${retreat.slug}`}>
-                    {retreat.availability_status === 'sold_out' ? 'Sold Out' : t('bookNow')}
-                  </Link>
-                </Button>
               </CardContent>
             </Card>
           </div>

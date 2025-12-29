@@ -45,14 +45,14 @@
     "bookNow": "Réserver"
   },
   "hero": {
-    "title": "Surfez, créez des souvenirs",
+    "title": "Vacances de Surf Gay Mondiales",
     "subtitle": "Rejoignez des aventures surf LGBTQ+ sur les plus belles plages du monde",
-    "cta": "Réservez votre retraite",
+    "cta": "Qui sommes-nous ?",
     "explore": "Explorer les destinations",
     "watchVideo": "Voir la vidéo",
     "stats": {
-      "retreats": "Retraites",
-      "countries": "Pays",
+      "experience": "Ans d'Expérience",
+      "destinations": "Destinations",
       "surfers": "Surfeurs heureux"
     }
   },
@@ -291,5 +291,16 @@
     "allowTestimonial": "J'autorise l'utilisation de mon témoignage",
     "thankYou": "Merci !",
     "thankYouDescription": "Votre retour compte énormément pour nous."
+  },
+  "retreatDetail": {
+    "aboutRetreat": "À propos de cette retraite",
+    "highlights": "Points forts",
+    "whatsIncluded": "Ce qui est inclus",
+    "notIncluded": "Non inclus",
+    "roomOptions": "Options de chambre",
+    "location": "Emplacement",
+    "bookNow": "Réserver maintenant",
+    "book": "Réserver",
+    "earlyBird": "Réservation anticipée"
   }
 }

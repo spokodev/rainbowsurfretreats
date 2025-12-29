@@ -11,7 +11,7 @@ export default defineConfig({
     ['html', { outputFolder: 'test-results/html-report' }],
   ],
   use: {
-    baseURL: 'https://rainbowsurfretreats-next.vercel.app',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'on',
     video: 'on-first-retry',

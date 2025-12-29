@@ -216,6 +216,20 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
 
   // Send confirmation email using multilingual email functions
   const isFirstPayment = !paymentNumber || paymentNumber === '1'
+
+  // Decrement room availability (only on first payment / initial booking confirmation)
+  if (isFirstPayment && booking.room_id) {
+    const { error: decrementError } = await supabase.rpc('decrement_room_availability', {
+      room_uuid: booking.room_id,
+      decrement_count: 1
+    })
+
+    if (decrementError) {
+      console.error('Error decrementing room availability:', decrementError)
+    } else {
+      console.log(`Room ${booking.room_id} availability decremented`)
+    }
+  }
   const bookingLanguage = booking.language || language || 'en'
 
   // Format dates based on language

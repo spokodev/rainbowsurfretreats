@@ -45,14 +45,14 @@
     "bookNow": "Jetzt buchen"
   },
   "hero": {
-    "title": "Wellen fangen, Erinnerungen schaffen",
+    "title": "Weltweite Schwule Surf-Urlaube",
     "subtitle": "Erlebe LGBTQ+ Surf-Abenteuer an den schönsten Stränden der Welt",
-    "cta": "Retreat buchen",
+    "cta": "Wer sind wir?",
     "explore": "Reiseziele entdecken",
     "watchVideo": "Video ansehen",
     "stats": {
-      "retreats": "Retreats",
-      "countries": "Länder",
+      "experience": "Jahre Erfahrung",
+      "destinations": "Reiseziele",
       "surfers": "Glückliche Surfer"
     }
   },
@@ -291,5 +291,16 @@
     "allowTestimonial": "Ich erlaube die Verwendung meines Testimonials",
     "thankYou": "Vielen Dank!",
     "thankYouDescription": "Dein Feedback bedeutet uns sehr viel."
+  },
+  "retreatDetail": {
+    "aboutRetreat": "Über dieses Retreat",
+    "highlights": "Highlights",
+    "whatsIncluded": "Im Preis enthalten",
+    "notIncluded": "Nicht enthalten",
+    "roomOptions": "Zimmeroptionen",
+    "location": "Lage",
+    "bookNow": "Jetzt buchen",
+    "book": "Buchen",
+    "earlyBird": "Frühbucher"
   }
 }

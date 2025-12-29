@@ -45,14 +45,14 @@
     "bookNow": "Reservar"
   },
   "hero": {
-    "title": "Atrapa olas, crea recuerdos",
+    "title": "Vacaciones Globales de Surf Gay",
     "subtitle": "Únete a aventuras de surf LGBTQ+ en las playas más hermosas del mundo",
-    "cta": "Reserva tu retiro",
+    "cta": "¿Quiénes somos?",
     "explore": "Explorar destinos",
     "watchVideo": "Ver vídeo",
     "stats": {
-      "retreats": "Retiros",
-      "countries": "Países",
+      "experience": "Años de Experiencia",
+      "destinations": "Destinos",
       "surfers": "Surfers felices"
     }
   },
@@ -291,5 +291,16 @@
     "allowTestimonial": "Doy permiso para usar mi testimonio",
     "thankYou": "¡Gracias!",
     "thankYouDescription": "Tu opinión es muy importante para nosotros."
+  },
+  "retreatDetail": {
+    "aboutRetreat": "Sobre este Retiro",
+    "highlights": "Destacados",
+    "whatsIncluded": "Qué incluye",
+    "notIncluded": "No incluido",
+    "roomOptions": "Opciones de habitación",
+    "location": "Ubicación",
+    "bookNow": "Reservar ahora",
+    "book": "Reservar",
+    "earlyBird": "Reserva anticipada"
   }
 }
