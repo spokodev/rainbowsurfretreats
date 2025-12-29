@@ -21,6 +21,8 @@ interface RetreatRoom {
   available: number
   is_sold_out: boolean
   sort_order: number
+  early_bird_price: number | null
+  early_bird_enabled: boolean
 }
 
 interface Retreat {
@@ -100,6 +102,33 @@ export default function RetreatPage() {
     return `€${price.toLocaleString()}`
   }
 
+  // Check if user is eligible for Early Bird (3+ months before retreat)
+  const isEligibleForEarlyBird = () => {
+    if (!retreat) return false
+    const now = new Date()
+    const retreatStart = new Date(retreat.start_date)
+    const monthsUntil = (retreatStart.getFullYear() - now.getFullYear()) * 12 +
+                         (retreatStart.getMonth() - now.getMonth())
+    return monthsUntil >= 3
+  }
+
+  // Get lowest prices among available rooms
+  const getLowestPrices = () => {
+    if (!retreat) return { regular: 0, earlyBird: null }
+    const availableRooms = sortedRooms.filter(r => !r.is_sold_out && r.available > 0)
+    if (availableRooms.length === 0) return { regular: retreat.price, earlyBird: null }
+
+    const lowestRegular = Math.min(...availableRooms.map(r => r.price))
+
+    // Find lowest Early Bird price among rooms with early_bird_enabled
+    const earlyBirdRooms = availableRooms.filter(r => r.early_bird_enabled && r.early_bird_price)
+    const lowestEarlyBird = earlyBirdRooms.length > 0
+      ? Math.min(...earlyBirdRooms.map(r => r.early_bird_price!))
+      : null
+
+    return { regular: lowestRegular, earlyBird: lowestEarlyBird }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -120,7 +149,10 @@ export default function RetreatPage() {
     )
   }
 
+  // Sort rooms by sort_order (must be before getLowestPrices which uses it)
   const sortedRooms = [...retreat.rooms].sort((a, b) => a.sort_order - b.sort_order)
+  const eligible = isEligibleForEarlyBird()
+  const { regular: lowestRegular, earlyBird: lowestEarlyBird } = getLowestPrices()
 
   return (
     <main className="min-h-screen">
@@ -186,22 +218,40 @@ export default function RetreatPage() {
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold">{formatPrice(retreat.price)}</span>
-                  <span className="text-muted-foreground text-sm">/ {tCommon('perPerson')}</span>
-                </div>
-                {retreat.early_bird_price && (
-                  <div className="flex items-center text-sm text-green-600">
-                    <Tag className="size-3 mr-1" />
-                    {t('earlyBird')}: {formatPrice(retreat.early_bird_price)}
+                {eligible && lowestEarlyBird ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg line-through text-muted-foreground">
+                        {formatPrice(lowestRegular)}
+                      </span>
+                      <span className="text-2xl font-bold text-green-600">
+                        {formatPrice(lowestEarlyBird)}
+                      </span>
+                      <span className="text-muted-foreground text-sm">/ {tCommon('perPerson')}</span>
+                    </div>
+                    <div className="flex items-center justify-end text-sm text-green-600">
+                      <Tag className="size-3 mr-1" />
+                      {t('earlyBird')} - Save {formatPrice(lowestRegular - lowestEarlyBird)}!
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold">{formatPrice(lowestRegular)}</span>
+                    <span className="text-muted-foreground text-sm">/ {tCommon('perPerson')}</span>
                   </div>
                 )}
               </div>
-              <Button asChild size="lg" disabled={retreat.availability_status === 'sold_out'}>
-                <Link href={`/booking?slug=${retreat.slug}`}>
-                  {retreat.availability_status === 'sold_out' ? 'Sold Out' : t('bookNow')}
-                </Link>
-              </Button>
+              {retreat.availability_status === 'sold_out' ? (
+                <Button size="lg" disabled className="cursor-not-allowed">
+                  Sold Out
+                </Button>
+              ) : (
+                <Button asChild size="lg">
+                  <Link href={`/booking?slug=${retreat.slug}`}>
+                    {t('bookNow')}
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -308,8 +358,24 @@ export default function RetreatPage() {
                       </div>
                       <div className="flex justify-between items-center mt-3">
                         <div>
-                          <span className="text-lg font-bold">{formatPrice(room.price)}</span>
-                          <span className="text-sm text-muted-foreground ml-1">/ {tCommon('perPerson')}</span>
+                          {eligible && room.early_bird_enabled && room.early_bird_price ? (
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm line-through text-muted-foreground">
+                                  {formatPrice(room.price)}
+                                </span>
+                                <span className="text-lg font-bold text-green-600">
+                                  {formatPrice(room.early_bird_price)}
+                                </span>
+                              </div>
+                              <span className="text-xs text-green-600">{t('earlyBird')}</span>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="text-lg font-bold">{formatPrice(room.price)}</span>
+                              <span className="text-sm text-muted-foreground ml-1">/ {tCommon('perPerson')}</span>
+                            </>
+                          )}
                         </div>
                         {!room.is_sold_out && room.available > 0 ? (
                           <div className="flex items-center gap-3">

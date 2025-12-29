@@ -41,6 +41,8 @@ const roomSchema = z.object({
   capacity: z.coerce.number().min(1, 'Capacity must be at least 1'),
   available: z.coerce.number().min(0, 'Available must be 0 or more'),
   is_sold_out: z.boolean().default(false),
+  early_bird_price: z.coerce.number().nullable().optional(),
+  early_bird_enabled: z.boolean().default(false),
 })
 
 const aboutSectionSchema = z.object({
@@ -141,6 +143,8 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
       capacity: room.capacity,
       available: room.available,
       is_sold_out: room.is_sold_out,
+      early_bird_price: room.early_bird_price || null,
+      early_bird_enabled: room.early_bird_enabled || false,
     })) || [],
   }
 
@@ -544,6 +548,8 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
                     capacity: 2,
                     available: 5,
                     is_sold_out: false,
+                    early_bird_price: null,
+                    early_bird_enabled: false,
                   })}
                 >
                   <Plus className="w-4 h-4 mr-1" /> Add Room
@@ -567,6 +573,8 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
                       capacity: 6,
                       available: 10,
                       is_sold_out: false,
+                      early_bird_price: null,
+                      early_bird_enabled: false,
                     })}
                   >
                     <Plus className="w-4 h-4 mr-1" /> Add First Room
@@ -660,6 +668,42 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
                           )}
                         />
                         <Label htmlFor={`room-sold-out-${index}`} className="text-sm">Mark as Sold Out</Label>
+                      </div>
+
+                      {/* Early Bird Section for Room */}
+                      <div className="bg-green-50 rounded-lg p-3 mt-3 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <Controller
+                            name={`rooms.${index}.early_bird_enabled`}
+                            control={control}
+                            render={({ field }) => (
+                              <Switch
+                                id={`room-early-bird-${index}`}
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            )}
+                          />
+                          <Label htmlFor={`room-early-bird-${index}`} className="text-sm font-medium text-green-800">
+                            Enable Early Bird for this room
+                          </Label>
+                        </div>
+
+                        {watch(`rooms.${index}.early_bird_enabled`) && (
+                          <div className="ml-8 space-y-1">
+                            <Label className="text-sm text-green-700">Early Bird Price (EUR)</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              {...register(`rooms.${index}.early_bird_price`)}
+                              className="max-w-[200px] bg-white"
+                              placeholder="e.g., 950"
+                            />
+                            <p className="text-xs text-green-600">
+                              This price will be shown when booking 3+ months in advance
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

@@ -78,6 +78,8 @@ export interface RetreatRoom {
   available: number
   is_sold_out: boolean
   sort_order: number
+  early_bird_price: number | null
+  early_bird_enabled: boolean
   created_at: string
   updated_at: string
 }
@@ -127,6 +129,8 @@ export interface RetreatRoomInsert {
   available: number
   is_sold_out?: boolean
   sort_order?: number
+  early_bird_price?: number | null
+  early_bird_enabled?: boolean
 }
 
 // =====================
@@ -394,6 +398,8 @@ export interface RetreatRoomFormData {
   capacity: number
   available: number
   is_sold_out: boolean
+  early_bird_price: string
+  early_bird_enabled: boolean
 }
 
 export interface BlogPostFormData extends Omit<BlogPostInsert, 'tags'> {

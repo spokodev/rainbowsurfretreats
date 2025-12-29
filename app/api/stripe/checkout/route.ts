@@ -71,12 +71,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Get room if specified
-    let room = null
+    let room: {
+      id: string
+      name?: string
+      price: number
+      is_sold_out?: boolean
+      available?: number
+      early_bird_price?: number | null
+      early_bird_enabled?: boolean
+    } | null = null
     let basePrice = retreat.price as number
 
     if (body.roomId && retreat.rooms) {
-      room = retreat.rooms.find((r: { id: string }) => r.id === body.roomId)
+      room = retreat.rooms.find((r: { id: string }) => r.id === body.roomId) || null
       if (room) {
+        // Check if room is sold out
+        if (room.is_sold_out || room.available === 0) {
+          return NextResponse.json<ApiResponse<null>>(
+            { error: 'This room type is no longer available. Please select a different room.' },
+            { status: 400 }
+          )
+        }
         basePrice = room.price
       }
     }
@@ -85,15 +100,25 @@ export async function POST(request: NextRequest) {
     const bookingDate = new Date()
     const retreatStartDate = new Date(retreat.start_date)
 
-    // Check if eligible for early bird
-    const eligibleForEarlyBird = retreat.early_bird_price
-      ? isEligibleForEarlyBird(bookingDate, retreatStartDate)
-      : false
+    // Check if eligible for early bird (3+ months before retreat)
+    const eligibleForTime = isEligibleForEarlyBird(bookingDate, retreatStartDate)
 
-    // Use early bird price if eligible
-    const effectivePrice = eligibleForEarlyBird && retreat.early_bird_price
-      ? retreat.early_bird_price as number
-      : basePrice
+    // Check if room has Early Bird enabled
+    const roomHasEarlyBird = room?.early_bird_enabled && room?.early_bird_price
+
+    // Determine effective price based on room or retreat early bird
+    let effectivePrice = basePrice
+    let eligibleForEarlyBird = false
+
+    if (eligibleForTime && roomHasEarlyBird) {
+      // Use room's early bird price
+      effectivePrice = room!.early_bird_price as number
+      eligibleForEarlyBird = true
+    } else if (eligibleForTime && retreat.early_bird_price) {
+      // Fallback to retreat-level early bird (legacy support)
+      effectivePrice = retreat.early_bird_price as number
+      eligibleForEarlyBird = true
+    }
 
     // Calculate payment schedule
     const paymentSchedule = calculatePaymentSchedule({
