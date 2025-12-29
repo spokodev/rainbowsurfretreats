@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { RetreatMap } from '@/components/retreat-map'
 import { MapPin, Calendar, Users, Clock, Utensils, Waves, Tag, Check, X, Loader2 } from 'lucide-react'
 
 interface RetreatRoom {
@@ -46,6 +47,8 @@ interface Retreat {
   exact_address: string
   check_in_time: string
   check_out_time: string
+  latitude: number | null
+  longitude: number | null
   availability_status: 'available' | 'sold_out' | 'few_spots'
   rooms: RetreatRoom[]
 }
@@ -335,11 +338,14 @@ export default function RetreatPage() {
                 <CardTitle>{t('location')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {retreat.exact_address && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">{retreat.exact_address}</p>
-                  </div>
-                )}
+                {/* Map */}
+                <RetreatMap
+                  latitude={retreat.latitude}
+                  longitude={retreat.longitude}
+                  address={retreat.exact_address}
+                />
+
+                {/* Check-in/out times */}
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   {retreat.check_in_time && (
                     <div>

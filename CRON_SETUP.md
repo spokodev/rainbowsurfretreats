@@ -27,6 +27,17 @@ Since Vercel free tier doesn't support cron jobs, you need to use an external cr
   Authorization: Bearer YOUR_CRON_SECRET
   ```
 
+### 3. Cleanup Trash (Daily at 3:00 AM UTC)
+
+- **URL:** `https://your-domain.vercel.app/api/cron/cleanup-trash`
+- **Schedule:** `0 3 * * *`
+- **Method:** GET
+- **Headers:**
+  ```
+  Authorization: Bearer YOUR_CRON_SECRET
+  ```
+- **Purpose:** Permanently deletes retreats and blog posts that have been in trash for more than 30 days
+
 ## Environment Variable
 
 Make sure to set `CRON_SECRET` in your Vercel environment variables:
@@ -94,3 +105,4 @@ curl -X POST "https://your-domain.vercel.app/api/cron/process-payments" \
 |----------|---------|---------------------|
 | `/api/cron/process-payments` | Charge scheduled payments | Daily at 9:00 AM |
 | `/api/cron/send-reminders` | Send payment & pre-retreat reminders | Daily at 10:00 AM |
+| `/api/cron/cleanup-trash` | Delete items in trash older than 30 days | Daily at 3:00 AM |

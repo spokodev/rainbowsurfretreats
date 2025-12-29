@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 
 function getSupabase() {
   return createClient(
@@ -8,12 +9,24 @@ function getSupabase() {
   )
 }
 
+async function checkAuth() {
+  const supabase = await createServerClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  return { user, error }
+}
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }
 
 // GET /api/admin/email-templates/[id] - Get single template
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  // Check authentication
+  const { user, error: authError } = await checkAuth()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { id } = await params
   const supabase = getSupabase()
 
@@ -41,6 +54,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 // PUT /api/admin/email-templates/[id] - Update template
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+  // Check authentication
+  const { user, error: authError } = await checkAuth()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { id } = await params
   const supabase = getSupabase()
 
@@ -80,6 +99,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 // DELETE /api/admin/email-templates/[id] - Delete template
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  // Check authentication
+  const { user, error: authError } = await checkAuth()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { id } = await params
   const supabase = getSupabase()
 

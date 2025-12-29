@@ -1,0 +1,147 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "Rainbow Surf Retreats Logo" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "Rainbow Surf Retreats Logo" [ref=e7]
+      - navigation [ref=e39]:
+        - link "Home" [ref=e40] [cursor=pointer]:
+          - /url: /
+        - link "Retreats" [ref=e41] [cursor=pointer]:
+          - /url: /retreats
+        - link "Blog" [ref=e42] [cursor=pointer]:
+          - /url: /blog
+        - link "About Us" [ref=e43] [cursor=pointer]:
+          - /url: /about
+        - link "Contact" [ref=e44] [cursor=pointer]:
+          - /url: /contact
+        - link "Policies" [ref=e45] [cursor=pointer]:
+          - /url: /policies
+      - generic [ref=e46]:
+        - button "🇺🇸 en" [ref=e47]:
+          - generic [ref=e48]: 🇺🇸
+          - generic [ref=e49]: en
+          - img
+        - link "Book Now" [ref=e51] [cursor=pointer]:
+          - /url: /retreats
+  - main [ref=e52]:
+    - generic [ref=e54]:
+      - heading "404" [level=1] [ref=e55]
+      - heading "This page could not be found." [level=2] [ref=e57]
+  - contentinfo [ref=e58]:
+    - generic [ref=e59]:
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - link "Rainbow Surf Retreats Logo" [ref=e62] [cursor=pointer]:
+            - /url: /
+            - img "Rainbow Surf Retreats Logo" [ref=e63]
+          - paragraph [ref=e95]: Transformative surf and wellness retreats in the world's most beautiful destinations. Find your wave, find yourself.
+          - generic [ref=e96]:
+            - link "Instagram" [ref=e97] [cursor=pointer]:
+              - /url: https://instagram.com/rainbowsurfretreats
+              - img [ref=e98]
+            - link "Facebook" [ref=e101] [cursor=pointer]:
+              - /url: https://facebook.com/rainbowsurfretreats
+              - img [ref=e102]
+            - link "YouTube" [ref=e104] [cursor=pointer]:
+              - /url: https://youtube.com/@rainbowsurfretreats
+              - img [ref=e105]
+        - generic [ref=e108]:
+          - heading "Destinations" [level=3] [ref=e109]
+          - list [ref=e110]:
+            - listitem [ref=e111]:
+              - link "Bali" [ref=e112] [cursor=pointer]:
+                - /url: /retreats/bali
+            - listitem [ref=e113]:
+              - link "Morocco" [ref=e114] [cursor=pointer]:
+                - /url: /retreats/morocco
+            - listitem [ref=e115]:
+              - link "Portugal" [ref=e116] [cursor=pointer]:
+                - /url: /retreats/portugal
+            - listitem [ref=e117]:
+              - link "Sri Lanka" [ref=e118] [cursor=pointer]:
+                - /url: /retreats/sri-lanka
+            - listitem [ref=e119]:
+              - link "Panama" [ref=e120] [cursor=pointer]:
+                - /url: /retreats/panama
+        - generic [ref=e121]:
+          - heading "Company" [level=3] [ref=e122]
+          - list [ref=e123]:
+            - listitem [ref=e124]:
+              - link "About Us" [ref=e125] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e126]:
+              - link "Blog" [ref=e127] [cursor=pointer]:
+                - /url: /blog
+            - listitem [ref=e128]:
+              - link "Contact" [ref=e129] [cursor=pointer]:
+                - /url: /contact
+        - generic [ref=e130]:
+          - heading "Legal" [level=3] [ref=e131]
+          - list [ref=e132]:
+            - listitem [ref=e133]:
+              - link "Policies" [ref=e134] [cursor=pointer]:
+                - /url: /policies
+            - listitem [ref=e135]:
+              - link "Privacy Policy" [ref=e136] [cursor=pointer]:
+                - /url: /privacy
+            - listitem [ref=e137]:
+              - link "Terms of Service" [ref=e138] [cursor=pointer]:
+                - /url: /terms
+      - generic [ref=e140]:
+        - paragraph [ref=e141]: © 2025 Rainbow Surf Retreats. All rights reserved.
+        - generic [ref=e142]:
+          - link "Privacy" [ref=e143] [cursor=pointer]:
+            - /url: /privacy
+          - link "Terms" [ref=e144] [cursor=pointer]:
+            - /url: /terms
+          - link "Cookies" [ref=e145] [cursor=pointer]:
+            - /url: /cookies
+  - link "Chat with us on WhatsApp" [ref=e147] [cursor=pointer]:
+    - /url: https://wa.me/34662424563?text=Hi!%20I'm%20interested%20in%20your%20surf%20retreats.
+    - img [ref=e150]
+  - alert [ref=e152]
+  - generic [ref=e155]:
+    - generic [ref=e156]:
+      - img [ref=e157]
+      - generic [ref=e159]:
+        - heading "We value your privacy" [level=3] [ref=e160]
+        - paragraph [ref=e161]:
+          - text: We use cookies to enhance your browsing experience, analyze site traffic, and personalize content. By clicking "Accept All", you consent to our use of cookies.
+          - link "Learn more" [ref=e162] [cursor=pointer]:
+            - /url: /privacy-policy
+    - generic [ref=e163]:
+      - button "Customize" [ref=e164]:
+        - img
+        - text: Customize
+      - button "Necessary Only" [ref=e165]
+      - button "Accept All" [ref=e166]
+    - button "Close" [ref=e167]:
+      - img
+      - generic [ref=e168]: Close
+  - dialog "Join the Rainbow Surf Family" [ref=e170]:
+    - button "Close newsletter popup" [ref=e171]:
+      - img [ref=e172]
+    - generic [ref=e176]:
+      - img [ref=e177]
+      - paragraph [ref=e180]: Stay in the Loop
+    - generic [ref=e181]:
+      - heading "Join the Rainbow Surf Family" [level=2] [ref=e182]
+      - paragraph [ref=e183]: Get exclusive access to early bird offers, surf tips, and community updates
+      - generic [ref=e184]:
+        - generic [ref=e185]:
+          - img [ref=e186]
+          - textbox "Enter your email" [ref=e189]
+        - generic [ref=e190]:
+          - checkbox "I agree to receive newsletters and accept the Privacy Policy" [ref=e191]
+          - checkbox
+          - generic [ref=e192]:
+            - text: I agree to receive newsletters and accept the
+            - link "Privacy Policy" [ref=e193] [cursor=pointer]:
+              - /url: /privacy-policy
+        - button "Subscribe" [ref=e194]
+      - paragraph [ref=e195]: No spam, unsubscribe anytime. Join 2,000+ surf enthusiasts.
+```

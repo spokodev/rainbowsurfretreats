@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email'
+import { createClient } from '@/lib/supabase/server'
+
+async function checkAuth() {
+  const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  return { user, error }
+}
 
 // Sample data for preview
 const sampleData: Record<string, string | number | boolean> = {
@@ -110,6 +117,12 @@ function wrapInLayout(content: string): string {
 
 // POST /api/admin/email-templates/preview - Preview or send test email
 export async function POST(request: NextRequest) {
+  // Check authentication
+  const { user, error: authError } = await checkAuth()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const { subject, html_content, action, testEmail, customData } = body

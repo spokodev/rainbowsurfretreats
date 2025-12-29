@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
+  Copy,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -50,6 +51,7 @@ export default function AdminRetreatsPage() {
   const [retreats, setRetreats] = useState<Retreat[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [isDuplicating, setIsDuplicating] = useState<string | null>(null)
 
   const fetchRetreats = useCallback(async () => {
     try {
@@ -93,6 +95,30 @@ export default function AdminRetreatsPage() {
       toast.error(error instanceof Error ? error.message : 'Failed to delete retreat')
     } finally {
       setIsDeleting(null)
+    }
+  }
+
+  const handleDuplicate = async (id: string) => {
+    setIsDuplicating(id)
+    try {
+      const response = await fetch(`/api/retreats/${id}/duplicate`, {
+        method: 'POST',
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to duplicate retreat')
+      }
+
+      toast.success('Retreat duplicated successfully')
+      // Refresh the list to show the new retreat
+      fetchRetreats()
+    } catch (error) {
+      console.error('Duplicate error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to duplicate retreat')
+    } finally {
+      setIsDuplicating(null)
     }
   }
 
@@ -216,6 +242,19 @@ export default function AdminRetreatsPage() {
                             <Pencil className="h-4 w-4" />
                           </Link>
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDuplicate(retreat.id)}
+                          disabled={isDuplicating === retreat.id}
+                          title="Duplicate retreat"
+                        >
+                          {isDuplicating === retreat.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
@@ -233,10 +272,10 @@ export default function AdminRetreatsPage() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Retreat?</AlertDialogTitle>
+                              <AlertDialogTitle>Move to Trash?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This will permanently delete the retreat &quot;{retreat.destination}&quot;.
-                                This action cannot be undone.
+                                This will move &quot;{retreat.destination}&quot; to trash.
+                                You can restore it within 30 days or delete it permanently from the Trash page.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -245,7 +284,7 @@ export default function AdminRetreatsPage() {
                                 onClick={() => handleDelete(retreat.id)}
                                 className="bg-red-500 hover:bg-red-600"
                               >
-                                Delete
+                                Move to Trash
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>

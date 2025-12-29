@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
           rooms:retreat_rooms(*)
         `)
         .eq('slug', slug)
+        .is('deleted_at', null)
         .single()
 
       if (error) {
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
         *,
         rooms:retreat_rooms(*)
       `)
+      .is('deleted_at', null)
       .order('start_date', { ascending: true })
 
     // Filter by published status

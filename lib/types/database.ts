@@ -62,6 +62,9 @@ export interface Retreat {
   is_published: boolean
   created_at: string
   updated_at: string
+  // Soft delete
+  deleted_at: string | null
+  deleted_by: string | null
   // Joined data
   rooms?: RetreatRoom[]
 }
@@ -161,6 +164,9 @@ export interface BlogPost {
   tags: string[]
   created_at: string
   updated_at: string
+  // Soft delete
+  deleted_at: string | null
+  deleted_by: string | null
   // Joined data
   category?: BlogCategory
 }
@@ -396,4 +402,17 @@ export interface RetreatRoomFormData {
 
 export interface BlogPostFormData extends Omit<BlogPostInsert, 'tags'> {
   tags: string // Comma-separated string for form input
+}
+
+// =====================
+// TRASH / SOFT DELETE TYPES
+// =====================
+export interface TrashItem {
+  id: string
+  item_type: 'retreat' | 'blog_post'
+  title: string
+  slug: string | null
+  deleted_at: string
+  deleted_by: string | null
+  days_remaining: number
 }

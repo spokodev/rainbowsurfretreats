@@ -134,7 +134,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// DELETE /api/blog/posts/[id] - Delete a blog post
+// DELETE /api/blog/posts/[id] - Soft delete a blog post (move to trash)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
@@ -149,10 +149,16 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       )
     }
 
+    // Soft delete: set deleted_at timestamp instead of actual deletion
     const { error } = await supabase
       .from('blog_posts')
-      .delete()
+      .update({
+        deleted_at: new Date().toISOString(),
+        deleted_by: user.id,
+        status: 'archived', // Change status to archived when deleted
+      })
       .eq('id', id)
+      .is('deleted_at', null) // Only delete if not already deleted
 
     if (error) {
       return NextResponse.json<ApiResponse<null>>(
@@ -162,7 +168,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     return NextResponse.json<ApiResponse<null>>({
-      message: 'Blog post deleted successfully'
+      message: 'Post moved to trash. It will be permanently deleted after 30 days.'
     })
   } catch (error) {
     console.error('Error deleting blog post:', error)

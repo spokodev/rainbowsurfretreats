@@ -15,6 +15,7 @@ import {
   Loader2,
   RefreshCw,
   Clock,
+  Copy,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -79,6 +80,7 @@ export default function AdminBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [isDuplicating, setIsDuplicating] = useState<string | null>(null)
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -122,6 +124,30 @@ export default function AdminBlogPage() {
       toast.error(error instanceof Error ? error.message : 'Failed to delete post')
     } finally {
       setIsDeleting(null)
+    }
+  }
+
+  const handleDuplicate = async (id: string) => {
+    setIsDuplicating(id)
+    try {
+      const response = await fetch(`/api/blog/posts/${id}/duplicate`, {
+        method: 'POST',
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to duplicate post')
+      }
+
+      toast.success('Post duplicated successfully')
+      // Refresh the list to show the new post
+      fetchPosts()
+    } catch (error) {
+      console.error('Duplicate error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to duplicate post')
+    } finally {
+      setIsDuplicating(null)
     }
   }
 
@@ -300,6 +326,19 @@ export default function AdminBlogPage() {
                             <Pencil className="h-4 w-4" />
                           </Link>
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDuplicate(post.id)}
+                          disabled={isDuplicating === post.id}
+                          title="Duplicate post"
+                        >
+                          {isDuplicating === post.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
@@ -317,10 +356,10 @@ export default function AdminBlogPage() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Post?</AlertDialogTitle>
+                              <AlertDialogTitle>Move to Trash?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This will permanently delete &quot;{post.title}&quot;.
-                                This action cannot be undone.
+                                This will move &quot;{post.title}&quot; to trash.
+                                You can restore it within 30 days or delete it permanently from the Trash page.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -329,7 +368,7 @@ export default function AdminBlogPage() {
                                 onClick={() => handleDelete(post.id)}
                                 className="bg-red-500 hover:bg-red-600"
                               >
-                                Delete
+                                Move to Trash
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>

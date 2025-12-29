@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+}
+
+async function checkAuth() {
+  const supabase = await createServerClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  return { user, error }
 }
 
 export interface EmailTemplate {
@@ -25,6 +32,12 @@ export interface EmailTemplate {
 
 // GET /api/admin/email-templates - Get all email templates
 export async function GET() {
+  // Check authentication
+  const { user, error: authError } = await checkAuth()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const supabase = getSupabase()
 
   try {
@@ -47,6 +60,12 @@ export async function GET() {
 
 // POST /api/admin/email-templates - Create new template
 export async function POST(request: NextRequest) {
+  // Check authentication
+  const { user, error: authError } = await checkAuth()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const supabase = getSupabase()
 
   try {

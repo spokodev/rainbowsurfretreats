@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { BlogPost } from '@/lib/types/database'
+import { getBlogPostBySlug } from '@/lib/blog-data'
+import type { BlogPost as StaticBlogPost } from '@/components/BlogCard'
 
 const categoryColors: Record<string, string> = {
   destinations: 'bg-purple-100 text-purple-800',
@@ -33,23 +35,261 @@ function formatDate(dateString: string): string {
   })
 }
 
+// Static blog post content (full articles)
+function getStaticPostContent(slug: string): string {
+  const content: Record<string, string> = {
+    '10-things-surfing-france': `
+## Welcome to the French Surf Scene
+
+France is one of Europe's premier surf destinations, offering world-class waves along its Atlantic coastline. Whether you're a beginner looking to catch your first wave or an experienced surfer seeking challenging breaks, France has something for everyone.
+
+## 1. The Best Time to Surf
+
+The optimal surfing season in France runs from September to November when Atlantic swells are consistent and crowds are smaller. Summer months (June-August) are great for beginners with smaller, more manageable waves, though beaches can be crowded.
+
+## 2. Top Surf Spots
+
+**Hossegor** - Often called the European Pipeline, known for powerful beach breaks.
+**Biarritz** - The birthplace of European surfing, offering waves for all levels.
+**Lacanau** - Famous for hosting international competitions.
+**Capbreton** - Protected from the wind, perfect for beginners.
+
+## 3. Water Temperature
+
+French Atlantic waters range from 12°C (54°F) in winter to 22°C (72°F) in summer. A 4/3mm wetsuit is essential year-round, with a 5/4mm recommended for winter months.
+
+## 4. Local Surf Culture
+
+The French surf community is welcoming but respects local etiquette. Wait your turn, don't drop in on other surfers, and always give right of way to the surfer closest to the peak.
+
+## 5. Equipment Rental
+
+Surf shops line the coast in every major surf town. Daily board rentals range from €15-30, and wetsuits from €10-15. Many shops offer package deals for weekly rentals.
+
+## 6. Surf Schools
+
+France boasts excellent surf schools with multilingual instructors. Group lessons typically cost €40-50 for 2 hours, while private lessons range from €60-80.
+
+## 7. Food & Wine
+
+Enjoy the best of French cuisine après-surf! Local specialties include fresh oysters, duck confit, and the famous Basque cake. The region produces excellent wines, including rosé perfect for sunset beach sessions.
+
+## 8. Accommodation Options
+
+From beachfront campsites to luxury surf lodges, accommodation options suit every budget. Book early for peak season (July-August) as popular spots fill quickly.
+
+## 9. Getting There
+
+Biarritz has its own international airport with connections to major European cities. Bordeaux airport is another option, about 2 hours from the main surf spots. Renting a car is recommended for exploring the coastline.
+
+## 10. Beyond Surfing
+
+Take a break from the waves to explore medieval villages, indulge in wine tasting, or visit San Sebastian just across the Spanish border. The Pyrenees mountains offer hiking and mountain biking opportunities.
+
+---
+
+France offers an unforgettable surf experience combining world-class waves with rich culture, incredible food, and welcoming communities. Whether you're chasing barrels or learning to stand up for the first time, the French coast awaits!
+    `,
+    '13-surf-trip-essentials': `
+## The Ultimate Surf Trip Packing List
+
+Planning a surf trip can be exciting, but packing for one? That's where things can get tricky. Whether you're heading to Bali, Portugal, or Morocco, having the right gear can make or break your experience.
+
+## 1. Your Surfboard (or Boards!)
+
+Obviously, the most important item. Consider bringing two boards if possible—your go-to shortboard and something with more volume for smaller days. Don't forget a quality board bag with padding to protect your precious cargo during travel.
+
+## 2. Wetsuits
+
+Even tropical destinations can have cooler water. Pack:
+- A spring suit or shorty for warm water
+- A 3/2mm fullsuit for moderate temperatures
+- Consider a 4/3mm if heading somewhere cooler
+
+## 3. Reef Boots
+
+Essential for rocky breaks and reef points. They protect your feet and give you confidence when paddling out over sharp surfaces.
+
+## 4. Sunscreen (Reef-Safe!)
+
+Choose mineral-based, reef-safe sunscreen. You'll be applying it multiple times daily, so bring enough! Look for zinc-based options that provide better protection for long sessions.
+
+## 5. Rashguard
+
+Protects against:
+- Sunburn during long sessions
+- Board rash on your chest and stomach
+- Jellyfish stings
+
+## 6. Surf Wax & Wax Comb
+
+Bring enough wax for the water temperature you'll encounter. A wax comb is essential for maintaining grip and removing old wax when needed.
+
+## 7. Leash
+
+Always bring at least one spare leash. They're prone to breaking at the worst times, and finding the right size in remote locations isn't always easy.
+
+## 8. Ding Repair Kit
+
+A small kit with solar resin can save your trip. Minor dings happen, and being able to fix them quickly means more time in the water.
+
+## 9. First Aid Kit
+
+Include:
+- Waterproof bandages
+- Antiseptic cream
+- Pain relievers
+- Motion sickness tablets
+- Any personal medications
+
+## 10. Earplugs
+
+Surfer's ear is real and preventable. Quality earplugs designed for water sports protect your ears while still allowing you to hear.
+
+## 11. Waterproof Phone Case
+
+Document your sessions! A waterproof case or bag lets you safely bring your phone to the beach and capture memories.
+
+## 12. Reusable Water Bottle
+
+Stay hydrated before and after sessions. A quality insulated bottle keeps water cold all day.
+
+## 13. Quick-Dry Towel
+
+Microfiber towels dry fast, pack small, and are perfect for travel. Bring two if you'll be surfing multiple times daily.
+
+---
+
+## Bonus Tips
+
+- Roll your wetsuits instead of folding to prevent creases
+- Use packing cubes to organize surf gear
+- Arrive a day early to adjust to time zones
+- Always check board bag weight limits with your airline
+
+With this list covered, you're ready for an incredible surf adventure. Now go chase those waves!
+    `,
+    '10-reasons-gay-surf-retreat': `
+## Why a Gay Surf Retreat is Different (and Better!)
+
+Looking for your next adventure? Dreaming of a vacation that's more than just a beach and a board? Here's why a gay surf retreat might be exactly what you need.
+
+## 1. A Truly Welcoming Environment
+
+At a gay surf retreat, you don't have to wonder if you'll be accepted. Everyone is there to celebrate who they are while pursuing their passion for surfing. There's no need to explain yourself or worry about judgment.
+
+## 2. Instant Community
+
+Walking into a group where everyone shares common ground creates instant connections. You'll make friends who understand your experiences and share your interests beyond just surfing.
+
+## 3. Expert Instruction Without Awkwardness
+
+Our instructors understand LGBTQ+ experiences and create an environment where everyone feels comfortable learning. No awkward moments, just supportive coaching.
+
+## 4. Safe Space to Be Yourself
+
+Express yourself freely on and off the board. Whether you're out and proud or still exploring your identity, surf retreats provide a judgment-free zone to be authentically you.
+
+## 5. Unique Social Events
+
+From beach bonfires to sunset cocktails, social events are designed with the LGBTQ+ community in mind. Think drag queen beach parties, pride flags flying, and playlists that actually slap.
+
+## 6. Travel to LGBTQ+-Friendly Destinations
+
+We choose locations known for their acceptance and vibrant LGBTQ+ scenes. Surf by day, explore gay-friendly nightlife by night.
+
+## 7. All Skill Levels Welcome
+
+Never surfed before? No problem. Advanced surfer looking for challenging waves? We've got you covered. Our retreats cater to every level with appropriate instruction and wave selection.
+
+## 8. Photography That Celebrates You
+
+Professional photographers capture your surf sessions. No worrying about how you're portrayed—our team celebrates diverse bodies and expressions.
+
+## 9. Wellness Beyond Surfing
+
+Many retreats include:
+- Yoga sessions
+- Meditation workshops
+- Healthy, inclusive meals
+- Spa treatments
+
+## 10. Memories That Last a Lifetime
+
+The combination of adventure, community, and self-expression creates experiences you'll never forget. Many participants return year after year, and lifelong friendships are formed.
+
+---
+
+## Ready to Join Us?
+
+Rainbow Surf Retreats offers inclusive surf adventures in stunning destinations worldwide. Whether you're a first-timer or experienced surfer, there's a place for you in our community.
+
+**Catch waves. Make memories. Be yourself.**
+    `,
+  }
+
+  return content[slug] || 'Content not available. Please try again later.'
+}
+
+// Type for display post data (unified format)
+interface DisplayPost {
+  title: string
+  content: string
+  featured_image_url: string
+  author_name: string
+  published_at: string
+  excerpt?: string
+  category?: { name: string; slug: string } | string
+  tags?: string[]
+}
+
 export default function BlogPostPage() {
   const params = useParams()
   const slug = params.slug as string
-  const [post, setPost] = useState<BlogPost | null>(null)
+  const [post, setPost] = useState<DisplayPost | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchPost() {
       try {
+        // First, try to get from static data (for existing blog posts)
+        const staticPost = getBlogPostBySlug(slug)
+
+        if (staticPost) {
+          // Convert static post to expected format
+          setPost({
+            title: staticPost.title,
+            content: getStaticPostContent(slug),
+            featured_image_url: staticPost.image,
+            author_name: staticPost.author.name,
+            published_at: staticPost.publishedAt,
+            excerpt: staticPost.excerpt,
+            category: { name: staticPost.category, slug: staticPost.categorySlug },
+            tags: [],
+          })
+          setLoading(false)
+          return
+        }
+
+        // If not in static data, try API (for new posts from Supabase)
         const response = await fetch(`/api/blog/posts?slug=${slug}`)
         const data = await response.json()
 
         if (data.error) {
           setError(data.error)
         } else if (data.data && data.data.length > 0) {
-          setPost(data.data[0])
+          const dbPost = data.data[0]
+          setPost({
+            title: dbPost.title,
+            content: dbPost.content,
+            featured_image_url: dbPost.featured_image_url,
+            author_name: dbPost.author_name,
+            published_at: dbPost.published_at,
+            excerpt: dbPost.excerpt,
+            category: dbPost.category,
+            tags: dbPost.tags,
+          })
         } else {
           setError('Post not found')
         }
@@ -100,8 +340,8 @@ export default function BlogPostPage() {
     )
   }
 
-  const categorySlug = post.category?.slug || 'destinations'
-  const categoryColor = categoryColors[categorySlug] || 'bg-gray-100 text-gray-800'
+  const categorySlug = typeof post.category === 'object' ? post.category?.slug : 'destinations'
+  const categoryColor = categoryColors[categorySlug || 'destinations'] || 'bg-gray-100 text-gray-800'
   const readTime = estimateReadTime(post.content)
 
   return (
@@ -131,7 +371,7 @@ export default function BlogPostPage() {
         <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12">
           <div className="container mx-auto">
             <Badge className={`${categoryColor} mb-4`}>
-              {post.category?.name || 'Blog'}
+              {typeof post.category === 'object' ? post.category?.name : post.category || 'Blog'}
             </Badge>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 max-w-4xl">
               {post.title}

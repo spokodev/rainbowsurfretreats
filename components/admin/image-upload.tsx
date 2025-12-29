@@ -69,13 +69,22 @@ export function ImageUpload({
   const handleDelete = useCallback(async () => {
     if (!value) return
 
-    // Extract path from URL
-    const url = new URL(value)
-    const path = url.pathname.split('/').slice(-1)[0]
+    // Extract path from URL - handle both full URLs and relative paths
+    let path: string
+    try {
+      const url = new URL(value)
+      // Get filename from the URL path
+      const pathParts = url.pathname.split('/')
+      path = pathParts[pathParts.length - 1]
+    } catch {
+      // If not a valid URL, use value as-is
+      path = value.split('/').pop() || value
+    }
 
     try {
-      const response = await fetch(`/api/upload?path=${path}&bucket=${bucket}`, {
+      const response = await fetch(`/api/upload?path=${encodeURIComponent(path)}&bucket=${bucket}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -87,7 +96,7 @@ export function ImageUpload({
       toast.success('Image deleted')
     } catch (error) {
       console.error('Delete error:', error)
-      // Still remove from form even if delete fails
+      // Still remove from form even if storage delete fails
       onChange(null)
       toast.error('Failed to delete from storage, but removed from form')
     }

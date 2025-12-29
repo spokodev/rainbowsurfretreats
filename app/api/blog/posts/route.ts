@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
         *,
         category:blog_categories(*)
       `, { count: 'exact' })
+      .is('deleted_at', null)
       .order('published_at', { ascending: false, nullsFirst: false })
 
     // Filter by slug (for single post lookup)

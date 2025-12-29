@@ -1,18 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Save,
-  Globe,
   Mail,
   Bell,
   CreditCard,
   Shield,
-  Palette,
   Building,
   ChevronRight,
   FileText,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,40 +25,174 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+
+interface SiteSettings {
+  general: {
+    siteName: string;
+    siteDescription: string;
+    phoneNumber: string;
+  };
+  email: {
+    contactEmail: string;
+    supportEmail: string;
+  };
+  notifications: {
+    emailNotifications: boolean;
+    bookingAlerts: boolean;
+    paymentAlerts: boolean;
+    marketingEmails: boolean;
+    weeklyReports: boolean;
+  };
+  payment: {
+    currency: string;
+    depositPercentage: number;
+    stripeEnabled: boolean;
+    paypalEnabled: boolean;
+  };
+  booking: {
+    autoConfirm: boolean;
+    requireDeposit: boolean;
+    cancellationDays: number;
+    maxParticipants: number;
+  };
+}
+
+const defaultSettings: SiteSettings = {
+  general: {
+    siteName: "Rainbow Surf Retreats",
+    siteDescription: "LGBTQ+ surf retreats around the world. Join our inclusive community and catch the perfect wave.",
+    phoneNumber: "+1 (555) 123-4567",
+  },
+  email: {
+    contactEmail: "hello@rainbowsurfretreats.com",
+    supportEmail: "support@rainbowsurfretreats.com",
+  },
+  notifications: {
+    emailNotifications: true,
+    bookingAlerts: true,
+    paymentAlerts: true,
+    marketingEmails: false,
+    weeklyReports: true,
+  },
+  payment: {
+    currency: "EUR",
+    depositPercentage: 30,
+    stripeEnabled: true,
+    paypalEnabled: false,
+  },
+  booking: {
+    autoConfirm: false,
+    requireDeposit: true,
+    cancellationDays: 30,
+    maxParticipants: 14,
+  },
+};
 
 export default function AdminSettingsPage() {
-  // General settings state
-  const [siteName, setSiteName] = useState("Rainbow Surf Retreats");
-  const [siteDescription, setSiteDescription] = useState(
-    "LGBTQ+ surf retreats around the world. Join our inclusive community and catch the perfect wave."
-  );
-  const [contactEmail, setContactEmail] = useState("hello@rainbowsurfretreats.com");
-  const [supportEmail, setSupportEmail] = useState("support@rainbowsurfretreats.com");
-  const [phoneNumber, setPhoneNumber] = useState("+1 (555) 123-4567");
+  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Notification settings state
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [bookingAlerts, setBookingAlerts] = useState(true);
-  const [paymentAlerts, setPaymentAlerts] = useState(true);
-  const [marketingEmails, setMarketingEmails] = useState(false);
-  const [weeklyReports, setWeeklyReports] = useState(true);
+  const fetchSettings = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/admin/settings");
+      const result = await response.json();
 
-  // Payment settings state
-  const [currency, setCurrency] = useState("USD");
-  const [depositPercentage, setDepositPercentage] = useState("30");
-  const [stripeEnabled, setStripeEnabled] = useState(true);
-  const [paypalEnabled, setPaypalEnabled] = useState(true);
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to fetch settings");
+      }
 
-  // Booking settings state
-  const [autoConfirm, setAutoConfirm] = useState(false);
-  const [requireDeposit, setRequireDeposit] = useState(true);
-  const [cancellationDays, setCancellationDays] = useState("30");
-  const [maxParticipants, setMaxParticipants] = useState("14");
+      // Merge fetched settings with defaults (in case some keys are missing)
+      setSettings({
+        general: { ...defaultSettings.general, ...result.data?.general },
+        email: { ...defaultSettings.email, ...result.data?.email },
+        notifications: { ...defaultSettings.notifications, ...result.data?.notifications },
+        payment: { ...defaultSettings.payment, ...result.data?.payment },
+        booking: { ...defaultSettings.booking, ...result.data?.booking },
+      });
+    } catch (error) {
+      console.error("Fetch settings error:", error);
+      toast.error("Failed to load settings");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const handleSave = () => {
-    // TODO: Implement save functionality
-    console.log("Settings saved");
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      const response = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ settings }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to save settings");
+      }
+
+      toast.success("Settings saved successfully");
+    } catch (error) {
+      console.error("Save settings error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to save settings");
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  // Helper to update nested state
+  const updateGeneral = (field: keyof SiteSettings["general"], value: string) => {
+    setSettings(prev => ({
+      ...prev,
+      general: { ...prev.general, [field]: value },
+    }));
+  };
+
+  const updateEmail = (field: keyof SiteSettings["email"], value: string) => {
+    setSettings(prev => ({
+      ...prev,
+      email: { ...prev.email, [field]: value },
+    }));
+  };
+
+  const updateNotifications = (field: keyof SiteSettings["notifications"], value: boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      notifications: { ...prev.notifications, [field]: value },
+    }));
+  };
+
+  const updatePayment = (field: keyof SiteSettings["payment"], value: string | number | boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      payment: { ...prev.payment, [field]: value },
+    }));
+  };
+
+  const updateBooking = (field: keyof SiteSettings["booking"], value: string | number | boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      booking: { ...prev.booking, [field]: value },
+    }));
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -70,8 +203,12 @@ export default function AdminSettingsPage() {
             Manage your site configuration and preferences
           </p>
         </div>
-        <Button onClick={handleSave}>
-          <Save className="mr-2 h-4 w-4" />
+        <Button onClick={handleSave} disabled={isSaving}>
+          {isSaving ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="mr-2 h-4 w-4" />
+          )}
           Save Changes
         </Button>
       </div>
@@ -94,16 +231,16 @@ export default function AdminSettingsPage() {
                 <Label htmlFor="siteName">Site Name</Label>
                 <Input
                   id="siteName"
-                  value={siteName}
-                  onChange={(e) => setSiteName(e.target.value)}
+                  value={settings.general.siteName}
+                  onChange={(e) => updateGeneral("siteName", e.target.value)}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phoneNumber">Phone Number</Label>
                 <Input
                   id="phoneNumber"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  value={settings.general.phoneNumber}
+                  onChange={(e) => updateGeneral("phoneNumber", e.target.value)}
                 />
               </div>
             </div>
@@ -111,8 +248,8 @@ export default function AdminSettingsPage() {
               <Label htmlFor="siteDescription">Site Description</Label>
               <Textarea
                 id="siteDescription"
-                value={siteDescription}
-                onChange={(e) => setSiteDescription(e.target.value)}
+                value={settings.general.siteDescription}
+                onChange={(e) => updateGeneral("siteDescription", e.target.value)}
                 rows={3}
               />
             </div>
@@ -137,8 +274,8 @@ export default function AdminSettingsPage() {
                 <Input
                   id="contactEmail"
                   type="email"
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
+                  value={settings.email.contactEmail}
+                  onChange={(e) => updateEmail("contactEmail", e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -146,8 +283,8 @@ export default function AdminSettingsPage() {
                 <Input
                   id="supportEmail"
                   type="email"
-                  value={supportEmail}
-                  onChange={(e) => setSupportEmail(e.target.value)}
+                  value={settings.email.supportEmail}
+                  onChange={(e) => updateEmail("supportEmail", e.target.value)}
                 />
               </div>
             </div>
@@ -191,8 +328,8 @@ export default function AdminSettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={emailNotifications}
-                onCheckedChange={setEmailNotifications}
+                checked={settings.notifications.emailNotifications}
+                onCheckedChange={(checked) => updateNotifications("emailNotifications", checked)}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -203,8 +340,8 @@ export default function AdminSettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={bookingAlerts}
-                onCheckedChange={setBookingAlerts}
+                checked={settings.notifications.bookingAlerts}
+                onCheckedChange={(checked) => updateNotifications("bookingAlerts", checked)}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -215,8 +352,8 @@ export default function AdminSettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={paymentAlerts}
-                onCheckedChange={setPaymentAlerts}
+                checked={settings.notifications.paymentAlerts}
+                onCheckedChange={(checked) => updateNotifications("paymentAlerts", checked)}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -227,8 +364,8 @@ export default function AdminSettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={marketingEmails}
-                onCheckedChange={setMarketingEmails}
+                checked={settings.notifications.marketingEmails}
+                onCheckedChange={(checked) => updateNotifications("marketingEmails", checked)}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -239,8 +376,8 @@ export default function AdminSettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={weeklyReports}
-                onCheckedChange={setWeeklyReports}
+                checked={settings.notifications.weeklyReports}
+                onCheckedChange={(checked) => updateNotifications("weeklyReports", checked)}
               />
             </div>
           </CardContent>
@@ -263,9 +400,9 @@ export default function AdminSettingsPage() {
                 <Label htmlFor="currency">Default Currency</Label>
                 <Input
                   id="currency"
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  placeholder="USD"
+                  value={settings.payment.currency}
+                  onChange={(e) => updatePayment("currency", e.target.value)}
+                  placeholder="EUR"
                 />
               </div>
               <div className="space-y-2">
@@ -273,8 +410,8 @@ export default function AdminSettingsPage() {
                 <Input
                   id="depositPercentage"
                   type="number"
-                  value={depositPercentage}
-                  onChange={(e) => setDepositPercentage(e.target.value)}
+                  value={settings.payment.depositPercentage}
+                  onChange={(e) => updatePayment("depositPercentage", parseInt(e.target.value) || 0)}
                   placeholder="30"
                 />
               </div>
@@ -287,8 +424,8 @@ export default function AdminSettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={stripeEnabled}
-                onCheckedChange={setStripeEnabled}
+                checked={settings.payment.stripeEnabled}
+                onCheckedChange={(checked) => updatePayment("stripeEnabled", checked)}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -299,8 +436,8 @@ export default function AdminSettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={paypalEnabled}
-                onCheckedChange={setPaypalEnabled}
+                checked={settings.payment.paypalEnabled}
+                onCheckedChange={(checked) => updatePayment("paypalEnabled", checked)}
               />
             </div>
           </CardContent>
@@ -326,8 +463,8 @@ export default function AdminSettingsPage() {
                 <Input
                   id="cancellationDays"
                   type="number"
-                  value={cancellationDays}
-                  onChange={(e) => setCancellationDays(e.target.value)}
+                  value={settings.booking.cancellationDays}
+                  onChange={(e) => updateBooking("cancellationDays", parseInt(e.target.value) || 0)}
                   placeholder="30"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -341,8 +478,8 @@ export default function AdminSettingsPage() {
                 <Input
                   id="maxParticipants"
                   type="number"
-                  value={maxParticipants}
-                  onChange={(e) => setMaxParticipants(e.target.value)}
+                  value={settings.booking.maxParticipants}
+                  onChange={(e) => updateBooking("maxParticipants", parseInt(e.target.value) || 0)}
                   placeholder="14"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -358,8 +495,8 @@ export default function AdminSettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={autoConfirm}
-                onCheckedChange={setAutoConfirm}
+                checked={settings.booking.autoConfirm}
+                onCheckedChange={(checked) => updateBooking("autoConfirm", checked)}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -370,8 +507,8 @@ export default function AdminSettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={requireDeposit}
-                onCheckedChange={setRequireDeposit}
+                checked={settings.booking.requireDeposit}
+                onCheckedChange={(checked) => updateBooking("requireDeposit", checked)}
               />
             </div>
           </CardContent>

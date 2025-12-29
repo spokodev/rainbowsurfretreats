@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getStripe } from '@/lib/stripe'
 
 // Use service role client to bypass RLS
@@ -8,6 +9,12 @@ function getSupabase() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+}
+
+async function checkAuth() {
+  const supabase = await createServerClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  return { user, error }
 }
 
 interface RefundRequest {
@@ -23,6 +30,12 @@ interface CancelRequest {
 
 // POST /api/admin/refunds - Create a refund
 export async function POST(request: NextRequest) {
+  // Check authentication
+  const { user, error: authError } = await checkAuth()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const supabase = getSupabase()
   const stripe = getStripe()
 
@@ -244,6 +257,12 @@ async function handleCancelPayment(
 
 // GET /api/admin/refunds - Get refund history for a booking
 export async function GET(request: NextRequest) {
+  // Check authentication
+  const { user, error: authError } = await checkAuth()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { searchParams } = new URL(request.url)
   const bookingId = searchParams.get('booking_id')
 

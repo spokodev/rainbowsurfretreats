@@ -5,14 +5,15 @@ import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Trash2, Save, Loader2, GripVertical } from 'lucide-react'
+import { Plus, Trash2, Save, Loader2, GripVertical, MapPin, Tag, Bed, Info, Image as ImageIcon, FileText, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -58,6 +59,7 @@ const retreatSchema = z.object({
   type: z.enum(['Budget', 'Standard', 'Premium']),
   gear: z.string().min(1, 'Gear info is required'),
   price: z.coerce.number().min(0, 'Price must be positive'),
+  early_bird_enabled: z.boolean().default(false),
   early_bird_price: z.coerce.number().nullable().optional(),
   start_date: z.string().min(1, 'Start date is required'),
   end_date: z.string().min(1, 'End date is required'),
@@ -68,6 +70,8 @@ const retreatSchema = z.object({
   exact_address: z.string().nullable().optional(),
   address_note: z.string().nullable().optional(),
   pricing_note: z.string().nullable().optional(),
+  latitude: z.coerce.number().nullable().optional(),
+  longitude: z.coerce.number().nullable().optional(),
   highlights: z.array(z.string()),
   included: z.array(z.string()),
   not_included: z.array(z.string()),
@@ -95,6 +99,7 @@ const typeOptions: RetreatType[] = ['Budget', 'Standard', 'Premium']
 export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isGeocodingAddress, setIsGeocodingAddress] = useState(false)
 
   const defaultValues: RetreatFormData = {
     destination: retreat?.destination || '',
@@ -107,6 +112,7 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
     type: retreat?.type || 'Standard',
     gear: retreat?.gear || 'Included',
     price: retreat?.price || 0,
+    early_bird_enabled: !!retreat?.early_bird_price,
     early_bird_price: retreat?.early_bird_price || null,
     start_date: retreat?.start_date || '',
     end_date: retreat?.end_date || '',
@@ -117,10 +123,12 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
     exact_address: retreat?.exact_address || null,
     address_note: retreat?.address_note || null,
     pricing_note: retreat?.pricing_note || null,
-    highlights: retreat?.highlights || [''],
-    included: retreat?.included || [''],
-    not_included: retreat?.not_included || [''],
-    about_sections: retreat?.about_sections || [{ title: '', paragraphs: [''] }],
+    latitude: retreat?.latitude || null,
+    longitude: retreat?.longitude || null,
+    highlights: retreat?.highlights?.length ? retreat.highlights : [''],
+    included: retreat?.included?.length ? retreat.included : [''],
+    not_included: retreat?.not_included?.length ? retreat.not_included : [''],
+    about_sections: retreat?.about_sections?.length ? retreat.about_sections : [{ title: '', paragraphs: [''] }],
     important_info: retreat?.important_info || {
       paymentTerms: '',
       cancellationPolicy: '',
@@ -146,6 +154,7 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(retreatSchema),
@@ -178,6 +187,44 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
     name: 'rooms',
   })
 
+  const watchedImageUrl = watch('image_url')
+  const watchedEarlyBirdEnabled = watch('early_bird_enabled')
+  const watchedLatitude = watch('latitude') as number | null
+  const watchedLongitude = watch('longitude') as number | null
+
+  // Geocode address to coordinates
+  const handleGeocodeAddress = useCallback(async () => {
+    const address = getValues('exact_address')
+    if (!address) {
+      toast.error('Please enter an address first')
+      return
+    }
+
+    setIsGeocodingAddress(true)
+    try {
+      // Use OpenStreetMap Nominatim API (free, no API key needed)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+        { headers: { 'User-Agent': 'RainbowSurfRetreats/1.0' } }
+      )
+      const data = await response.json()
+
+      if (data && data.length > 0) {
+        const { lat, lon } = data[0]
+        setValue('latitude', parseFloat(lat))
+        setValue('longitude', parseFloat(lon))
+        toast.success('Coordinates found!')
+      } else {
+        toast.error('Could not find coordinates for this address')
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error)
+      toast.error('Failed to geocode address')
+    } finally {
+      setIsGeocodingAddress(false)
+    }
+  }, [getValues, setValue])
+
   const onSubmit = useCallback(async (data: RetreatFormData) => {
     setIsSubmitting(true)
 
@@ -185,6 +232,8 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
       // Filter out empty strings from arrays
       const cleanedData = {
         ...data,
+        // If early bird is disabled, set price to null
+        early_bird_price: data.early_bird_enabled ? data.early_bird_price : null,
         highlights: data.highlights.filter(h => h.trim() !== ''),
         included: data.included.filter(i => i.trim() !== ''),
         not_included: data.not_included.filter(n => n.trim() !== ''),
@@ -196,6 +245,10 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
         })),
       }
 
+      // Remove early_bird_enabled from the data (it's not in the DB schema)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { early_bird_enabled, ...dataToSave } = cleanedData
+
       const url = isEdit ? `/api/retreats/${retreat?.id}` : '/api/retreats'
       const method = isEdit ? 'PUT' : 'POST'
 
@@ -203,7 +256,7 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cleanedData),
+        body: JSON.stringify(dataToSave),
       })
 
       const result = await response.json()
@@ -246,678 +299,825 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
     }
   }, [isEdit, retreat?.id, router])
 
-  const watchedImageUrl = watch('image_url')
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      {/* Basic Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="destination">Destination *</Label>
-              <Input
-                id="destination"
-                {...register('destination')}
-                placeholder="e.g., Bali, Indonesia"
-              />
-              {errors.destination && (
-                <p className="text-sm text-red-500">{errors.destination.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="location">Location *</Label>
-              <Input
-                id="location"
-                {...register('location')}
-                placeholder="e.g., Canggu"
-              />
-              {errors.location && (
-                <p className="text-sm text-red-500">{errors.location.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Cover Image</Label>
-            <ImageUpload
-              value={watchedImageUrl || undefined}
-              onChange={(url) => setValue('image_url', url)}
-              bucket="retreat-images"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              {...register('description')}
-              placeholder="Brief description of the retreat..."
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="intro_text">Intro Text</Label>
-            <Textarea
-              id="intro_text"
-              {...register('intro_text')}
-              placeholder="Introductory text shown on the retreat page..."
-              rows={4}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Retreat Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label>Level *</Label>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {/* Publishing Status - Always visible at top */}
+      <Card className="border-2 border-dashed">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <Controller
-                name="level"
+                name="is_published"
                 control={control}
                 render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {levelOptions.map(level => (
-                        <SelectItem key={level} value={level}>{level}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Type *</Label>
-              <Controller
-                name="type"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {typeOptions.map(type => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="duration">Duration *</Label>
-              <Input
-                id="duration"
-                {...register('duration')}
-                placeholder="e.g., 7 nights"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="participants">Participants *</Label>
-              <Input
-                id="participants"
-                {...register('participants')}
-                placeholder="e.g., 10-16"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="food">Food *</Label>
-              <Input
-                id="food"
-                {...register('food')}
-                placeholder="e.g., Breakfast & Dinner"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="gear">Gear *</Label>
-              <Input
-                id="gear"
-                {...register('gear')}
-                placeholder="e.g., Included"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Dates & Pricing */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Dates & Pricing</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start_date">Start Date *</Label>
-              <Input
-                id="start_date"
-                type="date"
-                {...register('start_date')}
-              />
-              {errors.start_date && (
-                <p className="text-sm text-red-500">{errors.start_date.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="end_date">End Date *</Label>
-              <Input
-                id="end_date"
-                type="date"
-                {...register('end_date')}
-              />
-              {errors.end_date && (
-                <p className="text-sm text-red-500">{errors.end_date.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="check_in_time">Check-in Time</Label>
-              <Input
-                id="check_in_time"
-                type="time"
-                {...register('check_in_time')}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="check_out_time">Check-out Time</Label>
-              <Input
-                id="check_out_time"
-                type="time"
-                {...register('check_out_time')}
-              />
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="price">Base Price (EUR) *</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                {...register('price')}
-              />
-              {errors.price && (
-                <p className="text-sm text-red-500">{errors.price.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="early_bird_price">Early Bird Price (EUR)</Label>
-              <Input
-                id="early_bird_price"
-                type="number"
-                step="0.01"
-                {...register('early_bird_price')}
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-1">
-              <Label htmlFor="pricing_note">Pricing Note</Label>
-              <Input
-                id="pricing_note"
-                {...register('pricing_note')}
-                placeholder="e.g., per person, shared room"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Location Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Location Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="exact_address">Exact Address</Label>
-            <Input
-              id="exact_address"
-              {...register('exact_address')}
-              placeholder="Full address of the retreat venue"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address_note">Address Note</Label>
-            <Textarea
-              id="address_note"
-              {...register('address_note')}
-              placeholder="Additional directions or notes about the location..."
-              rows={2}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Dynamic Lists */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Highlights & Inclusions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Accordion type="multiple" className="w-full" defaultValue={['highlights', 'included', 'not-included']}>
-            {/* Highlights */}
-            <AccordionItem value="highlights">
-              <AccordionTrigger>
-                Highlights ({highlightFields.length})
-              </AccordionTrigger>
-              <AccordionContent className="space-y-2 pt-2">
-                {highlightFields.map((field, index) => (
-                  <div key={field.id} className="flex gap-2 items-center">
-                    <GripVertical className="w-4 h-4 text-gray-400" />
-                    <Input
-                      {...register(`highlights.${index}` as const)}
-                      placeholder="e.g., Daily surf lessons"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeHighlight(index)}
-                      disabled={highlightFields.length === 1}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => appendHighlight('')}
-                  className="mt-2"
-                >
-                  <Plus className="w-4 h-4 mr-1" /> Add Highlight
-                </Button>
-              </AccordionContent>
-            </AccordionItem>
-
-            {/* Included */}
-            <AccordionItem value="included">
-              <AccordionTrigger>
-                What's Included ({includedFields.length})
-              </AccordionTrigger>
-              <AccordionContent className="space-y-2 pt-2">
-                {includedFields.map((field, index) => (
-                  <div key={field.id} className="flex gap-2 items-center">
-                    <GripVertical className="w-4 h-4 text-gray-400" />
-                    <Input
-                      {...register(`included.${index}` as const)}
-                      placeholder="e.g., 7 nights accommodation"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeIncluded(index)}
-                      disabled={includedFields.length === 1}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => appendIncluded('')}
-                  className="mt-2"
-                >
-                  <Plus className="w-4 h-4 mr-1" /> Add Item
-                </Button>
-              </AccordionContent>
-            </AccordionItem>
-
-            {/* Not Included */}
-            <AccordionItem value="not-included">
-              <AccordionTrigger>
-                Not Included ({notIncludedFields.length})
-              </AccordionTrigger>
-              <AccordionContent className="space-y-2 pt-2">
-                {notIncludedFields.map((field, index) => (
-                  <div key={field.id} className="flex gap-2 items-center">
-                    <GripVertical className="w-4 h-4 text-gray-400" />
-                    <Input
-                      {...register(`not_included.${index}` as const)}
-                      placeholder="e.g., Flights"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeNotIncluded(index)}
-                      disabled={notIncludedFields.length === 1}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => appendNotIncluded('')}
-                  className="mt-2"
-                >
-                  <Plus className="w-4 h-4 mr-1" /> Add Item
-                </Button>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </CardContent>
-      </Card>
-
-      {/* About Sections */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>About Sections</span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => appendAbout({ title: '', paragraphs: [''] })}
-            >
-              <Plus className="w-4 h-4 mr-1" /> Add Section
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {aboutFields.map((field, sectionIndex) => (
-            <div key={field.id} className="border rounded-lg p-4 space-y-3">
-              <div className="flex gap-2 items-start">
-                <div className="flex-1 space-y-2">
-                  <Label>Section Title (optional)</Label>
-                  <Input
-                    {...register(`about_sections.${sectionIndex}.title`)}
-                    placeholder="e.g., The Experience"
+                  <Switch
+                    id="is_published"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
                   />
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeAbout(sectionIndex)}
-                  disabled={aboutFields.length === 1}
-                  className="mt-6"
-                >
-                  <Trash2 className="w-4 h-4 text-red-500" />
-                </Button>
+                )}
+              />
+              <div>
+                <Label htmlFor="is_published" className="text-base font-medium">
+                  Publish Retreat
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {watch('is_published') ? 'Visible on website' : 'Hidden from website'}
+                </p>
+              </div>
+            </div>
+            <Badge variant={watch('is_published') ? 'default' : 'secondary'}>
+              {watch('is_published') ? 'Published' : 'Draft'}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Accordion
+        type="multiple"
+        defaultValue={['basic-info', 'rooms-pricing']}
+        className="space-y-4"
+      >
+        {/* 1. Basic Information */}
+        <AccordionItem value="basic-info" className="border rounded-lg px-4">
+          <AccordionTrigger className="hover:no-underline">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              <span className="font-semibold">Basic Information</span>
+              <Badge variant="outline" className="ml-2">Required</Badge>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="destination">Destination *</Label>
+                <Input
+                  id="destination"
+                  {...register('destination')}
+                  placeholder="e.g., Bali, Indonesia"
+                />
+                {errors.destination && (
+                  <p className="text-sm text-red-500">{errors.destination.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label>Paragraphs</Label>
+                <Label htmlFor="location">Location *</Label>
+                <Input
+                  id="location"
+                  {...register('location')}
+                  placeholder="e.g., Canggu"
+                />
+                {errors.location && (
+                  <p className="text-sm text-red-500">{errors.location.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="start_date">Start Date *</Label>
+                <Input
+                  id="start_date"
+                  type="date"
+                  {...register('start_date')}
+                />
+                {errors.start_date && (
+                  <p className="text-sm text-red-500">{errors.start_date.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="end_date">End Date *</Label>
+                <Input
+                  id="end_date"
+                  type="date"
+                  {...register('end_date')}
+                />
+                {errors.end_date && (
+                  <p className="text-sm text-red-500">{errors.end_date.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Level *</Label>
                 <Controller
-                  name={`about_sections.${sectionIndex}.paragraphs`}
+                  name="level"
                   control={control}
-                  render={({ field: paragraphsField }) => (
-                    <div className="space-y-2">
-                      {(paragraphsField.value || ['']).map((_, pIndex) => (
-                        <div key={pIndex} className="flex gap-2">
-                          <Textarea
-                            value={paragraphsField.value?.[pIndex] || ''}
-                            onChange={(e) => {
-                              const newParagraphs = [...(paragraphsField.value || [])]
-                              newParagraphs[pIndex] = e.target.value
-                              paragraphsField.onChange(newParagraphs)
-                            }}
-                            placeholder="Paragraph content..."
-                            rows={2}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              const newParagraphs = paragraphsField.value.filter((_, i) => i !== pIndex)
-                              paragraphsField.onChange(newParagraphs.length ? newParagraphs : [''])
-                            }}
-                            disabled={(paragraphsField.value?.length || 0) <= 1}
-                          >
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </Button>
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          paragraphsField.onChange([...(paragraphsField.value || []), ''])
-                        }}
-                      >
-                        <Plus className="w-4 h-4 mr-1" /> Add Paragraph
-                      </Button>
-                    </div>
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {levelOptions.map(level => (
+                          <SelectItem key={level} value={level}>{level}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Type *</Label>
+                <Controller
+                  name="type"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {typeOptions.map(type => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                 />
               </div>
             </div>
-          ))}
-        </CardContent>
-      </Card>
 
-      {/* Important Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Important Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="paymentTerms">Payment Terms</Label>
-            <Textarea
-              id="paymentTerms"
-              {...register('important_info.paymentTerms')}
-              placeholder="Payment terms and conditions..."
-              rows={3}
-            />
-          </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="price">Base Price (EUR) *</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  {...register('price')}
+                />
+                {errors.price && (
+                  <p className="text-sm text-red-500">{errors.price.message}</p>
+                )}
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="cancellationPolicy">Cancellation Policy</Label>
-            <Textarea
-              id="cancellationPolicy"
-              {...register('important_info.cancellationPolicy')}
-              placeholder="Cancellation policy details..."
-              rows={3}
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duration *</Label>
+                <Input
+                  id="duration"
+                  {...register('duration')}
+                  placeholder="e.g., 7 nights"
+                />
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="travelInsurance">Travel Insurance</Label>
-            <Textarea
-              id="travelInsurance"
-              {...register('important_info.travelInsurance')}
-              placeholder="Travel insurance information..."
-              rows={2}
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="participants">Participants *</Label>
+                <Input
+                  id="participants"
+                  {...register('participants')}
+                  placeholder="e.g., 10-16"
+                />
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
-          <div className="space-y-2">
-            <Label htmlFor="whatToBring">What to Bring</Label>
-            <Textarea
-              id="whatToBring"
-              {...register('important_info.whatToBring')}
-              placeholder="List of items guests should bring..."
-              rows={3}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Rooms */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Room Options ({roomFields.length})</span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => appendRoom({
-                name: '',
-                description: '',
-                price: 0,
-                deposit_price: 0,
-                capacity: 2,
-                available: 0,
-                is_sold_out: false,
-              })}
-            >
-              <Plus className="w-4 h-4 mr-1" /> Add Room
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {roomFields.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">
-              No rooms added yet. Add rooms to offer different accommodation options.
-            </p>
-          ) : (
-            roomFields.map((field, index) => (
-              <div key={field.id} className="border rounded-lg p-4 space-y-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-medium">Room {index + 1}</h4>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeRoom(index)}
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500 mr-1" />
-                    Remove
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Room Name *</Label>
-                    <Input
-                      {...register(`rooms.${index}.name`)}
-                      placeholder="e.g., Shared Dorm"
-                    />
-                    {errors.rooms?.[index]?.name && (
-                      <p className="text-sm text-red-500">{errors.rooms[index]?.name?.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Description</Label>
-                    <Input
-                      {...register(`rooms.${index}.description`)}
-                      placeholder="Brief room description"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label>Price (EUR) *</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...register(`rooms.${index}.price`)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Deposit (EUR) *</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...register(`rooms.${index}.deposit_price`)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Capacity</Label>
-                    <Input
-                      type="number"
-                      {...register(`rooms.${index}.capacity`)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Available</Label>
-                    <Input
-                      type="number"
-                      {...register(`rooms.${index}.available`)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
+        {/* 2. Rooms & Pricing */}
+        <AccordionItem value="rooms-pricing" className="border rounded-lg px-4">
+          <AccordionTrigger className="hover:no-underline">
+            <div className="flex items-center gap-2">
+              <Bed className="w-5 h-5 text-primary" />
+              <span className="font-semibold">Rooms & Pricing</span>
+              <Badge variant="secondary" className="ml-2">{roomFields.length} rooms</Badge>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-6 space-y-4">
+            {/* Early Bird */}
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <Tag className="w-5 h-5 text-green-600" />
+                <div className="flex items-center gap-3 flex-1">
                   <Controller
-                    name={`rooms.${index}.is_sold_out`}
+                    name="early_bird_enabled"
                     control={control}
                     render={({ field }) => (
                       <Switch
-                        id={`room-sold-out-${index}`}
+                        id="early_bird_enabled"
                         checked={field.value}
                         onCheckedChange={field.onChange}
                       />
                     )}
                   />
-                  <Label htmlFor={`room-sold-out-${index}`}>Mark as Sold Out</Label>
+                  <Label htmlFor="early_bird_enabled" className="font-medium">
+                    Enable Early Bird Discount
+                  </Label>
                 </div>
               </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Publishing */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Publishing</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-2">
-            <Controller
-              name="is_published"
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="is_published"
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
+              {watchedEarlyBirdEnabled && (
+                <div className="ml-8 space-y-2">
+                  <Label htmlFor="early_bird_price">Early Bird Price (EUR)</Label>
+                  <Input
+                    id="early_bird_price"
+                    type="number"
+                    step="0.01"
+                    {...register('early_bird_price')}
+                    className="max-w-[200px]"
+                    placeholder="e.g., 1350"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Applies to bookings made 3+ months before retreat starts
+                  </p>
+                </div>
               )}
-            />
-            <Label htmlFor="is_published">Publish retreat (visible on website)</Label>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
 
-      {/* Submit */}
-      <div className="flex justify-end gap-4">
+            <Separator />
+
+            {/* Rooms */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">Room Options</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Add different accommodation types with their prices
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => appendRoom({
+                    name: '',
+                    description: '',
+                    price: 0,
+                    deposit_price: 0,
+                    capacity: 2,
+                    available: 5,
+                    is_sold_out: false,
+                  })}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add Room
+                </Button>
+              </div>
+
+              {roomFields.length === 0 ? (
+                <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                  <Bed className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground mb-3">
+                    No rooms added yet. Add rooms to offer different accommodation options.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => appendRoom({
+                      name: 'Shared Room',
+                      description: '4-6 beds per room',
+                      price: 1200,
+                      deposit_price: 120,
+                      capacity: 6,
+                      available: 10,
+                      is_sold_out: false,
+                    })}
+                  >
+                    <Plus className="w-4 h-4 mr-1" /> Add First Room
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {roomFields.map((field, index) => (
+                    <div key={field.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-medium">Room {index + 1}</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeRoom(index)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-sm">Room Name *</Label>
+                          <Input
+                            {...register(`rooms.${index}.name`)}
+                            placeholder="e.g., Shared Dorm"
+                          />
+                          {errors.rooms?.[index]?.name && (
+                            <p className="text-xs text-red-500">{errors.rooms[index]?.name?.message}</p>
+                          )}
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label className="text-sm">Description</Label>
+                          <Input
+                            {...register(`rooms.${index}.description`)}
+                            placeholder="e.g., 4-6 beds per room"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-sm">Price (EUR) *</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            {...register(`rooms.${index}.price`)}
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label className="text-sm">Deposit (EUR) *</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            {...register(`rooms.${index}.deposit_price`)}
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label className="text-sm">Capacity</Label>
+                          <Input
+                            type="number"
+                            {...register(`rooms.${index}.capacity`)}
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label className="text-sm">Available Spots</Label>
+                          <Input
+                            type="number"
+                            {...register(`rooms.${index}.available`)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2 pt-1">
+                        <Controller
+                          name={`rooms.${index}.is_sold_out`}
+                          control={control}
+                          render={({ field }) => (
+                            <Switch
+                              id={`room-sold-out-${index}`}
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          )}
+                        />
+                        <Label htmlFor={`room-sold-out-${index}`} className="text-sm">Mark as Sold Out</Label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* 3. Media & Description */}
+        <AccordionItem value="media" className="border rounded-lg px-4">
+          <AccordionTrigger className="hover:no-underline">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-primary" />
+              <span className="font-semibold">Media & Description</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-6 space-y-4">
+            <div className="space-y-2">
+              <Label>Cover Image</Label>
+              <ImageUpload
+                value={watchedImageUrl || undefined}
+                onChange={(url) => setValue('image_url', url)}
+                bucket="retreat-images"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="intro_text">Intro Text</Label>
+              <Textarea
+                id="intro_text"
+                {...register('intro_text')}
+                placeholder="Short introductory text shown at the top of the retreat page..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Full Description</Label>
+              <Textarea
+                id="description"
+                {...register('description')}
+                placeholder="Detailed description of the retreat experience..."
+                rows={5}
+              />
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* 4. Retreat Details */}
+        <AccordionItem value="details" className="border rounded-lg px-4">
+          <AccordionTrigger className="hover:no-underline">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
+              <span className="font-semibold">Retreat Details</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-6 space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="food">Food</Label>
+                <Input
+                  id="food"
+                  {...register('food')}
+                  placeholder="e.g., Breakfast & Dinner"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="gear">Gear</Label>
+                <Input
+                  id="gear"
+                  {...register('gear')}
+                  placeholder="e.g., Included"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pricing_note">Pricing Note</Label>
+                <Input
+                  id="pricing_note"
+                  {...register('pricing_note')}
+                  placeholder="e.g., per person"
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Highlights */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Highlights</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => appendHighlight('')}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add
+                </Button>
+              </div>
+              {highlightFields.map((field, index) => (
+                <div key={field.id} className="flex gap-2 items-center">
+                  <GripVertical className="w-4 h-4 text-gray-400" />
+                  <Input
+                    {...register(`highlights.${index}` as const)}
+                    placeholder="e.g., Daily surf lessons"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeHighlight(index)}
+                    disabled={highlightFields.length === 1}
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <Separator />
+
+            {/* Included */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>What's Included</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => appendIncluded('')}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add
+                </Button>
+              </div>
+              {includedFields.map((field, index) => (
+                <div key={field.id} className="flex gap-2 items-center">
+                  <GripVertical className="w-4 h-4 text-gray-400" />
+                  <Input
+                    {...register(`included.${index}` as const)}
+                    placeholder="e.g., 7 nights accommodation"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeIncluded(index)}
+                    disabled={includedFields.length === 1}
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <Separator />
+
+            {/* Not Included */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Not Included</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => appendNotIncluded('')}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add
+                </Button>
+              </div>
+              {notIncludedFields.map((field, index) => (
+                <div key={field.id} className="flex gap-2 items-center">
+                  <GripVertical className="w-4 h-4 text-gray-400" />
+                  <Input
+                    {...register(`not_included.${index}` as const)}
+                    placeholder="e.g., Flights"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeNotIncluded(index)}
+                    disabled={notIncludedFields.length === 1}
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* 5. Location & Map */}
+        <AccordionItem value="location" className="border rounded-lg px-4">
+          <AccordionTrigger className="hover:no-underline">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary" />
+              <span className="font-semibold">Location & Map</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="exact_address">Exact Address</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="exact_address"
+                  {...register('exact_address')}
+                  placeholder="Full address of the retreat venue"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleGeocodeAddress}
+                  disabled={isGeocodingAddress}
+                >
+                  {isGeocodingAddress ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <MapPin className="w-4 h-4" />
+                  )}
+                  <span className="ml-1 hidden sm:inline">Find on Map</span>
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="latitude">Latitude</Label>
+                <Input
+                  id="latitude"
+                  type="number"
+                  step="any"
+                  {...register('latitude')}
+                  placeholder="e.g., 30.3475"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="longitude">Longitude</Label>
+                <Input
+                  id="longitude"
+                  type="number"
+                  step="any"
+                  {...register('longitude')}
+                  placeholder="e.g., -9.7233"
+                />
+              </div>
+            </div>
+
+            {/* Map Preview */}
+            {watchedLatitude && watchedLongitude && (
+              <div className="space-y-2">
+                <Label>Map Preview</Label>
+                <div className="border rounded-lg overflow-hidden">
+                  <iframe
+                    src={`https://www.google.com/maps?q=${watchedLatitude},${watchedLongitude}&output=embed&z=14`}
+                    width="100%"
+                    height="250"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="address_note">Address Note</Label>
+              <Textarea
+                id="address_note"
+                {...register('address_note')}
+                placeholder="Additional directions or notes about the location..."
+                rows={2}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="check_in_time">Check-in Time</Label>
+                <Input
+                  id="check_in_time"
+                  type="time"
+                  {...register('check_in_time')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="check_out_time">Check-out Time</Label>
+                <Input
+                  id="check_out_time"
+                  type="time"
+                  {...register('check_out_time')}
+                />
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* 6. Additional Information */}
+        <AccordionItem value="additional" className="border rounded-lg px-4">
+          <AccordionTrigger className="hover:no-underline">
+            <div className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-primary" />
+              <span className="font-semibold">Additional Information</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-6 space-y-4">
+            {/* About Sections */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>About Sections</Label>
+                  <p className="text-sm text-muted-foreground">Additional content sections for the retreat page</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => appendAbout({ title: '', paragraphs: [''] })}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add Section
+                </Button>
+              </div>
+
+              {aboutFields.map((field, sectionIndex) => (
+                <div key={field.id} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex gap-2 items-start">
+                    <div className="flex-1 space-y-2">
+                      <Label className="text-sm">Section Title (optional)</Label>
+                      <Input
+                        {...register(`about_sections.${sectionIndex}.title`)}
+                        placeholder="e.g., The Experience"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeAbout(sectionIndex)}
+                      disabled={aboutFields.length === 1}
+                      className="mt-6"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm">Paragraphs</Label>
+                    <Controller
+                      name={`about_sections.${sectionIndex}.paragraphs`}
+                      control={control}
+                      render={({ field: paragraphsField }) => (
+                        <div className="space-y-2">
+                          {(paragraphsField.value || ['']).map((_, pIndex) => (
+                            <div key={pIndex} className="flex gap-2">
+                              <Textarea
+                                value={paragraphsField.value?.[pIndex] || ''}
+                                onChange={(e) => {
+                                  const newParagraphs = [...(paragraphsField.value || [])]
+                                  newParagraphs[pIndex] = e.target.value
+                                  paragraphsField.onChange(newParagraphs)
+                                }}
+                                placeholder="Paragraph content..."
+                                rows={2}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  const newParagraphs = paragraphsField.value.filter((_, i) => i !== pIndex)
+                                  paragraphsField.onChange(newParagraphs.length ? newParagraphs : [''])
+                                }}
+                                disabled={(paragraphsField.value?.length || 0) <= 1}
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              paragraphsField.onChange([...(paragraphsField.value || []), ''])
+                            }}
+                          >
+                            <Plus className="w-4 h-4 mr-1" /> Add Paragraph
+                          </Button>
+                        </div>
+                      )}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Separator />
+
+            {/* Important Information */}
+            <div className="space-y-4">
+              <Label className="text-base font-medium">Important Information</Label>
+
+              <div className="space-y-2">
+                <Label htmlFor="paymentTerms" className="text-sm">Payment Terms</Label>
+                <Textarea
+                  id="paymentTerms"
+                  {...register('important_info.paymentTerms')}
+                  placeholder="Payment terms and conditions..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cancellationPolicy" className="text-sm">Cancellation Policy</Label>
+                <Textarea
+                  id="cancellationPolicy"
+                  {...register('important_info.cancellationPolicy')}
+                  placeholder="Cancellation policy details..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="travelInsurance" className="text-sm">Travel Insurance</Label>
+                <Textarea
+                  id="travelInsurance"
+                  {...register('important_info.travelInsurance')}
+                  placeholder="Travel insurance information..."
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="whatToBring" className="text-sm">What to Bring</Label>
+                <Textarea
+                  id="whatToBring"
+                  {...register('important_info.whatToBring')}
+                  placeholder="List of items guests should bring..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      {/* Submit Buttons - Sticky at bottom */}
+      <div className="sticky bottom-0 bg-background border-t pt-4 pb-4 -mx-4 px-4 flex justify-end gap-4">
         <Button
           type="button"
           variant="outline"

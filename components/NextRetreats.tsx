@@ -1,12 +1,13 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { retreats } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Calendar,
   MapPin,
@@ -17,7 +18,46 @@ import {
   Tag,
 } from "lucide-react";
 
+interface Retreat {
+  id: string;
+  slug: string;
+  destination: string;
+  location: string;
+  image_url: string;
+  level: string;
+  duration: string;
+  participants: string;
+  food: string;
+  type: string;
+  gear: string;
+  price: number;
+  early_bird_price: number | null;
+  start_date: string;
+  end_date: string;
+}
+
 export default function NextRetreats() {
+  const [retreats, setRetreats] = useState<Retreat[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/retreats?published=true")
+      .then((res) => res.json())
+      .then((data) => setRetreats(data.data || []))
+      .catch(() => setRetreats([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const formatDate = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const options: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
+    const yearOptions: Intl.DateTimeFormatOptions = { year: "numeric" };
+    return `${start.toLocaleDateString("en-US", options)} - ${end.toLocaleDateString("en-US", options)}, ${end.toLocaleDateString("en-US", yearOptions)}`;
+  };
+
+  const formatPrice = (price: number) => `€${price.toLocaleString()}`;
+
   return (
     <section className="py-16 md:py-24">
       <div className="container mx-auto px-4">
@@ -37,6 +77,29 @@ export default function NextRetreats() {
           </p>
         </motion.div>
 
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="overflow-hidden h-full flex flex-col">
+                <Skeleton className="aspect-[4/3] w-full" />
+                <CardContent className="flex-1 pt-4 space-y-3">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Skeleton className="h-4" />
+                    <Skeleton className="h-4" />
+                    <Skeleton className="h-4" />
+                    <Skeleton className="h-4" />
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Skeleton className="h-10 w-full" />
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {retreats.map((retreat, index) => (
             <motion.div
@@ -49,7 +112,7 @@ export default function NextRetreats() {
               <Card className="overflow-hidden h-full flex flex-col group hover:shadow-lg transition-shadow duration-300">
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <Image
-                    src={retreat.image}
+                    src={retreat.image_url}
                     alt={retreat.destination}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -77,7 +140,7 @@ export default function NextRetreats() {
 
                   <div className="flex items-center text-sm text-muted-foreground mb-4">
                     <Calendar className="size-4 mr-1" />
-                    {retreat.date}
+                    {formatDate(retreat.start_date, retreat.end_date)}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -102,30 +165,33 @@ export default function NextRetreats() {
                   <div className="mt-4 pt-4 border-t">
                     <div className="flex items-baseline justify-between">
                       <div>
-                        <span className="text-2xl font-bold">{retreat.price}</span>
+                        <span className="text-2xl font-bold">{formatPrice(retreat.price)}</span>
                         <span className="text-muted-foreground text-sm ml-1">
                           / person
                         </span>
                       </div>
-                      <div className="flex items-center text-sm">
-                        <Tag className="size-4 mr-1 text-green-600" />
-                        <span className="text-green-600 font-medium">
-                          Early Bird: {retreat.earlyBird}
-                        </span>
-                      </div>
+                      {retreat.early_bird_price && (
+                        <div className="flex items-center text-sm">
+                          <Tag className="size-4 mr-1 text-green-600" />
+                          <span className="text-green-600 font-medium">
+                            Early Bird: {formatPrice(retreat.early_bird_price)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
 
                 <CardFooter className="pt-0">
                   <Button asChild className="w-full">
-                    <Link href={`/retreats/${retreat.id}`}>Book Now</Link>
+                    <Link href={`/retreats/${retreat.slug}`}>Book Now</Link>
                   </Button>
                 </CardFooter>
               </Card>
             </motion.div>
           ))}
         </div>
+        )}
       </div>
     </section>
   );

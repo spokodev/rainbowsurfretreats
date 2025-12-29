@@ -98,7 +98,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// DELETE /api/retreats/[id] - Delete a retreat
+// DELETE /api/retreats/[id] - Soft delete a retreat (move to trash)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
@@ -113,10 +113,16 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       )
     }
 
+    // Soft delete: set deleted_at timestamp instead of actual deletion
     const { error } = await supabase
       .from('retreats')
-      .delete()
+      .update({
+        deleted_at: new Date().toISOString(),
+        deleted_by: user.id,
+        is_published: false, // Unpublish when moving to trash
+      })
       .eq('id', id)
+      .is('deleted_at', null) // Only delete if not already deleted
 
     if (error) {
       return NextResponse.json<ApiResponse<null>>(
@@ -126,7 +132,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     return NextResponse.json<ApiResponse<null>>({
-      message: 'Retreat deleted successfully'
+      message: 'Retreat moved to trash. It will be permanently deleted after 30 days.'
     })
   } catch (error) {
     console.error('Error deleting retreat:', error)
