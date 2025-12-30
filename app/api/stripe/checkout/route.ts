@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { stripe, getStripe, calculateVat } from '@/lib/stripe'
 import { calculatePaymentSchedule, isEligibleForEarlyBird } from '@/lib/payment-schedule'
 import { getPaymentSettings } from '@/lib/settings'
-import type { ApiResponse, BookingInsert } from '@/lib/types/database'
+import { validatePromoCode, determineBestDiscount, recordPromoCodeRedemption } from '@/lib/promo-codes'
+import type { ApiResponse, BookingInsert, DiscountSource } from '@/lib/types/database'
 
 interface CheckoutRequest {
   retreatId?: string // Legacy support (UUID)
@@ -23,6 +24,7 @@ interface CheckoutRequest {
   newsletterOptIn?: boolean
   notes?: string
   language?: string // User preferred language for emails (en, de, es, fr, nl)
+  promoCode?: string // Promo code if applied
 }
 
 // POST /api/stripe/checkout - Create Stripe checkout session
@@ -107,19 +109,51 @@ export async function POST(request: NextRequest) {
     // Check if room has Early Bird enabled
     const roomHasEarlyBird = room?.early_bird_enabled && room?.early_bird_price
 
-    // Determine effective price based on room or retreat early bird
-    let effectivePrice = basePrice
+    // Calculate early bird discount amount
+    let earlyBirdDiscountAmount = 0
+    if (eligibleForTime && roomHasEarlyBird) {
+      earlyBirdDiscountAmount = basePrice - (room!.early_bird_price as number)
+    } else if (eligibleForTime && retreat.early_bird_price) {
+      earlyBirdDiscountAmount = basePrice - (retreat.early_bird_price as number)
+    }
+
+    // Validate promo code if provided
+    let validatedPromoCode = null
+    let promoDiscountAmount = 0
+
+    if (body.promoCode) {
+      const promoValidation = await validatePromoCode(
+        body.promoCode,
+        retreat.id,
+        body.roomId,
+        basePrice
+      )
+
+      if (promoValidation.valid && promoValidation.promoCode) {
+        validatedPromoCode = promoValidation.promoCode
+        promoDiscountAmount = promoValidation.discountAmount || 0
+      }
+      // If promo code is invalid, we silently ignore it and proceed without
+    }
+
+    // Best Discount Wins logic
+    let bestDiscountAmount = 0
+    let discountSource: DiscountSource | null = null
     let eligibleForEarlyBird = false
 
-    if (eligibleForTime && roomHasEarlyBird) {
-      // Use room's early bird price
-      effectivePrice = room!.early_bird_price as number
-      eligibleForEarlyBird = true
-    } else if (eligibleForTime && retreat.early_bird_price) {
-      // Fallback to retreat-level early bird (legacy support)
-      effectivePrice = retreat.early_bird_price as number
-      eligibleForEarlyBird = true
+    if (promoDiscountAmount > 0 || earlyBirdDiscountAmount > 0) {
+      if (promoDiscountAmount >= earlyBirdDiscountAmount) {
+        bestDiscountAmount = promoDiscountAmount
+        discountSource = 'promo_code'
+      } else {
+        bestDiscountAmount = earlyBirdDiscountAmount
+        discountSource = 'early_bird'
+        eligibleForEarlyBird = true
+      }
     }
+
+    // Calculate effective price after best discount
+    const effectivePrice = basePrice - bestDiscountAmount
 
     // Get payment settings from database
     const paymentSettings = await getPaymentSettings()
@@ -190,6 +224,11 @@ export async function POST(request: NextRequest) {
       early_bird_discount: paymentSchedule.earlyBirdDiscount,
       // Language for multilingual emails
       language: body.language || 'en',
+      // Promo code / discount tracking
+      discount_amount: bestDiscountAmount,
+      discount_code: discountSource === 'promo_code' && validatedPromoCode ? validatedPromoCode.code : null,
+      discount_source: discountSource,
+      promo_code_id: discountSource === 'promo_code' && validatedPromoCode ? validatedPromoCode.id : null,
     }
 
     const { data: booking, error: bookingError } = await supabase
@@ -203,6 +242,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json<ApiResponse<null>>(
         { error: 'Failed to create booking' },
         { status: 500 }
+      )
+    }
+
+    // Record promo code redemption if promo code was used
+    if (discountSource === 'promo_code' && validatedPromoCode) {
+      await recordPromoCodeRedemption(
+        validatedPromoCode.id,
+        booking.id,
+        basePrice,
+        bestDiscountAmount,
+        effectivePrice
       )
     }
 

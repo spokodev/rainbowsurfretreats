@@ -16,6 +16,8 @@ import {
   Calendar,
   Loader2,
   AlertCircle,
+  Tag,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,6 +101,19 @@ function BookingContent() {
     newsletter: false,
   });
 
+  // Promo code state
+  const [promoCode, setPromoCode] = useState("");
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [promoValidating, setPromoValidating] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoDiscount, setPromoDiscount] = useState<{
+    amount: number;
+    source: 'promo_code' | 'early_bird' | null;
+    promoDiscountAmount: number;
+    earlyBirdDiscountAmount: number;
+    isEarlyBirdEligible: boolean;
+  } | null>(null);
+
   useEffect(() => {
     async function fetchRetreat() {
       if (!retreatSlug) {
@@ -149,6 +164,61 @@ function BookingContent() {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
+  // Validate promo code
+  const handleApplyPromoCode = async () => {
+    if (!promoCodeInput.trim()) {
+      setPromoError("Please enter a promo code");
+      return;
+    }
+
+    setPromoValidating(true);
+    setPromoError(null);
+
+    try {
+      const response = await fetch("/api/promo-codes/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: promoCodeInput.trim().toUpperCase(),
+          retreatId: retreat?.id,
+          roomId: selectedRoom?.id,
+          orderAmount: regularPrice,
+          retreatStartDate: retreat?.start_date,
+          roomEarlyBirdPercent: selectedRoom?.early_bird_enabled ? 10 : undefined,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.valid) {
+        setPromoError(data.error || "Invalid promo code");
+        setPromoDiscount(null);
+        return;
+      }
+
+      setPromoCode(promoCodeInput.trim().toUpperCase());
+      setPromoDiscount({
+        amount: data.discount.amount,
+        source: data.discount.source,
+        promoDiscountAmount: data.discount.promoDiscount || 0,
+        earlyBirdDiscountAmount: data.discount.earlyBirdDiscount || 0,
+        isEarlyBirdEligible: data.discount.isEarlyBirdEligible || false,
+      });
+      setPromoError(null);
+    } catch {
+      setPromoError("Failed to validate promo code");
+    } finally {
+      setPromoValidating(false);
+    }
+  };
+
+  const handleRemovePromoCode = () => {
+    setPromoCode("");
+    setPromoCodeInput("");
+    setPromoDiscount(null);
+    setPromoError(null);
+  };
+
   const handleCheckout = async () => {
     if (!formData.acceptTerms) {
       setError("Please accept the terms and conditions");
@@ -179,6 +249,7 @@ function BookingContent() {
           acceptTerms: formData.acceptTerms,
           newsletterOptIn: formData.newsletter,
           language: navigator.language?.split("-")[0] || "en",
+          promoCode: promoCode || undefined,
         }),
       });
 
@@ -219,15 +290,28 @@ function BookingContent() {
     selectedRoom?.early_bird_enabled &&
     selectedRoom?.early_bird_price;
 
-  const effectivePrice = hasRoomEarlyBird
-    ? selectedRoom.early_bird_price!
-    : regularPrice;
-
-  const earlyBirdDiscount = hasRoomEarlyBird
-    ? regularPrice - effectivePrice
+  // Calculate early bird discount (without promo)
+  const earlyBirdDiscountAmount = hasRoomEarlyBird
+    ? regularPrice - selectedRoom.early_bird_price!
     : 0;
 
-  const finalPrice = effectivePrice;
+  // Best Discount Wins logic
+  // If promo code is applied and validated, use the promoDiscount result
+  // Otherwise, fall back to early bird if eligible
+  let bestDiscountAmount = 0;
+  let bestDiscountSource: 'promo_code' | 'early_bird' | null = null;
+
+  if (promoDiscount) {
+    // Promo code was validated - use the server's decision
+    bestDiscountAmount = promoDiscount.amount;
+    bestDiscountSource = promoDiscount.source;
+  } else if (earlyBirdDiscountAmount > 0) {
+    // No promo code, use early bird
+    bestDiscountAmount = earlyBirdDiscountAmount;
+    bestDiscountSource = 'early_bird';
+  }
+
+  const finalPrice = regularPrice - bestDiscountAmount;
   const depositAmount = (finalPrice * 0.5).toFixed(2);
 
   const vatRate = formData.country === "DE" ? 0.19 : 0;
@@ -724,15 +808,74 @@ function BookingContent() {
                 </div>
               </div>
 
+              {/* Promo Code Input */}
+              <div className="mb-6 pb-4 border-b">
+                <Label className="text-sm font-medium mb-2 block">Promo Code</Label>
+                {promoCode ? (
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-green-600" />
+                      <span className="font-mono font-semibold text-green-700">{promoCode}</span>
+                      {bestDiscountSource === 'promo_code' && (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Applied</span>
+                      )}
+                      {bestDiscountSource === 'early_bird' && promoDiscount && (
+                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">Early Bird better</span>
+                      )}
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={handleRemovePromoCode} className="h-6 w-6 p-0">
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter code"
+                      value={promoCodeInput}
+                      onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                      className="flex-1 uppercase"
+                      onKeyDown={(e) => e.key === 'Enter' && handleApplyPromoCode()}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={handleApplyPromoCode}
+                      disabled={promoValidating}
+                      className="shrink-0"
+                    >
+                      {promoValidating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+                    </Button>
+                  </div>
+                )}
+                {promoError && (
+                  <p className="text-xs text-red-600 mt-1">{promoError}</p>
+                )}
+              </div>
+
               <div className="space-y-2 text-sm mb-6">
                 <div className="flex justify-between">
                   <span>Room price:</span>
                   <span>€{regularPrice}</span>
                 </div>
-                {earlyBirdDiscount > 0 && (
+                {bestDiscountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
-                    <span>Early Bird discount:</span>
-                    <span>-€{earlyBirdDiscount}</span>
+                    <span>
+                      {bestDiscountSource === 'promo_code'
+                        ? `Promo (${promoCode}):`
+                        : 'Early Bird discount:'}
+                    </span>
+                    <span>-€{bestDiscountAmount}</span>
+                  </div>
+                )}
+                {promoDiscount && bestDiscountSource === 'early_bird' && promoDiscount.promoDiscountAmount > 0 && (
+                  <div className="flex justify-between text-gray-400 line-through text-xs">
+                    <span>Promo ({promoCode}):</span>
+                    <span>-€{promoDiscount.promoDiscountAmount}</span>
+                  </div>
+                )}
+                {promoDiscount && bestDiscountSource === 'promo_code' && earlyBirdDiscountAmount > 0 && (
+                  <div className="flex justify-between text-gray-400 line-through text-xs">
+                    <span>Early Bird:</span>
+                    <span>-€{earlyBirdDiscountAmount}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-semibold pt-2 border-t">

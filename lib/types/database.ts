@@ -287,6 +287,9 @@ export interface BookingInsert {
   notes?: string | null
   source?: string
   language?: string // User preferred language for emails (en, de, es, fr, nl)
+  // Promo code support
+  discount_source?: DiscountSource | null
+  promo_code_id?: string | null
 }
 
 // =====================
@@ -417,4 +420,77 @@ export interface TrashItem {
   deleted_at: string
   deleted_by: string | null
   days_remaining: number
+}
+
+// =====================
+// PROMO CODE TYPES
+// =====================
+export type PromoCodeDiscountType = 'percentage' | 'fixed_amount'
+export type PromoCodeScope = 'global' | 'retreat' | 'room'
+export type DiscountSource = 'early_bird' | 'promo_code'
+
+export interface PromoCode {
+  id: string
+  code: string
+  description: string | null
+  discount_type: PromoCodeDiscountType
+  discount_value: number
+  scope: PromoCodeScope
+  retreat_id: string | null
+  room_id: string | null
+  valid_from: string
+  valid_until: string | null
+  max_uses: number | null
+  current_uses: number
+  min_order_amount: number | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  // Joined data
+  retreat?: Retreat
+  room?: RetreatRoom
+}
+
+export interface PromoCodeInsert {
+  code: string
+  description?: string | null
+  discount_type: PromoCodeDiscountType
+  discount_value: number
+  scope?: PromoCodeScope
+  retreat_id?: string | null
+  room_id?: string | null
+  valid_from?: string
+  valid_until?: string | null
+  max_uses?: number | null
+  min_order_amount?: number | null
+  is_active?: boolean
+}
+
+export interface PromoCodeRedemption {
+  id: string
+  promo_code_id: string
+  booking_id: string
+  original_amount: number
+  discount_applied: number
+  final_amount: number
+  redeemed_at: string
+  // Joined data
+  promo_code?: PromoCode
+  booking?: Booking
+}
+
+export interface PromoCodeRedemptionInsert {
+  promo_code_id: string
+  booking_id: string
+  original_amount: number
+  discount_applied: number
+  final_amount: number
+}
+
+// Validation result for promo code check
+export interface PromoCodeValidationResult {
+  valid: boolean
+  promoCode?: PromoCode
+  discountAmount?: number
+  error?: string
 }

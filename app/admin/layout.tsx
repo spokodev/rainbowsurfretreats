@@ -15,6 +15,8 @@ import {
   Menu,
   X,
   Trash2,
+  ScrollText,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +32,9 @@ const navItems = [
   { href: "/admin/retreats", label: "Retreats", icon: Palmtree },
   { href: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
+  { href: "/admin/promo-codes", label: "Promo Codes", icon: Tag },
   { href: "/admin/blog", label: "Blog", icon: FileText },
+  { href: "/admin/policies", label: "Policies", icon: ScrollText },
   { href: "/admin/trash", label: "Trash", icon: Trash2 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
