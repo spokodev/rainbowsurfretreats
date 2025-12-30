@@ -132,13 +132,16 @@ test.describe('Flow 2: Complete Booking Process', () => {
   test('complete booking flow up to Stripe checkout', async ({ page }) => {
     // Go directly to booking page with Morocco retreat (known to be available)
     await page.goto('/booking?slug=morocco-march-2026');
-    await page.waitForLoadState('domcontentloaded'); await page.waitForTimeout(2000);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(3000);
     await closePopups(page);
 
     await page.screenshot({ path: 'test-results/flow2-step1-booking-start.png', fullPage: true });
 
-    // Step 1: Personal Information
-    await page.fill('input#firstName', 'Test');
+    // Step 1: Personal Information - wait for form fields to be visible
+    const firstNameInput = page.locator('input#firstName');
+    await firstNameInput.waitFor({ state: 'visible', timeout: 10000 });
+    await firstNameInput.fill('Test');
     await page.fill('input#lastName', 'User');
     await page.fill('input#email', 'test@example.com');
     await page.fill('input#phone', '+49123456789');
