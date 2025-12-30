@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { createClient as createServerClient } from '@/lib/supabase/server'
+import { checkAdminAuth } from '@/lib/settings'
 
 function getSupabase() {
   return createClient(
@@ -9,22 +9,19 @@ function getSupabase() {
   )
 }
 
-async function checkAuth() {
-  const supabase = await createServerClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
-  return { user, error }
-}
-
 interface RouteParams {
   params: Promise<{ id: string }>
 }
 
-// GET /api/admin/email-templates/[id] - Get single template
+// GET /api/admin/email-templates/[id] - Get single template (admin only)
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  // Check authentication
-  const { user, error: authError } = await checkAuth()
-  if (authError || !user) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const { id } = await params
@@ -52,12 +49,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// PUT /api/admin/email-templates/[id] - Update template
+// PUT /api/admin/email-templates/[id] - Update template (admin only)
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  // Check authentication
-  const { user, error: authError } = await checkAuth()
-  if (authError || !user) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const { id } = await params
@@ -97,12 +97,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// DELETE /api/admin/email-templates/[id] - Delete template
+// DELETE /api/admin/email-templates/[id] - Delete template (admin only)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  // Check authentication
-  const { user, error: authError } = await checkAuth()
-  if (authError || !user) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const { id } = await params

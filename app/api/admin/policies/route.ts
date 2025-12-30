@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkAdminAuth } from '@/lib/settings'
 
 export interface PolicySection {
   id: string
@@ -13,8 +14,17 @@ export interface PolicySection {
   updated_at: string
 }
 
-// GET /api/admin/policies - Get all policy sections
+// GET /api/admin/policies - Get all policy sections (admin only)
 export async function GET(request: NextRequest) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   try {
     const supabase = await createClient()
     const { searchParams } = new URL(request.url)
@@ -44,8 +54,17 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT /api/admin/policies - Update a policy section
+// PUT /api/admin/policies - Update a policy section (admin only)
 export async function PUT(request: NextRequest) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   try {
     const supabase = await createClient()
     const body = await request.json()
@@ -89,8 +108,17 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// POST /api/admin/policies - Create a new policy section
+// POST /api/admin/policies - Create a new policy section (admin only)
 export async function POST(request: NextRequest) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   try {
     const supabase = await createClient()
     const body = await request.json()

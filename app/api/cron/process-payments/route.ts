@@ -217,6 +217,9 @@ export async function GET(request: NextRequest) {
           // Payment requires action or failed
           console.log(`[Cron] Payment ${payment.id} status: ${paymentIntent.status}`)
 
+          const newAttempts = payment.attempts + 1
+          const hasRetriesLeft = newAttempts < payment.max_attempts // Fixed: was "< max_attempts - 1"
+
           await supabase
             .from('payment_schedules')
             .update({
@@ -225,8 +228,8 @@ export async function GET(request: NextRequest) {
               failure_reason: paymentIntent.status === 'requires_action'
                 ? 'Requires customer action (3D Secure)'
                 : 'Payment not completed',
-              attempts: payment.attempts + 1,
-              next_retry_at: payment.attempts < payment.max_attempts - 1
+              attempts: newAttempts,
+              next_retry_at: hasRetriesLeft
                 ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Retry tomorrow
                 : null,
             })

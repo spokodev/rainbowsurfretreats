@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, FROM_EMAIL } from '@/lib/email'
+import { escapeHtml } from '@/lib/utils/html-escape'
+import { newsletterSubscribeSchema } from '@/lib/validations/booking'
+import { checkRateLimit, getClientIp, rateLimitPresets, rateLimitHeaders } from '@/lib/utils/rate-limit'
 import crypto from 'crypto'
 
 function getSupabase() {
@@ -19,13 +22,28 @@ function generateToken(): string {
 
 // POST /api/newsletter/subscribe
 export async function POST(request: NextRequest) {
+  // Rate limiting - 3 requests per minute per IP
+  const clientIp = getClientIp(request)
+  const rateLimitResult = checkRateLimit(clientIp, rateLimitPresets.newsletter)
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: rateLimitHeaders(rateLimitResult) }
+    )
+  }
+
   try {
     const body = await request.json()
-    const { email, firstName, source = 'website', language = 'en' } = body
 
-    if (!email || !email.includes('@')) {
-      return NextResponse.json({ error: 'Valid email is required' }, { status: 400 })
+    // Validate input with Zod schema
+    const validation = newsletterSubscribeSchema.safeParse(body)
+    if (!validation.success) {
+      const firstError = validation.error.issues[0]
+      return NextResponse.json({ error: firstError.message }, { status: 400 })
     }
+
+    const { email, firstName, source, language } = validation.data
 
     const supabase = getSupabase()
 
@@ -152,7 +170,9 @@ async function sendConfirmationEmail(email: string, token: string, language: str
   }
 
   const t = translations[language] || translations.en
-  const greeting = firstName ? `Hi ${firstName}!` : 'Hi there!'
+  // Escape user input to prevent XSS in email clients
+  const safeFirstName = escapeHtml(firstName)
+  const greeting = safeFirstName ? `Hi ${safeFirstName}!` : 'Hi there!'
 
   const html = `
 <!DOCTYPE html>

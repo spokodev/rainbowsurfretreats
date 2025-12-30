@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { createClient as createServerClient } from '@/lib/supabase/server'
+import { checkAdminAuth } from '@/lib/settings'
 
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-}
-
-async function checkAuth() {
-  const supabase = await createServerClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
-  return { user, error }
 }
 
 export interface EmailTemplate {
@@ -30,12 +24,15 @@ export interface EmailTemplate {
   updated_at: string
 }
 
-// GET /api/admin/email-templates - Get all email templates
+// GET /api/admin/email-templates - Get all email templates (admin only)
 export async function GET() {
-  // Check authentication
-  const { user, error: authError } = await checkAuth()
-  if (authError || !user) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const supabase = getSupabase()
@@ -58,12 +55,15 @@ export async function GET() {
   }
 }
 
-// POST /api/admin/email-templates - Create new template
+// POST /api/admin/email-templates - Create new template (admin only)
 export async function POST(request: NextRequest) {
-  // Check authentication
-  const { user, error: authError } = await checkAuth()
-  if (authError || !user) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const supabase = getSupabase()

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkAdminAuth } from '@/lib/settings'
+import { handleDatabaseError } from '@/lib/utils/api-errors'
 import type { Retreat, RetreatInsert, ApiResponse } from '@/lib/types/database'
 
 interface RouteParams {
@@ -22,16 +24,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .single()
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json<ApiResponse<null>>(
-          { error: 'Retreat not found' },
-          { status: 404 }
-        )
-      }
-      return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
-        { status: 500 }
-      )
+      const errorResponse = handleDatabaseError(error, 'GET /api/retreats/[id]')
+      if (errorResponse) return errorResponse
     }
 
     return NextResponse.json<ApiResponse<Retreat>>({ data: data as Retreat })
@@ -44,26 +38,52 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// PUT /api/retreats/[id] - Update a retreat
+// PUT /api/retreats/[id] - Update a retreat (admin only)
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
+    return NextResponse.json<ApiResponse<null>>(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    )
+  }
+  if (!isAdmin) {
+    return NextResponse.json<ApiResponse<null>>(
+      { error: 'Forbidden' },
+      { status: 403 }
+    )
+  }
+
   try {
     const { id } = await params
     const supabase = await createClient()
-
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json<ApiResponse<null>>(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
 
     const body: Partial<RetreatInsert> = await request.json()
 
     // Remove 'rooms' from body as it's a relation, not a column
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { rooms, ...updateData } = body as Partial<RetreatInsert> & { rooms?: unknown }
+
+    // Validate dates if provided
+    if (updateData.start_date && updateData.end_date) {
+      const startDate = new Date(updateData.start_date)
+      const endDate = new Date(updateData.end_date)
+      if (endDate <= startDate) {
+        return NextResponse.json<ApiResponse<null>>(
+          { error: 'End date must be after start date' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Validate early bird price
+    if (updateData.early_bird_price && updateData.price && updateData.early_bird_price >= updateData.price) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Early bird price must be less than regular price' },
+        { status: 400 }
+      )
+    }
 
     const { data, error } = await supabase
       .from('retreats')
@@ -73,16 +93,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       .single()
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json<ApiResponse<null>>(
-          { error: 'Retreat not found' },
-          { status: 404 }
-        )
-      }
-      return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
-        { status: 500 }
-      )
+      const errorResponse = handleDatabaseError(error, 'PUT /api/retreats/[id]', {
+        '23505': 'A retreat with this slug already exists',
+      })
+      if (errorResponse) return errorResponse
     }
 
     return NextResponse.json<ApiResponse<Retreat>>({
@@ -98,20 +112,26 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// DELETE /api/retreats/[id] - Soft delete a retreat (move to trash)
+// DELETE /api/retreats/[id] - Soft delete a retreat (admin only)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
+    return NextResponse.json<ApiResponse<null>>(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    )
+  }
+  if (!isAdmin) {
+    return NextResponse.json<ApiResponse<null>>(
+      { error: 'Forbidden' },
+      { status: 403 }
+    )
+  }
+
   try {
     const { id } = await params
     const supabase = await createClient()
-
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json<ApiResponse<null>>(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
 
     // Soft delete: set deleted_at timestamp instead of actual deletion
     const { error } = await supabase
@@ -125,10 +145,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       .is('deleted_at', null) // Only delete if not already deleted
 
     if (error) {
-      return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
-        { status: 500 }
-      )
+      const errorResponse = handleDatabaseError(error, 'DELETE /api/retreats/[id]')
+      if (errorResponse) return errorResponse
     }
 
     return NextResponse.json<ApiResponse<null>>({

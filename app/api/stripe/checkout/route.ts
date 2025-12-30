@@ -4,49 +4,38 @@ import { stripe, getStripe, calculateVat } from '@/lib/stripe'
 import { calculatePaymentSchedule, isEligibleForEarlyBird } from '@/lib/payment-schedule'
 import { getPaymentSettings } from '@/lib/settings'
 import { validatePromoCode, determineBestDiscount, recordPromoCodeRedemption } from '@/lib/promo-codes'
+import { checkoutRequestSchema, type CheckoutRequest } from '@/lib/validations/booking'
+import { checkRateLimit, getClientIp, rateLimitPresets, rateLimitHeaders } from '@/lib/utils/rate-limit'
 import type { ApiResponse, BookingInsert, DiscountSource } from '@/lib/types/database'
-
-interface CheckoutRequest {
-  retreatId?: string // Legacy support (UUID)
-  retreatSlug?: string // New: lookup by slug
-  roomId?: string
-  firstName: string
-  lastName: string
-  email: string
-  phone?: string
-  billingAddress?: string
-  city?: string
-  postalCode?: string
-  country: string
-  guestsCount?: number
-  paymentType: 'deposit' | 'full' | 'scheduled' // Added 'scheduled' for multi-stage
-  acceptTerms: boolean
-  newsletterOptIn?: boolean
-  notes?: string
-  language?: string // User preferred language for emails (en, de, es, fr, nl)
-  promoCode?: string // Promo code if applied
-}
 
 // POST /api/stripe/checkout - Create Stripe checkout session
 export async function POST(request: NextRequest) {
+  // Rate limiting - 10 requests per minute per IP
+  const clientIp = getClientIp(request)
+  const rateLimitResult = checkRateLimit(clientIp, rateLimitPresets.checkout)
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json<ApiResponse<null>>(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: rateLimitHeaders(rateLimitResult) }
+    )
+  }
+
   try {
     const supabase = await createClient()
-    const body: CheckoutRequest = await request.json()
+    const rawBody = await request.json()
 
-    // Validate required fields
-    if ((!body.retreatId && !body.retreatSlug) || !body.firstName || !body.lastName || !body.email || !body.country) {
+    // Validate request body with Zod schema
+    const validation = checkoutRequestSchema.safeParse(rawBody)
+    if (!validation.success) {
+      const firstError = validation.error.issues[0]
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'Missing required fields' },
+        { error: firstError.message },
         { status: 400 }
       )
     }
 
-    if (!body.acceptTerms) {
-      return NextResponse.json<ApiResponse<null>>(
-        { error: 'You must accept the terms and conditions' },
-        { status: 400 }
-      )
-    }
+    const body = validation.data
 
     // Fetch retreat data - support both slug (new) and id (legacy)
     let retreatQuery = supabase
@@ -132,23 +121,34 @@ export async function POST(request: NextRequest) {
       if (promoValidation.valid && promoValidation.promoCode) {
         validatedPromoCode = promoValidation.promoCode
         promoDiscountAmount = promoValidation.discountAmount || 0
+      } else {
+        // Return error if promo code was provided but is invalid
+        return NextResponse.json<ApiResponse<null>>(
+          { error: promoValidation.error || 'Invalid promo code' },
+          { status: 400 }
+        )
       }
-      // If promo code is invalid, we silently ignore it and proceed without
     }
 
-    // Best Discount Wins logic
+    // Best Discount Wins logic - if equal, prefer early bird (automatic benefit)
     let bestDiscountAmount = 0
     let discountSource: DiscountSource | null = null
     let eligibleForEarlyBird = false
 
     if (promoDiscountAmount > 0 || earlyBirdDiscountAmount > 0) {
-      if (promoDiscountAmount >= earlyBirdDiscountAmount) {
+      if (promoDiscountAmount > earlyBirdDiscountAmount) {
+        // Promo code wins only if strictly greater
         bestDiscountAmount = promoDiscountAmount
         discountSource = 'promo_code'
-      } else {
+      } else if (earlyBirdDiscountAmount > 0) {
+        // Early bird wins when equal or greater
         bestDiscountAmount = earlyBirdDiscountAmount
         discountSource = 'early_bird'
         eligibleForEarlyBird = true
+      } else {
+        // Only promo discount with zero early bird
+        bestDiscountAmount = promoDiscountAmount
+        discountSource = 'promo_code'
       }
     }
 
@@ -246,14 +246,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Record promo code redemption if promo code was used
+    // This uses atomic increment to prevent race conditions
     if (discountSource === 'promo_code' && validatedPromoCode) {
-      await recordPromoCodeRedemption(
-        validatedPromoCode.id,
-        booking.id,
-        basePrice,
-        bestDiscountAmount,
-        effectivePrice
-      )
+      try {
+        await recordPromoCodeRedemption(
+          validatedPromoCode.id,
+          booking.id,
+          basePrice,
+          bestDiscountAmount,
+          effectivePrice
+        )
+      } catch (promoError) {
+        // Promo code usage limit reached between validation and redemption (race condition)
+        // Clean up the booking and return error
+        console.error('Promo code redemption failed:', promoError)
+        await supabase.from('bookings').delete().eq('id', booking.id)
+        return NextResponse.json<ApiResponse<null>>(
+          { error: 'Promo code usage limit reached. Please try again without the promo code.' },
+          { status: 400 }
+        )
+      }
     }
 
     // Create or find Stripe Customer for future payments

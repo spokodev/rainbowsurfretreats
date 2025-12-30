@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getStripe } from '@/lib/stripe'
+import { checkAdminAuth } from '@/lib/settings'
 
 // Use service role client to bypass RLS
 function getSupabase() {
@@ -9,12 +9,6 @@ function getSupabase() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-}
-
-async function checkAuth() {
-  const supabase = await createServerClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
-  return { user, error }
 }
 
 interface RefundRequest {
@@ -28,12 +22,15 @@ interface CancelRequest {
   reason?: string
 }
 
-// POST /api/admin/refunds - Create a refund
+// POST /api/admin/refunds - Create a refund (admin only)
 export async function POST(request: NextRequest) {
-  // Check authentication
-  const { user, error: authError } = await checkAuth()
-  if (authError || !user) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const supabase = getSupabase()
@@ -255,12 +252,15 @@ async function handleCancelPayment(
   })
 }
 
-// GET /api/admin/refunds - Get refund history for a booking
+// GET /api/admin/refunds - Get refund history for a booking (admin only)
 export async function GET(request: NextRequest) {
-  // Check authentication
-  const { user, error: authError } = await checkAuth()
-  if (authError || !user) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const { searchParams } = new URL(request.url)

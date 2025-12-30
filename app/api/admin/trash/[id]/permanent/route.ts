@@ -1,24 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkAdminAuth } from '@/lib/settings'
 import type { ApiResponse } from '@/lib/types/database'
 
 interface RouteParams {
   params: Promise<{ id: string }>
 }
 
-// DELETE /api/admin/trash/[id]/permanent - Permanently delete an item
+// DELETE /api/admin/trash/[id]/permanent - Permanently delete an item (admin only)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
+    return NextResponse.json<ApiResponse<null>>(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    )
+  }
+  if (!isAdmin) {
+    return NextResponse.json<ApiResponse<null>>(
+      { error: 'Forbidden' },
+      { status: 403 }
+    )
+  }
+
   try {
     const { id } = await params
     const supabase = await createClient()
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json<ApiResponse<null>>(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
 
     const { searchParams } = new URL(request.url)
     const item_type = searchParams.get('type') as 'retreat' | 'blog_post'

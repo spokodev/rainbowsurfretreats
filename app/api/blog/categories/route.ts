@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkAdminAuth } from '@/lib/settings'
 import type { BlogCategory, BlogCategoryInsert, ApiResponse } from '@/lib/types/database'
 
 // GET /api/blog/categories - List all categories
@@ -29,19 +30,25 @@ export async function GET() {
   }
 }
 
-// POST /api/blog/categories - Create a new category
+// POST /api/blog/categories - Create a new category (admin only)
 export async function POST(request: NextRequest) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
+    return NextResponse.json<ApiResponse<null>>(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    )
+  }
+  if (!isAdmin) {
+    return NextResponse.json<ApiResponse<null>>(
+      { error: 'Forbidden' },
+      { status: 403 }
+    )
+  }
+
   try {
     const supabase = await createClient()
-
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json<ApiResponse<null>>(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
 
     const body: BlogCategoryInsert = await request.json()
 

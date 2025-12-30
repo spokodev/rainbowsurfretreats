@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkAdminAuth } from '@/lib/settings'
 
 function getSupabase() {
   return createClient(
@@ -8,8 +9,17 @@ function getSupabase() {
   )
 }
 
-// GET /api/payments - Get all payments (admin)
+// GET /api/payments - Get all payments (admin only)
 export async function GET() {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const supabase = getSupabase()
 
   try {

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkAdminAuth } from '@/lib/settings'
+import { handleDatabaseError } from '@/lib/utils/api-errors'
 import type { Retreat, RetreatInsert, ApiResponse } from '@/lib/types/database'
 
 // GET /api/retreats - List all retreats or get single by slug
@@ -26,16 +28,8 @@ export async function GET(request: NextRequest) {
         .single()
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          return NextResponse.json<ApiResponse<null>>(
-            { error: 'Retreat not found' },
-            { status: 404 }
-          )
-        }
-        return NextResponse.json<ApiResponse<null>>(
-          { error: error.message },
-          { status: 500 }
-        )
+        const errorResponse = handleDatabaseError(error, 'GET /api/retreats (slug)')
+        if (errorResponse) return errorResponse
       }
 
       return NextResponse.json<ApiResponse<Retreat>>({ data: data as Retreat })
@@ -69,10 +63,8 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query
 
     if (error) {
-      return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
-        { status: 500 }
-      )
+      const errorResponse = handleDatabaseError(error, 'GET /api/retreats (list)')
+      if (errorResponse) return errorResponse
     }
 
     return NextResponse.json<ApiResponse<Retreat[]>>({ data: data as Retreat[] })
@@ -85,26 +77,50 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/retreats - Create a new retreat
+// POST /api/retreats - Create a new retreat (admin only)
 export async function POST(request: NextRequest) {
+  // Check admin authentication
+  const { user, isAdmin } = await checkAdminAuth()
+  if (!user) {
+    return NextResponse.json<ApiResponse<null>>(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    )
+  }
+  if (!isAdmin) {
+    return NextResponse.json<ApiResponse<null>>(
+      { error: 'Forbidden' },
+      { status: 403 }
+    )
+  }
+
   try {
     const supabase = await createClient()
-
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json<ApiResponse<null>>(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const body: RetreatInsert = await request.json()
 
     // Validate required fields
     if (!body.destination || !body.location || !body.start_date || !body.end_date) {
       return NextResponse.json<ApiResponse<null>>(
         { error: 'Missing required fields: destination, location, start_date, end_date' },
+        { status: 400 }
+      )
+    }
+
+    // Validate dates
+    const startDate = new Date(body.start_date)
+    const endDate = new Date(body.end_date)
+
+    if (endDate <= startDate) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'End date must be after start date' },
+        { status: 400 }
+      )
+    }
+
+    // Validate early bird price
+    if (body.early_bird_price && body.price && body.early_bird_price >= body.price) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Early bird price must be less than regular price' },
         { status: 400 }
       )
     }
@@ -116,10 +132,10 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
-        { status: 500 }
-      )
+      const errorResponse = handleDatabaseError(error, 'POST /api/retreats', {
+        '23505': 'A retreat with this slug already exists',
+      })
+      if (errorResponse) return errorResponse
     }
 
     return NextResponse.json<ApiResponse<Retreat>>(

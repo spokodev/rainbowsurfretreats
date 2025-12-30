@@ -96,20 +96,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
   const supabase = getSupabase()
   const stripe = getStripe()
 
-  // Idempotency check: check if this event was already processed
-  const { data: existingPayment } = await supabase
-    .from('payments')
-    .select('id, status, stripe_webhook_event_id')
-    .eq('stripe_checkout_session_id', session.id)
-    .single()
-
-  if (existingPayment?.stripe_webhook_event_id) {
-    console.log(`Event already processed: ${existingPayment.stripe_webhook_event_id}`)
-    return // Already processed, skip
-  }
-
-  // Update payment record with idempotency marker
-  const { error: paymentError } = await supabase
+  // Atomic idempotency check: try to claim this event by updating only if not already processed
+  // This prevents race conditions where two webhook deliveries both read null and proceed
+  const { data: updatedPayment, error: paymentError } = await supabase
     .from('payments')
     .update({
       stripe_payment_intent_id: session.payment_intent as string,
@@ -119,9 +108,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
       payment_method: 'card',
     })
     .eq('stripe_checkout_session_id', session.id)
+    .is('stripe_webhook_event_id', null) // Only update if not already processed
+    .select('id')
+    .maybeSingle()
 
   if (paymentError) {
     console.error('Error updating payment:', paymentError)
+    return
+  }
+
+  // If no row was updated, it means another webhook already processed this event
+  if (!updatedPayment) {
+    console.log(`Event ${eventId} already processed or payment not found for session ${session.id}`)
+    return
   }
 
   // Save payment method to customer for future charges

@@ -68,7 +68,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         slug: newSlug,
         content: originalPost.content,
         excerpt: originalPost.excerpt,
-        featured_image: originalPost.featured_image,
+        featured_image_url: originalPost.featured_image_url,
         author_name: originalPost.author_name,
         author_id: user.id, // Set current user as author
         category_id: originalPost.category_id,

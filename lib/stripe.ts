@@ -31,19 +31,51 @@ export const stripe = {
   },
 }
 
-// VAT rates for EU countries
+// VAT rates for EU countries (as of 2024)
+// Standard VAT rates - verify for current year
 export const vatRates: Record<string, number> = {
+  // Western Europe
   DE: 0.19, // Germany
   FR: 0.20, // France
+  NL: 0.21, // Netherlands
+  BE: 0.21, // Belgium
+  LU: 0.17, // Luxembourg
+  AT: 0.20, // Austria
+  CH: 0.081, // Switzerland (not EU but common)
+
+  // Southern Europe
   ES: 0.21, // Spain
   IT: 0.22, // Italy
   PT: 0.23, // Portugal
-  NL: 0.21, // Netherlands
-  BE: 0.21, // Belgium
-  AT: 0.20, // Austria
+  GR: 0.24, // Greece
+  MT: 0.18, // Malta
+  CY: 0.19, // Cyprus
+
+  // Northern Europe
   IE: 0.23, // Ireland
+  GB: 0.20, // United Kingdom (post-Brexit, for reference)
+  DK: 0.25, // Denmark
+  SE: 0.25, // Sweden
+  FI: 0.255, // Finland (25.5%)
+  NO: 0.25, // Norway (not EU but common)
+
+  // Eastern Europe
   PL: 0.23, // Poland
-  // Add more as needed
+  CZ: 0.21, // Czech Republic
+  SK: 0.20, // Slovakia
+  HU: 0.27, // Hungary (highest in EU)
+  RO: 0.19, // Romania
+  BG: 0.20, // Bulgaria
+  HR: 0.25, // Croatia
+  SI: 0.22, // Slovenia
+  EE: 0.22, // Estonia
+  LV: 0.21, // Latvia
+  LT: 0.21, // Lithuania
+
+  // Non-EU (0% VAT for exports)
+  US: 0, // United States
+  CA: 0, // Canada
+  AU: 0, // Australia
 }
 
 export function calculateVat(amount: number, country: string): { vatRate: number; vatAmount: number; total: number } {

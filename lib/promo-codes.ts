@@ -156,8 +156,8 @@ export function determineBestDiscount(
     }
   }
 
-  // Best discount wins
-  if (promoDiscount >= earlyBirdDiscount) {
+  // Best discount wins - if equal, prefer early bird (automatic benefit for customer)
+  if (promoDiscount > earlyBirdDiscount) {
     return {
       discountAmount: promoDiscount,
       discountSource: 'promo_code',
@@ -167,6 +167,7 @@ export function determineBestDiscount(
       isEarlyBirdEligible
     }
   } else {
+    // Early bird wins when discounts are equal or early bird is greater
     return {
       discountAmount: earlyBirdDiscount,
       discountSource: 'early_bird',
@@ -179,7 +180,8 @@ export function determineBestDiscount(
 }
 
 /**
- * Record a promo code redemption
+ * Record a promo code redemption with atomic usage limit check
+ * Throws error if promo code usage limit has been reached (race condition safe)
  */
 export async function recordPromoCodeRedemption(
   promoCodeId: string,
@@ -190,8 +192,25 @@ export async function recordPromoCodeRedemption(
 ): Promise<void> {
   const supabase = await createClient()
 
+  // Atomically try to increment usage - this prevents race conditions
+  // where two concurrent checkouts both validate the same code at limit-1
+  const { data: incrementSuccess, error: rpcError } = await supabase.rpc(
+    'try_increment_promo_code_usage',
+    { code_id: promoCodeId }
+  )
+
+  if (rpcError) {
+    console.error('Error incrementing promo code usage:', rpcError)
+    throw new Error('Failed to apply promo code')
+  }
+
+  // If atomic increment failed, the usage limit was reached between validation and redemption
+  if (!incrementSuccess) {
+    throw new Error('Promo code usage limit reached')
+  }
+
   // Insert redemption record
-  await supabase.from('promo_code_redemptions').insert({
+  const { error: insertError } = await supabase.from('promo_code_redemptions').insert({
     promo_code_id: promoCodeId,
     booking_id: bookingId,
     original_amount: originalAmount,
@@ -199,8 +218,11 @@ export async function recordPromoCodeRedemption(
     final_amount: finalAmount
   })
 
-  // Increment usage count
-  await supabase.rpc('increment_promo_code_usage', { code_id: promoCodeId })
+  if (insertError) {
+    console.error('Error recording promo code redemption:', insertError)
+    // Note: Usage was already incremented, but this is acceptable
+    // as the promo code was validly used even if audit trail failed
+  }
 }
 
 /**
