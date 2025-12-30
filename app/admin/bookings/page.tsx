@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   Plus,
@@ -26,6 +27,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
+import { checkAdminAuth } from "@/lib/settings";
 
 interface Booking {
   id: string;
@@ -136,6 +138,12 @@ const getPaymentBadgeVariant = (status: string) => {
 };
 
 export default async function AdminBookingsPage() {
+  // Server-side auth check (defense in depth - middleware also checks)
+  const { isAdmin } = await checkAdminAuth();
+  if (!isAdmin) {
+    redirect("/");
+  }
+
   const { bookings, stats } = await getBookings();
 
   return (

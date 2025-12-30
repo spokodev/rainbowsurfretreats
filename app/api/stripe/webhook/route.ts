@@ -463,10 +463,10 @@ async function handleRefund(charge: Stripe.Charge) {
   const supabase = getSupabase()
   const paymentIntentId = charge.payment_intent as string
 
-  // Find the original payment
+  // Find the original payment with booking room_id
   const { data: originalPayment, error: findError } = await supabase
     .from('payments')
-    .select('booking_id')
+    .select('booking_id, booking:bookings(room_id)')
     .eq('stripe_payment_intent_id', paymentIntentId)
     .single()
 
@@ -502,6 +502,23 @@ async function handleRefund(charge: Stripe.Charge) {
 
   if (bookingError) {
     console.error('Error updating booking on refund:', bookingError)
+  }
+
+  // If FULL refund, return room availability
+  // Supabase returns nested join as array, extract first element
+  const bookingArray = originalPayment.booking as Array<{ room_id: string | null }> | null
+  const bookingData = Array.isArray(bookingArray) ? bookingArray[0] : bookingArray
+  if (charge.refunded && bookingData?.room_id) {
+    const { error: incrementError } = await supabase.rpc('increment_room_availability', {
+      room_uuid: bookingData.room_id,
+      increment_count: 1
+    })
+
+    if (incrementError) {
+      console.error('Error incrementing room availability on refund:', incrementError)
+    } else {
+      console.log(`Room ${bookingData.room_id} availability incremented due to refund`)
+    }
   }
 
   // Send refund confirmation email

@@ -1,8 +1,5 @@
 import { z } from 'zod'
 
-// Email regex that's more strict than simple .includes('@')
-const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-
 // Phone number regex - allows international format
 const phoneRegex = /^[+]?[0-9\s\-().]{7,20}$/
 

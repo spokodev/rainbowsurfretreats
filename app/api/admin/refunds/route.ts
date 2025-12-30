@@ -54,10 +54,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Fetch the payment
+    // Fetch the payment with booking details including room_id
     const { data: payment, error: fetchError } = await supabase
       .from('payments')
-      .select('*, booking:bookings(id, email, first_name, last_name)')
+      .select('*, booking:bookings(id, email, first_name, last_name, room_id)')
       .eq('id', paymentId)
       .single()
 
@@ -164,6 +164,14 @@ export async function POST(request: NextRequest) {
         .from('bookings')
         .update({ payment_status: paymentStatus })
         .eq('id', payment.booking_id)
+
+      // If FULL refund, return room availability
+      if (paymentStatus === 'refunded' && payment.booking?.room_id) {
+        await supabase.rpc('increment_room_availability', {
+          room_uuid: payment.booking.room_id,
+          increment_count: 1
+        })
+      }
     }
 
     // TODO: Send refund confirmation email

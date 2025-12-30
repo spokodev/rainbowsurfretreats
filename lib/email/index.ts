@@ -445,6 +445,138 @@ export async function sendPreRetreatReminder(data: {
   return sendEmail({ to: data.email, subject, html: fullHtml })
 }
 
+// Cancellation message translations
+const cancellationTranslations = {
+  en: {
+    subject: 'Booking Cancelled',
+    title: 'Your Booking Has Been Cancelled',
+    message: 'We\'re sorry to inform you that your booking has been cancelled.',
+    refundNote: 'If you have already made a payment, a refund will be processed separately.',
+    contactNote: 'If you have any questions about this cancellation, please don\'t hesitate to contact us.',
+  },
+  de: {
+    subject: 'Buchung storniert',
+    title: 'Ihre Buchung wurde storniert',
+    message: 'Wir bedauern, Ihnen mitteilen zu müssen, dass Ihre Buchung storniert wurde.',
+    refundNote: 'Falls Sie bereits eine Zahlung geleistet haben, wird eine Rückerstattung separat bearbeitet.',
+    contactNote: 'Bei Fragen zu dieser Stornierung können Sie sich gerne an uns wenden.',
+  },
+  es: {
+    subject: 'Reserva cancelada',
+    title: 'Su reserva ha sido cancelada',
+    message: 'Lamentamos informarle que su reserva ha sido cancelada.',
+    refundNote: 'Si ya ha realizado un pago, se procesará un reembolso por separado.',
+    contactNote: 'Si tiene alguna pregunta sobre esta cancelación, no dude en contactarnos.',
+  },
+  fr: {
+    subject: 'Réservation annulée',
+    title: 'Votre réservation a été annulée',
+    message: 'Nous avons le regret de vous informer que votre réservation a été annulée.',
+    refundNote: 'Si vous avez déjà effectué un paiement, un remboursement sera traité séparément.',
+    contactNote: 'Si vous avez des questions concernant cette annulation, n\'hésitez pas à nous contacter.',
+  },
+  nl: {
+    subject: 'Boeking geannuleerd',
+    title: 'Uw boeking is geannuleerd',
+    message: 'Het spijt ons u te moeten meedelen dat uw boeking is geannuleerd.',
+    refundNote: 'Als u al een betaling heeft gedaan, wordt een terugbetaling apart verwerkt.',
+    contactNote: 'Als u vragen heeft over deze annulering, neem dan gerust contact met ons op.',
+  },
+}
+
+// Send booking cancellation email
+export async function sendBookingCancellation(data: {
+  booking: {
+    id: string
+    booking_number: string
+    first_name: string
+    last_name: string
+    email: string
+    total_amount: number
+    deposit_amount: number
+    payment_status: string
+    language: string
+    retreat: {
+      destination: string
+      start_date: string
+      end_date: string
+    }
+  }
+  reason?: string
+}) {
+  const { booking, reason } = data
+  const language = booking.language || 'en'
+  const template = await getTemplate('booking_cancellation', language)
+
+  const lang = language as keyof typeof cancellationTranslations
+  const t = cancellationTranslations[lang] || cancellationTranslations.en
+
+  const dateLocale = language === 'de' ? 'de-DE' :
+                     language === 'es' ? 'es-ES' :
+                     language === 'fr' ? 'fr-FR' :
+                     language === 'nl' ? 'nl-NL' : 'en-US'
+
+  const retreatDates = `${new Date(booking.retreat.start_date).toLocaleDateString(dateLocale, { month: 'long', day: 'numeric' })} - ${new Date(booking.retreat.end_date).toLocaleDateString(dateLocale, { month: 'long', day: 'numeric', year: 'numeric' })}`
+
+  const hasPaid = booking.payment_status !== 'unpaid'
+
+  const templateData: Record<string, unknown> = {
+    firstName: booking.first_name,
+    lastName: booking.last_name,
+    bookingNumber: booking.booking_number,
+    retreatDestination: booking.retreat.destination,
+    retreatDates,
+    totalAmount: booking.total_amount.toFixed(2),
+    depositAmount: booking.deposit_amount.toFixed(2),
+    reason: reason || '',
+    hasPaid,
+    title: t.title,
+    message: t.message,
+    refundNote: t.refundNote,
+    contactNote: t.contactNote,
+  }
+
+  let subject: string
+  let htmlContent: string
+
+  if (template) {
+    subject = renderTemplate(template.subject, templateData)
+    htmlContent = renderTemplate(template.html_content, templateData)
+  } else {
+    // Fallback to hardcoded template
+    subject = `${t.subject} - ${booking.booking_number}`
+    htmlContent = `
+      <h2>${t.title}</h2>
+      <p>Hi ${booking.first_name},</p>
+      <p>${t.message}</p>
+
+      <div class="highlight-box">
+        <p><strong>Booking Number:</strong> ${booking.booking_number}</p>
+        <p><strong>Retreat:</strong> ${booking.retreat.destination} Surf Retreat</p>
+        <p><strong>Dates:</strong> ${retreatDates}</p>
+        ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+      </div>
+
+      ${hasPaid ? `
+        <div class="warning-box">
+          <p><strong>Payment Information</strong></p>
+          <p>${t.refundNote}</p>
+        </div>
+      ` : ''}
+
+      <p>${t.contactNote}</p>
+
+      <p style="margin-top: 30px;">
+        Best regards,<br>
+        <strong>Rainbow Surf Retreats Team</strong>
+      </p>
+    `
+  }
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({ to: booking.email, subject, html: fullHtml })
+}
+
 // Send refund confirmation email
 export async function sendRefundConfirmation(data: {
   firstName: string

@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import {
   DollarSign,
   CalendarCheck,
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
+import { checkAdminAuth } from "@/lib/settings";
 
 interface DashboardStats {
   totalRevenue: number;
@@ -136,6 +138,12 @@ const getStatusBadgeVariant = (status: string) => {
 };
 
 export default async function AdminDashboard() {
+  // Server-side auth check (defense in depth - middleware also checks)
+  const { isAdmin } = await checkAdminAuth();
+  if (!isAdmin) {
+    redirect("/");
+  }
+
   const { stats, recentBookings, upcomingRetreats } = await getDashboardData();
 
   const statsCards = [

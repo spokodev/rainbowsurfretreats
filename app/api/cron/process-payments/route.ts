@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getStripe } from '@/lib/stripe'
+import { sendPaymentConfirmation, sendPaymentFailed } from '@/lib/email'
 
 // Use service role client to bypass RLS
 function getSupabase() {
@@ -35,10 +36,12 @@ interface PaymentScheduleRow {
   max_attempts: number
   booking: {
     id: string
+    booking_number: string
     email: string
     first_name: string
     last_name: string
     language: string
+    total_amount: number
     stripe_customer_id: string | null
     stripe_payment_method_id: string | null
     retreat: {
@@ -77,10 +80,12 @@ export async function GET(request: NextRequest) {
         max_attempts,
         booking:bookings!inner (
           id,
+          booking_number,
           email,
           first_name,
           last_name,
           language,
+          total_amount,
           stripe_customer_id,
           stripe_payment_method_id,
           retreat:retreats!inner (
@@ -212,6 +217,50 @@ export async function GET(request: NextRequest) {
               .eq('id', booking.id)
           }
 
+          // Get next pending payment info for email
+          const { data: nextPayment } = await supabase
+            .from('payment_schedules')
+            .select('amount, due_date')
+            .eq('booking_id', booking.id)
+            .eq('status', 'pending')
+            .order('payment_number', { ascending: true })
+            .limit(1)
+            .single()
+
+          // Calculate remaining balance
+          const { data: paidPayments } = await supabase
+            .from('payment_schedules')
+            .select('amount')
+            .eq('booking_id', booking.id)
+            .eq('status', 'paid')
+
+          const totalPaid = (paidPayments || []).reduce((sum, p) => sum + p.amount, 0)
+          const remainingBalance = booking.total_amount - totalPaid
+
+          // Send payment confirmation email
+          const retreatDatesFormatted = `${new Date(booking.retreat.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(booking.retreat.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+
+          try {
+            await sendPaymentConfirmation({
+              bookingNumber: booking.booking_number,
+              firstName: booking.first_name,
+              lastName: booking.last_name,
+              email: booking.email,
+              retreatDestination: booking.retreat.destination,
+              amount: payment.amount,
+              paymentNumber: payment.payment_number,
+              paymentDescription: `Payment ${payment.payment_number} of ${payment.payment_number + (pendingPayments?.length || 0)}`,
+              remainingBalance,
+              nextPaymentDate: nextPayment?.due_date,
+              nextPaymentAmount: nextPayment?.amount,
+              language: booking.language || 'en',
+            })
+            console.log(`[Cron] Payment confirmation email sent for ${payment.id}`)
+          } catch (emailError) {
+            console.error(`[Cron] Failed to send confirmation email for ${payment.id}:`, emailError)
+            // Don't fail the payment if email fails
+          }
+
           results.succeeded++
         } else {
           // Payment requires action or failed
@@ -260,7 +309,30 @@ export async function GET(request: NextRequest) {
         results.failed++
         results.errors.push(`Payment ${payment.id}: ${error.message}`)
 
-        // TODO: Send failure notification email to customer
+        // Send failure notification email to customer
+        const retreatDatesFormatted = `${new Date(booking.retreat.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(booking.retreat.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+        const daysUntilRetreat = Math.ceil((new Date(booking.retreat.start_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+
+        try {
+          await sendPaymentFailed({
+            bookingNumber: booking.booking_number,
+            firstName: booking.first_name,
+            lastName: booking.last_name,
+            email: booking.email,
+            retreatDestination: booking.retreat.destination,
+            retreatDates: retreatDatesFormatted,
+            retreatStartDate: booking.retreat.start_date,
+            daysUntilRetreat,
+            amount: payment.amount,
+            dueDate: payment.due_date,
+            paymentNumber: payment.payment_number,
+            language: booking.language || 'en',
+            failureReason: error.message || 'Payment processing failed',
+          })
+          console.log(`[Cron] Payment failed email sent for ${payment.id}`)
+        } catch (emailError) {
+          console.error(`[Cron] Failed to send failure email for ${payment.id}:`, emailError)
+        }
       }
     }
 

@@ -147,6 +147,68 @@ const formatDate = (dateString: string) => {
   });
 };
 
+const formatDateForCSV = (dateString: string) => {
+  return new Date(dateString).toISOString().split("T")[0];
+};
+
+const exportToCSV = (payments: Payment[]) => {
+  // CSV headers
+  const headers = [
+    "Date",
+    "Booking ID",
+    "Guest Name",
+    "Email",
+    "Retreat",
+    "Type",
+    "Amount",
+    "Currency",
+    "Status",
+    "Payment Method",
+    "Stripe ID",
+  ];
+
+  // Convert payments to CSV rows
+  const rows = payments.map((payment) => [
+    formatDateForCSV(payment.created_at),
+    payment.booking?.booking_number || "",
+    payment.booking
+      ? `${payment.booking.first_name} ${payment.booking.last_name}`
+      : "",
+    payment.booking?.email || "",
+    payment.booking?.retreat?.destination || "",
+    payment.payment_type,
+    payment.payment_type === "refund"
+      ? `-${payment.amount.toFixed(2)}`
+      : payment.amount.toFixed(2),
+    payment.currency,
+    payment.status,
+    payment.payment_method || "",
+    payment.stripe_payment_intent_id || "",
+  ]);
+
+  // Build CSV content
+  const csvContent = [
+    headers.join(","),
+    ...rows.map((row) =>
+      row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+    ),
+  ].join("\n");
+
+  // Create blob and download
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute(
+    "download",
+    `payments-export-${new Date().toISOString().split("T")[0]}.csv`
+  );
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 export default function AdminPaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [schedules, setSchedules] = useState<PaymentSchedule[]>([]);
@@ -356,9 +418,9 @@ export default function AdminPaymentsPage() {
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => exportToCSV(payments)} disabled={payments.length === 0}>
             <Download className="mr-2 h-4 w-4" />
-            Export
+            Export CSV
           </Button>
           <Button onClick={triggerPaymentProcessing}>
             <Clock className="mr-2 h-4 w-4" />
