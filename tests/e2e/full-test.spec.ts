@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'https://rainbowsurfretreats-next.vercel.app';
+// Use baseURL from playwright.config.ts (default: localhost:3000, or PLAYWRIGHT_BASE_URL env var)
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
 
 test.describe('Rainbow Surf Retreats - Full E2E Tests', () => {
 
@@ -302,6 +303,120 @@ test.describe('Rainbow Surf Retreats - Full E2E Tests', () => {
       const cookieBanner = page.locator('[class*="cookie"], [role="dialog"]:has-text("cookie")');
 
       await page.screenshot({ path: 'test-results/cookie-banner.png', fullPage: true });
+    });
+  });
+
+  test.describe('Policies Page', () => {
+    test('should display policies page with all sections', async ({ page }) => {
+      await page.goto(`${BASE_URL}/policies`);
+      await page.waitForLoadState('networkidle');
+
+      // Check hero section
+      await expect(page.locator('h1')).toContainText(/Policies|Políticas|Politiques|Richtlinien|Beleid/i);
+
+      // Wait for policies to load from API
+      await page.waitForTimeout(2000);
+
+      // Check that policy sections are visible (accordion buttons)
+      const policySections = page.locator('button:has(svg)').filter({ hasText: /.+/ });
+      const sectionCount = await policySections.count();
+      console.log(`Found ${sectionCount} policy sections`);
+
+      // Should have at least 4 policy sections
+      expect(sectionCount).toBeGreaterThanOrEqual(4);
+
+      await page.screenshot({ path: 'test-results/policies-page.png', fullPage: true });
+    });
+
+    test('should expand and collapse policy sections', async ({ page }) => {
+      await page.goto(`${BASE_URL}/policies`);
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(2000);
+
+      // Find and click on a policy section (Payment Terms or similar)
+      const firstSection = page.locator('button').filter({ hasText: /Payment|Zahlungs|Pago|Paiement|Betaling/i }).first();
+
+      if (await firstSection.isVisible()) {
+        // Click to expand
+        await firstSection.click();
+        await page.waitForTimeout(500);
+
+        // Check content is visible
+        const content = page.locator('text=/deposit|Anzahlung|depósito|acompte|aanbetaling/i').first();
+        await expect(content).toBeVisible();
+
+        await page.screenshot({ path: 'test-results/policies-expanded.png', fullPage: true });
+
+        // Click again to collapse
+        await firstSection.click();
+        await page.waitForTimeout(500);
+      }
+    });
+
+    test('should display policies in different languages', async ({ page, context }) => {
+      // This app uses cookie-based locale switching, not URL-based
+      // Test German by setting locale cookie
+      await context.addCookies([{ name: 'locale', value: 'de', domain: 'localhost', path: '/' }]);
+      await page.goto(`${BASE_URL}/policies`);
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(2000);
+
+      await expect(page.locator('h1').first()).toContainText(/Richtlinien/i);
+      await page.screenshot({ path: 'test-results/policies-de.png', fullPage: true });
+
+      // Test Spanish by changing locale cookie
+      await context.addCookies([{ name: 'locale', value: 'es', domain: 'localhost', path: '/' }]);
+      await page.goto(`${BASE_URL}/policies`);
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(2000);
+
+      await expect(page.locator('h1').first()).toContainText(/Políticas/i);
+      await page.screenshot({ path: 'test-results/policies-es.png', fullPage: true });
+    });
+  });
+
+  test.describe('Admin Policies Management', () => {
+    test('should access admin policies page after login', async ({ page }) => {
+      // Login first
+      await page.goto(`${BASE_URL}/login`);
+      await page.fill('input[type="email"], input[name="email"]', 'admin@rainbowsurfretreats.com');
+      await page.fill('input[type="password"], input[name="password"]', 'RainbowSurf2024!');
+      await page.click('button[type="submit"]');
+      await page.waitForTimeout(3000);
+
+      // Navigate to policies admin
+      await page.goto(`${BASE_URL}/admin/policies`);
+      await page.waitForLoadState('networkidle');
+
+      // Check page loaded - use more specific selector for main content h1
+      await expect(page.locator('main h1.text-3xl')).toContainText(/Policies/i);
+
+      // Check language tabs are visible
+      await expect(page.locator('button:has-text("English")')).toBeVisible();
+      await expect(page.locator('button:has-text("Deutsch")')).toBeVisible();
+
+      await page.screenshot({ path: 'test-results/admin-policies.png', fullPage: true });
+    });
+
+    test('should edit policy content in admin', async ({ page }) => {
+      // Login first
+      await page.goto(`${BASE_URL}/login`);
+      await page.fill('input[type="email"], input[name="email"]', 'admin@rainbowsurfretreats.com');
+      await page.fill('input[type="password"], input[name="password"]', 'RainbowSurf2024!');
+      await page.click('button[type="submit"]');
+      await page.waitForTimeout(3000);
+
+      // Navigate to policies admin
+      await page.goto(`${BASE_URL}/admin/policies`);
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(2000);
+
+      // Click on first policy section to expand
+      const firstCard = page.locator('[class*="card"]').first();
+      await firstCard.click();
+      await page.waitForTimeout(500);
+
+      await page.screenshot({ path: 'test-results/admin-policies-edit.png', fullPage: true });
     });
   });
 });

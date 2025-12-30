@@ -17,6 +17,8 @@ import {
   SlidersHorizontal,
   Loader2,
 } from 'lucide-react'
+import ImageWithFallback from '@/components/ImageWithFallback'
+import { RETREAT_IMAGES } from '@/lib/images'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
@@ -121,6 +123,19 @@ export default function RetreatsPage() {
     return `€${price.toLocaleString()}`
   }
 
+  const getLowestAvailablePrice = (retreat: Retreat): { price: number | null; isSoldOut: boolean } => {
+    const availableRooms = retreat.rooms?.filter(
+      room => room.available > 0 && !room.is_sold_out
+    ) || [];
+
+    if (availableRooms.length === 0) {
+      return { price: null, isSoldOut: true };
+    }
+
+    const lowestPrice = Math.min(...availableRooms.map(room => room.price));
+    return { price: lowestPrice, isSoldOut: false };
+  };
+
   const filteredRetreats = useMemo(() => {
     let result = [...retreats]
 
@@ -190,16 +205,25 @@ export default function RetreatsPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-teal py-16 md:py-24">
-        <div className="container mx-auto px-4 text-center">
+      <section className="relative h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0">
+          <ImageWithFallback
+            src={RETREAT_IMAGES.morocco}
+            alt="Our Retreats"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
+        </div>
+        <div className="container relative z-10 mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
-              {t('title').split(' ')[0]}{' '}
-              <span className="text-gradient-rainbow">{t('title').split(' ').slice(1).join(' ') || 'Retreats'}</span>
+              {t('title')}
             </h1>
             <p className="text-white/90 text-lg md:text-xl max-w-2xl mx-auto">
               {t('subtitle')}
@@ -351,14 +375,25 @@ export default function RetreatsPage() {
                       <div className="mt-4 pt-4 border-t">
                         <div className="flex items-baseline justify-between">
                           <div>
-                            <span className="text-2xl font-bold">
-                              {formatPrice(retreat.price)}
-                            </span>
-                            <span className="text-muted-foreground text-sm ml-1">
-                              / {tCommon('perPerson')}
-                            </span>
+                            {(() => {
+                              const { price, isSoldOut } = getLowestAvailablePrice(retreat);
+                              if (isSoldOut) {
+                                return (
+                                  <span className="text-xl font-bold text-red-600">{t('soldOut')}</span>
+                                );
+                              }
+                              return (
+                                <>
+                                  <span className="text-sm text-muted-foreground mr-1">{t('from')}</span>
+                                  <span className="text-2xl font-bold">{formatPrice(price!)}</span>
+                                  <span className="text-muted-foreground text-sm ml-1">
+                                    / {t('person')}
+                                  </span>
+                                </>
+                              );
+                            })()}
                           </div>
-                          {retreat.early_bird_price && (
+                          {retreat.early_bird_price && !getLowestAvailablePrice(retreat).isSoldOut && (
                             <div className="flex items-center text-sm">
                               <Tag className="size-4 mr-1 text-green-600" />
                               <span className="text-green-600 font-medium">
@@ -371,15 +406,20 @@ export default function RetreatsPage() {
                     </CardContent>
 
                     <CardFooter className="pt-0">
-                      <Button
-                        asChild
-                        className="w-full bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]"
-                        disabled={retreat.availability_status === 'sold_out'}
-                      >
-                        <Link href={`/retreats/${retreat.slug}`}>
-                          {retreat.availability_status === 'sold_out' ? 'Sold Out' : t('bookNow')}
-                        </Link>
-                      </Button>
+                      {(() => {
+                        const { isSoldOut } = getLowestAvailablePrice(retreat);
+                        return (
+                          <Button
+                            asChild
+                            className="w-full bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]"
+                            disabled={isSoldOut}
+                          >
+                            <Link href={`/retreats/${retreat.slug}`}>
+                              {isSoldOut ? t('soldOut') : t('bookNow')}
+                            </Link>
+                          </Button>
+                        );
+                      })()}
                     </CardFooter>
                   </Card>
                 </motion.div>

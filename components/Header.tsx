@@ -86,19 +86,8 @@ export default function Header() {
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
-          <Link href="/" className="flex-shrink-0">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-32 md:w-40"
-            >
-              <Logo
-                variant={isScrolled ? 'light' : 'dark'}
-                className="w-full h-auto"
-              />
-            </motion.div>
-          </Link>
+          {/* Spacer (logo removed) */}
+          <div className="flex-shrink-0 w-32 md:w-40" />
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-1">
@@ -165,7 +154,7 @@ export default function Header() {
 
             {/* Book Now Button */}
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button asChild variant="outline" className="border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-white">
+              <Button asChild variant="outline" className="border-[var(--primary-teal)] text-[var(--primary-teal)] hover:bg-[var(--primary-teal)] hover:text-white">
                 <Link href="/retreats">Book Now</Link>
               </Button>
             </motion.div>
@@ -187,7 +176,7 @@ export default function Header() {
               <SheetContent side="right" className="w-full sm:w-80">
                 <SheetHeader>
                   <SheetTitle>
-                    <Logo variant="light" className="w-32 h-auto" />
+                    <Logo variant="dark" className="w-32 h-auto" />
                   </SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col mt-8 space-y-1">
@@ -237,7 +226,7 @@ export default function Header() {
 
                 {/* Mobile Book Now Button */}
                 <div className="mt-8 px-4">
-                  <Button asChild className="w-full" size="lg">
+                  <Button asChild className="w-full bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]" size="lg">
                     <Link
                       href="/retreats"
                       onClick={() => setIsMobileMenuOpen(false)}

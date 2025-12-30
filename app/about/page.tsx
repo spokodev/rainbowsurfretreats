@@ -56,7 +56,7 @@ export default function AboutPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40" />
         <div className="relative z-10 text-center text-white px-4">
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-4">
-            About <span className="text-gradient-rainbow">Us</span>
+            About Us
           </h1>
           <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto">
             Creating safe, inclusive spaces for LGBTQ+ surfers worldwide
@@ -134,7 +134,7 @@ export default function AboutPage() {
             </div>
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Our <span className="text-gradient-rainbow">Story</span>
+                Our Story
               </h2>
               <div className="space-y-4 text-gray-700">
                 <p>
@@ -162,7 +162,7 @@ export default function AboutPage() {
       <section className="py-16 md:py-24 bg-[var(--sand-light)]">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            Meet the <span className="text-gradient-rainbow">Team</span>
+            Meet the Team
           </h2>
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Rich */}

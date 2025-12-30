@@ -59,6 +59,9 @@
   "retreats": {
     "title": "Our Retreats",
     "subtitle": "Discover your perfect surf adventure",
+    "from": "From",
+    "soldOut": "Sold Out",
+    "person": "person",
     "nextRetreats": "Upcoming Retreats",
     "nextRetreatsSubtitle": "Join our upcoming surf adventures in amazing destinations around the world",
     "viewRetreat": "View Retreat",
@@ -253,7 +256,8 @@
   },
   "footer": {
     "tagline": "Transformative surf and wellness retreats in the world's most beautiful destinations. Find your wave, find yourself.",
-    "destinations": "Destinations",
+    "upcomingRetreats": "Upcoming Retreats",
+    "noUpcomingRetreats": "No upcoming retreats",
     "company": "Company",
     "legal": "Legal",
     "aboutUs": "About Us",
@@ -302,5 +306,59 @@
     "bookNow": "Book Now",
     "book": "Book",
     "earlyBird": "Early Bird"
+  },
+  "policies": {
+    "title": "Policies",
+    "subtitle": "Everything you need to know about booking, payments, and participating in our retreats.",
+    "paymentTerms": {
+      "title": "Payment Terms",
+      "depositTitle": "Deposit",
+      "depositText": "The deposit reserves your spot on the upcoming Rainbow Surf Retreat. The ticket options on our website are 10% deposit fees for the full ticketed amount.",
+      "scheduleTitle": "Payment Schedule",
+      "schedule1": "10% deposit due at booking to reserve your spot",
+      "schedule2": "2nd instalment (50%) due 3 months before the retreat",
+      "schedule3": "Balance (40%, or 30% with early bird discount) due no later than 1 month before the event",
+      "methodsTitle": "Payment Methods",
+      "methodsText": "Payments can be made by card, bank transfer, or in cash upon arrival. Bank details available upon request."
+    },
+    "cancellation": {
+      "title": "Cancellation Policy",
+      "byCancelTitle": "If We Cancel",
+      "byCancelText": "If Rainbow Surf Retreats cancels (due to situations like weather, issues with local providers, or unforeseen events), you'll get a full refund of your deposit. However, we can't reimburse extra costs like flights.",
+      "byYouTitle": "If You Cancel",
+      "byYou1": "We'll refund your fee if we or you can find someone to take your spot",
+      "byYou2": "If your cancellation is less than 2 weeks before the retreat, unfortunately, we can't refund your deposit anymore",
+      "note": "Important",
+      "noteText": "We strongly recommend purchasing travel insurance that includes cancellation coverage to protect your investment."
+    },
+    "insurance": {
+      "title": "Travel Insurance",
+      "required": "For your safety, travel insurance is required for all participants.",
+      "mustIncludeTitle": "Your Insurance Must Include",
+      "mustInclude1": "Surfing coverage (some policies consider surfing an \"extreme sport\")",
+      "mustInclude2": "Ocean rescue coverage",
+      "mustInclude3": "Trip cancellation coverage",
+      "tip": "Pro Tip",
+      "tipText": "Double-check that your insurance specifically covers water sports and surfing activities. Not all standard travel insurance policies include this."
+    },
+    "whatToBring": {
+      "title": "What to Bring",
+      "intro": "Here's what we recommend packing for your surf retreat adventure:",
+      "essentialsTitle": "Essentials",
+      "essentials1": "Valid passport (check visa requirements for your destination)",
+      "essentials2": "Travel insurance documents",
+      "essentials3": "Swimwear and beach attire",
+      "essentials4": "Sunscreen (reef-safe preferred)",
+      "essentials5": "Comfortable clothing for warm weather",
+      "optionalTitle": "Optional but Recommended",
+      "optional1": "Your own wetsuit (if you have one)",
+      "optional2": "Waterproof phone case",
+      "optional3": "Reusable water bottle",
+      "optional4": "Yoga mat (for wellness activities)"
+    },
+    "legal": {
+      "title": "Legal Terms",
+      "text": "This retreat is organized under Spanish law. By booking, you're agreeing to our terms and conditions and understand that any disputes will be handled in Spanish courts."
+    }
   }
 }

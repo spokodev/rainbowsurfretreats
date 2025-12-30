@@ -59,6 +59,9 @@
   "retreats": {
     "title": "Onze retreats",
     "subtitle": "Ontdek je perfecte surfavontuur",
+    "from": "Vanaf",
+    "soldOut": "Uitverkocht",
+    "person": "persoon",
     "nextRetreats": "Aankomende retreats",
     "nextRetreatsSubtitle": "Sluit je aan bij onze aankomende surfavonturen op geweldige bestemmingen wereldwijd",
     "viewRetreat": "Bekijk retreat",
@@ -253,7 +256,8 @@
   },
   "footer": {
     "tagline": "Transformatieve surf- en wellness-retreats op 's werelds mooiste bestemmingen. Vind je golf, vind jezelf.",
-    "destinations": "Bestemmingen",
+    "upcomingRetreats": "Aankomende Retreats",
+    "noUpcomingRetreats": "Geen aankomende retreats",
     "company": "Bedrijf",
     "legal": "Juridisch",
     "aboutUs": "Over ons",
@@ -302,5 +306,59 @@
     "bookNow": "Nu boeken",
     "book": "Boeken",
     "earlyBird": "Vroegboekkorting"
+  },
+  "policies": {
+    "title": "Beleid",
+    "subtitle": "Alles wat je moet weten over boekingen, betalingen en deelname aan onze retreats.",
+    "paymentTerms": {
+      "title": "Betalingsvoorwaarden",
+      "depositTitle": "Aanbetaling",
+      "depositText": "De aanbetaling reserveert je plek voor de aankomende Rainbow Surf Retreat. De ticketopties op onze website zijn aanbetalingskosten van 10% van het totale ticketbedrag.",
+      "scheduleTitle": "Betalingsschema",
+      "schedule1": "10% aanbetaling bij boeking om je plek te reserveren",
+      "schedule2": "2e termijn (50%) verschuldigd 3 maanden voor de retreat",
+      "schedule3": "Restbedrag (40%, of 30% met vroegboekkorting) verschuldigd uiterlijk 1 maand voor het evenement",
+      "methodsTitle": "Betaalmethoden",
+      "methodsText": "Betalingen kunnen worden gedaan per kaart, bankoverschrijving of contant bij aankomst. Bankgegevens beschikbaar op aanvraag."
+    },
+    "cancellation": {
+      "title": "Annuleringsbeleid",
+      "byCancelTitle": "Als Wij Annuleren",
+      "byCancelText": "Als Rainbow Surf Retreats annuleert (vanwege situaties zoals weer, problemen met lokale aanbieders of onvoorziene gebeurtenissen), krijg je volledige terugbetaling van je aanbetaling. We kunnen echter geen extra kosten zoals vluchten vergoeden.",
+      "byYouTitle": "Als Jij Annuleert",
+      "byYou1": "We betalen je terug als wij of jij iemand vindt om je plek over te nemen",
+      "byYou2": "Als je annulering minder dan 2 weken voor de retreat is, kunnen we helaas je aanbetaling niet meer terugbetalen",
+      "note": "Belangrijk",
+      "noteText": "We raden sterk aan om een reisverzekering af te sluiten die annuleringsdekking bevat om je investering te beschermen."
+    },
+    "insurance": {
+      "title": "Reisverzekering",
+      "required": "Voor je veiligheid is een reisverzekering verplicht voor alle deelnemers.",
+      "mustIncludeTitle": "Je Verzekering Moet Bevatten",
+      "mustInclude1": "Surfdekking (sommige polissen beschouwen surfen als \"extreme sport\")",
+      "mustInclude2": "Zeeredding dekking",
+      "mustInclude3": "Reis annuleringsdekking",
+      "tip": "Pro Tip",
+      "tipText": "Controleer of je verzekering specifiek watersporten en surfactiviteiten dekt. Niet alle standaard reisverzekeringen bevatten dit."
+    },
+    "whatToBring": {
+      "title": "Wat Mee te Nemen",
+      "intro": "Dit is wat we aanbevelen in te pakken voor je surfavontuur:",
+      "essentialsTitle": "Essentials",
+      "essentials1": "Geldig paspoort (controleer visumvereisten voor je bestemming)",
+      "essentials2": "Reisverzekeringsdocumenten",
+      "essentials3": "Zwemkleding en strandkleding",
+      "essentials4": "Zonnebrand (bij voorkeur rifvriendelijk)",
+      "essentials5": "Comfortabele kleding voor warm weer",
+      "optionalTitle": "Optioneel maar Aanbevolen",
+      "optional1": "Je eigen wetsuit (als je er een hebt)",
+      "optional2": "Waterproof telefoonhoesje",
+      "optional3": "Herbruikbare waterfles",
+      "optional4": "Yogamat (voor wellness activiteiten)"
+    },
+    "legal": {
+      "title": "Juridische Voorwaarden",
+      "text": "Deze retreat wordt georganiseerd onder Spaans recht. Door te boeken, ga je akkoord met onze algemene voorwaarden en begrijp je dat eventuele geschillen worden behandeld door Spaanse rechtbanken."
+    }
   }
 }

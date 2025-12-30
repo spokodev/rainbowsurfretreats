@@ -59,6 +59,9 @@
   "retreats": {
     "title": "Nuestros retiros",
     "subtitle": "Descubre tu aventura de surf perfecta",
+    "from": "Desde",
+    "soldOut": "Agotado",
+    "person": "persona",
     "nextRetreats": "Próximos retiros",
     "nextRetreatsSubtitle": "Únete a nuestras próximas aventuras de surf en destinos increíbles de todo el mundo",
     "viewRetreat": "Ver retiro",
@@ -253,7 +256,8 @@
   },
   "footer": {
     "tagline": "Retiros transformadores de surf y bienestar en los destinos más hermosos del mundo. Encuentra tu ola, encuéntrate a ti mismo.",
-    "destinations": "Destinos",
+    "upcomingRetreats": "Próximos Retiros",
+    "noUpcomingRetreats": "No hay retiros próximos",
     "company": "Empresa",
     "legal": "Legal",
     "aboutUs": "Sobre nosotros",
@@ -302,5 +306,59 @@
     "bookNow": "Reservar ahora",
     "book": "Reservar",
     "earlyBird": "Reserva anticipada"
+  },
+  "policies": {
+    "title": "Políticas",
+    "subtitle": "Todo lo que necesitas saber sobre reservas, pagos y participación en nuestros retiros.",
+    "paymentTerms": {
+      "title": "Términos de Pago",
+      "depositTitle": "Depósito",
+      "depositText": "El depósito reserva tu plaza en el próximo Rainbow Surf Retreat. Las opciones de tickets en nuestra web son tarifas de depósito del 10% sobre el importe total del ticket.",
+      "scheduleTitle": "Calendario de Pagos",
+      "schedule1": "10% de depósito al reservar para asegurar tu plaza",
+      "schedule2": "2ª cuota (50%) vence 3 meses antes del retiro",
+      "schedule3": "Saldo restante (40%, o 30% con descuento de reserva anticipada) vence como máximo 1 mes antes del evento",
+      "methodsTitle": "Métodos de Pago",
+      "methodsText": "Los pagos pueden realizarse con tarjeta, transferencia bancaria o en efectivo a la llegada. Datos bancarios disponibles bajo petición."
+    },
+    "cancellation": {
+      "title": "Política de Cancelación",
+      "byCancelTitle": "Si Nosotros Cancelamos",
+      "byCancelText": "Si Rainbow Surf Retreats cancela (debido a situaciones como el clima, problemas con proveedores locales o eventos imprevistos), recibirás un reembolso completo de tu depósito. Sin embargo, no podemos reembolsar costes adicionales como vuelos.",
+      "byYouTitle": "Si Tú Cancelas",
+      "byYou1": "Reembolsaremos tu tarifa si nosotros o tú encontramos a alguien que ocupe tu plaza",
+      "byYou2": "Si tu cancelación es menos de 2 semanas antes del retiro, lamentablemente, ya no podemos reembolsar tu depósito",
+      "note": "Importante",
+      "noteText": "Recomendamos encarecidamente contratar un seguro de viaje que incluya cobertura de cancelación para proteger tu inversión."
+    },
+    "insurance": {
+      "title": "Seguro de Viaje",
+      "required": "Para tu seguridad, el seguro de viaje es obligatorio para todos los participantes.",
+      "mustIncludeTitle": "Tu Seguro Debe Incluir",
+      "mustInclude1": "Cobertura de surf (algunas pólizas consideran el surf un \"deporte extremo\")",
+      "mustInclude2": "Cobertura de rescate marítimo",
+      "mustInclude3": "Cobertura de cancelación de viaje",
+      "tip": "Consejo",
+      "tipText": "Verifica que tu seguro cubra específicamente deportes acuáticos y actividades de surf. No todas las pólizas de seguro de viaje estándar incluyen esto."
+    },
+    "whatToBring": {
+      "title": "Qué Traer",
+      "intro": "Esto es lo que recomendamos empacar para tu aventura de surf:",
+      "essentialsTitle": "Esenciales",
+      "essentials1": "Pasaporte válido (comprueba los requisitos de visa para tu destino)",
+      "essentials2": "Documentos del seguro de viaje",
+      "essentials3": "Traje de baño y ropa de playa",
+      "essentials4": "Protector solar (preferiblemente seguro para arrecifes)",
+      "essentials5": "Ropa cómoda para clima cálido",
+      "optionalTitle": "Opcional pero Recomendado",
+      "optional1": "Tu propio traje de neopreno (si tienes uno)",
+      "optional2": "Funda impermeable para el teléfono",
+      "optional3": "Botella de agua reutilizable",
+      "optional4": "Esterilla de yoga (para actividades de bienestar)"
+    },
+    "legal": {
+      "title": "Términos Legales",
+      "text": "Este retiro está organizado bajo la ley española. Al reservar, aceptas nuestros términos y condiciones y entiendes que cualquier disputa será tratada en los tribunales españoles."
+    }
   }
 }

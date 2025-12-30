@@ -153,7 +153,7 @@ function QuizContent() {
           {currentQ.options.map(option => (
             <div
               key={option.value}
-              className="flex items-center space-x-3 p-4 border rounded-lg hover:border-[#2C7A7B] cursor-pointer transition-colors"
+              className="flex items-center space-x-3 p-4 border rounded-lg hover:border-[var(--primary-teal)] cursor-pointer transition-colors"
             >
               <RadioGroupItem value={option.value} id={option.value} />
               <Label htmlFor={option.value} className="cursor-pointer flex-1">

@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BlogCard } from '@/components/BlogCard'
 import { blogPosts, blogCategories } from '@/lib/blog-data'
+import ImageWithFallback from '@/components/ImageWithFallback'
+import { BLOG_IMAGES } from '@/lib/images'
 
 export default function BlogPage() {
   const t = useTranslations('blog')
@@ -51,8 +53,18 @@ export default function BlogPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-teal py-16 md:py-24">
-        <div className="container mx-auto px-4 text-center">
+      <section className="relative h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0">
+          <ImageWithFallback
+            src={BLOG_IMAGES.surfingFrance}
+            alt="Surf Blog"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
+        </div>
+        <div className="container relative z-10 mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
             {t('title')}
           </h1>

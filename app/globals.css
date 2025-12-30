@@ -15,10 +15,10 @@
   --font-body: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 
-  /* Primary: Ocean Teal */
-  --primary-teal: #2C7A7B;
-  --primary-teal-hover: #234E52;
-  --primary-teal-light: #319795;
+  /* Primary: Burnt Sienna (was Ocean Teal) */
+  --primary-teal: #E97451;
+  --primary-teal-hover: #C4593A;
+  --primary-teal-light: #F08C6D;
 
   /* Secondary: Warm Sand/Beige */
   --sand-light: #F7F1E3;
@@ -303,6 +303,6 @@
   }
 
   .bg-gradient-teal {
-    background: linear-gradient(135deg, #0d9488 0%, #2C7A7B 50%, #234E52 100%);
+    background: linear-gradient(135deg, var(--primary-teal-light) 0%, var(--primary-teal) 50%, var(--primary-teal-hover) 100%);
   }
 }

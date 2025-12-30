@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import ImageWithFallback from '@/components/ImageWithFallback'
+import { HOME_SLIDER } from '@/lib/images'
 
 interface FormData {
   name: string
@@ -129,7 +130,7 @@ export default function Contact() {
       <section className="relative h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <ImageWithFallback
-            src="/images/contact-hero.jpg"
+            src={HOME_SLIDER.surfersSunset}
             alt="Contact Rainbow Surf Retreats"
             fill
             className="object-cover"
@@ -145,7 +146,7 @@ export default function Contact() {
           className="relative z-10 text-center text-white px-4"
         >
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-            Get in <span className="text-gradient-rainbow">Touch</span>
+            Get in Touch
           </h1>
           <p className="text-lg md:text-xl max-w-2xl mx-auto opacity-90">
             Have questions about our retreats? We&apos;d love to hear from you.

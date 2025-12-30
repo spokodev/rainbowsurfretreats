@@ -59,6 +59,9 @@
   "retreats": {
     "title": "Unsere Retreats",
     "subtitle": "Entdecke dein perfektes Surfabenteuer",
+    "from": "Ab",
+    "soldOut": "Ausverkauft",
+    "person": "Person",
     "nextRetreats": "Kommende Retreats",
     "nextRetreatsSubtitle": "Erlebe unsere kommenden Surf-Abenteuer an fantastischen Orten weltweit",
     "viewRetreat": "Retreat ansehen",
@@ -253,7 +256,8 @@
   },
   "footer": {
     "tagline": "Transformative Surf- und Wellness-Retreats an den schönsten Orten der Welt. Finde deine Welle, finde dich selbst.",
-    "destinations": "Reiseziele",
+    "upcomingRetreats": "Kommende Retreats",
+    "noUpcomingRetreats": "Keine kommenden Retreats",
     "company": "Unternehmen",
     "legal": "Rechtliches",
     "aboutUs": "Über uns",
@@ -302,5 +306,59 @@
     "bookNow": "Jetzt buchen",
     "book": "Buchen",
     "earlyBird": "Frühbucher"
+  },
+  "policies": {
+    "title": "Richtlinien",
+    "subtitle": "Alles, was du über Buchung, Zahlungen und die Teilnahme an unseren Retreats wissen musst.",
+    "paymentTerms": {
+      "title": "Zahlungsbedingungen",
+      "depositTitle": "Anzahlung",
+      "depositText": "Die Anzahlung reserviert deinen Platz beim kommenden Rainbow Surf Retreat. Die Ticketoptionen auf unserer Website sind 10% Anzahlungsgebühren für den gesamten Ticketbetrag.",
+      "scheduleTitle": "Zahlungsplan",
+      "schedule1": "10% Anzahlung bei der Buchung, um deinen Platz zu reservieren",
+      "schedule2": "2. Rate (50%) fällig 3 Monate vor dem Retreat",
+      "schedule3": "Restbetrag (40%, oder 30% mit Frühbucher-Rabatt) fällig spätestens 1 Monat vor der Veranstaltung",
+      "methodsTitle": "Zahlungsmethoden",
+      "methodsText": "Zahlungen können per Karte, Banküberweisung oder bar bei Ankunft erfolgen. Bankdaten auf Anfrage erhältlich."
+    },
+    "cancellation": {
+      "title": "Stornierungsbedingungen",
+      "byCancelTitle": "Wenn wir stornieren",
+      "byCancelText": "Wenn Rainbow Surf Retreats storniert (aufgrund von Situationen wie Wetter, Problemen mit lokalen Anbietern oder unvorhergesehenen Ereignissen), erhältst du eine vollständige Rückerstattung deiner Anzahlung. Allerdings können wir keine zusätzlichen Kosten wie Flüge erstatten.",
+      "byYouTitle": "Wenn du stornierst",
+      "byYou1": "Wir erstatten deine Gebühr, wenn wir oder du jemanden findest, der deinen Platz übernimmt",
+      "byYou2": "Wenn deine Stornierung weniger als 2 Wochen vor dem Retreat erfolgt, können wir leider deine Anzahlung nicht mehr erstatten",
+      "note": "Wichtig",
+      "noteText": "Wir empfehlen dringend, eine Reiseversicherung mit Stornierungsschutz abzuschließen, um deine Investition zu schützen."
+    },
+    "insurance": {
+      "title": "Reiseversicherung",
+      "required": "Zu deiner Sicherheit ist eine Reiseversicherung für alle Teilnehmer erforderlich.",
+      "mustIncludeTitle": "Deine Versicherung muss beinhalten",
+      "mustInclude1": "Surfabdeckung (manche Policen betrachten Surfen als \"Extremsport\")",
+      "mustInclude2": "Seenotrettung",
+      "mustInclude3": "Reiserücktrittsversicherung",
+      "tip": "Profi-Tipp",
+      "tipText": "Überprüfe, ob deine Versicherung ausdrücklich Wassersport und Surfaktivitäten abdeckt. Nicht alle Standard-Reiseversicherungen beinhalten dies."
+    },
+    "whatToBring": {
+      "title": "Was mitbringen",
+      "intro": "Hier ist, was wir für dein Surf-Retreat-Abenteuer empfehlen:",
+      "essentialsTitle": "Essentials",
+      "essentials1": "Gültiger Reisepass (Visabestimmungen für dein Ziel prüfen)",
+      "essentials2": "Reiseversicherungsunterlagen",
+      "essentials3": "Badebekleidung und Strandkleidung",
+      "essentials4": "Sonnencreme (rifffreundlich bevorzugt)",
+      "essentials5": "Bequeme Kleidung für warmes Wetter",
+      "optionalTitle": "Optional aber empfohlen",
+      "optional1": "Eigener Neoprenanzug (falls vorhanden)",
+      "optional2": "Wasserdichte Handyhülle",
+      "optional3": "Wiederverwendbare Wasserflasche",
+      "optional4": "Yogamatte (für Wellness-Aktivitäten)"
+    },
+    "legal": {
+      "title": "Rechtliche Bedingungen",
+      "text": "Dieses Retreat wird nach spanischem Recht organisiert. Mit der Buchung stimmst du unseren Allgemeinen Geschäftsbedingungen zu und verstehst, dass etwaige Streitigkeiten vor spanischen Gerichten behandelt werden."
+    }
   }
 }

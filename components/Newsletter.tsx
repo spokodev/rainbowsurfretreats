@@ -79,8 +79,8 @@ export default function Newsletter() {
 
   return (
     <section className="relative overflow-hidden py-16 md:py-24">
-      {/* Teal Background */}
-      <div className="absolute inset-0 bg-[#2C7A7B]" />
+      {/* Primary Background */}
+      <div className="absolute inset-0 bg-[var(--primary-teal)]" />
 
       {/* Wave Pattern Overlay */}
       <div className="absolute inset-0 opacity-10">
@@ -173,7 +173,7 @@ export default function Newsletter() {
                 <Button
                   type="submit"
                   disabled={status === 'loading'}
-                  className="h-12 bg-white px-8 text-blue-600 hover:bg-white/90"
+                  className="h-12 bg-white px-8 text-[var(--primary-teal)] hover:bg-white/90"
                 >
                   {status === 'loading' ? (
                     <>
@@ -199,7 +199,7 @@ export default function Newsletter() {
                       setTermsAccepted(checked === true);
                       setTermsError('');
                     }}
-                    className="mt-0.5 border-white/50 data-[state=checked]:bg-white data-[state=checked]:text-blue-600"
+                    className="mt-0.5 border-white/50 data-[state=checked]:bg-white data-[state=checked]:text-[var(--primary-teal)]"
                     aria-invalid={!!termsError}
                     aria-describedby={termsError ? 'terms-error' : undefined}
                   />

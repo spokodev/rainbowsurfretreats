@@ -175,7 +175,7 @@ export default function NewsletterPopup() {
                       />
                       <label htmlFor="popup-terms" className="text-sm text-gray-600">
                         {t('terms')}{' '}
-                        <Link href="/privacy-policy" className="text-[#2C7A7B] underline" onClick={handleClose}>
+                        <Link href="/privacy-policy" className="text-[var(--primary-teal)] underline" onClick={handleClose}>
                           {t('privacyPolicy')}
                         </Link>
                       </label>

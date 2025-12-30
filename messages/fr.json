@@ -59,6 +59,9 @@
   "retreats": {
     "title": "Nos retraites",
     "subtitle": "Découvrez votre aventure surf parfaite",
+    "from": "À partir de",
+    "soldOut": "Complet",
+    "person": "personne",
     "nextRetreats": "Prochaines retraites",
     "nextRetreatsSubtitle": "Rejoignez nos prochaines aventures surf dans des destinations incroyables du monde entier",
     "viewRetreat": "Voir la retraite",
@@ -253,7 +256,8 @@
   },
   "footer": {
     "tagline": "Retraites transformatrices de surf et bien-être dans les plus belles destinations du monde. Trouvez votre vague, trouvez-vous.",
-    "destinations": "Destinations",
+    "upcomingRetreats": "Prochaines Retraites",
+    "noUpcomingRetreats": "Pas de retraites à venir",
     "company": "Entreprise",
     "legal": "Mentions légales",
     "aboutUs": "À propos",
@@ -302,5 +306,59 @@
     "bookNow": "Réserver maintenant",
     "book": "Réserver",
     "earlyBird": "Réservation anticipée"
+  },
+  "policies": {
+    "title": "Politiques",
+    "subtitle": "Tout ce que vous devez savoir sur les réservations, les paiements et la participation à nos retraites.",
+    "paymentTerms": {
+      "title": "Conditions de Paiement",
+      "depositTitle": "Acompte",
+      "depositText": "L'acompte réserve votre place pour la prochaine Rainbow Surf Retreat. Les options de billets sur notre site sont des frais d'acompte de 10% sur le montant total du billet.",
+      "scheduleTitle": "Échéancier de Paiement",
+      "schedule1": "10% d'acompte à la réservation pour réserver votre place",
+      "schedule2": "2ème versement (50%) dû 3 mois avant la retraite",
+      "schedule3": "Solde (40%, ou 30% avec réduction early bird) dû au plus tard 1 mois avant l'événement",
+      "methodsTitle": "Modes de Paiement",
+      "methodsText": "Les paiements peuvent être effectués par carte, virement bancaire ou en espèces à l'arrivée. Coordonnées bancaires disponibles sur demande."
+    },
+    "cancellation": {
+      "title": "Politique d'Annulation",
+      "byCancelTitle": "Si Nous Annulons",
+      "byCancelText": "Si Rainbow Surf Retreats annule (en raison de situations comme la météo, des problèmes avec les prestataires locaux ou des événements imprévus), vous recevrez un remboursement complet de votre acompte. Cependant, nous ne pouvons pas rembourser les frais supplémentaires comme les vols.",
+      "byYouTitle": "Si Vous Annulez",
+      "byYou1": "Nous rembourserons vos frais si nous ou vous trouvons quelqu'un pour prendre votre place",
+      "byYou2": "Si votre annulation est à moins de 2 semaines de la retraite, malheureusement, nous ne pouvons plus rembourser votre acompte",
+      "note": "Important",
+      "noteText": "Nous recommandons vivement de souscrire une assurance voyage incluant une couverture annulation pour protéger votre investissement."
+    },
+    "insurance": {
+      "title": "Assurance Voyage",
+      "required": "Pour votre sécurité, une assurance voyage est obligatoire pour tous les participants.",
+      "mustIncludeTitle": "Votre Assurance Doit Inclure",
+      "mustInclude1": "Couverture surf (certaines polices considèrent le surf comme un \"sport extrême\")",
+      "mustInclude2": "Couverture sauvetage en mer",
+      "mustInclude3": "Couverture annulation de voyage",
+      "tip": "Conseil Pro",
+      "tipText": "Vérifiez que votre assurance couvre spécifiquement les sports nautiques et les activités de surf. Toutes les polices d'assurance voyage standard n'incluent pas cette couverture."
+    },
+    "whatToBring": {
+      "title": "Que Faut-il Apporter",
+      "intro": "Voici ce que nous recommandons d'emporter pour votre aventure surf :",
+      "essentialsTitle": "Essentiels",
+      "essentials1": "Passeport valide (vérifiez les exigences de visa pour votre destination)",
+      "essentials2": "Documents d'assurance voyage",
+      "essentials3": "Maillot de bain et tenue de plage",
+      "essentials4": "Crème solaire (de préférence respectueuse des récifs)",
+      "essentials5": "Vêtements confortables pour temps chaud",
+      "optionalTitle": "Optionnel mais Recommandé",
+      "optional1": "Votre propre combinaison (si vous en avez une)",
+      "optional2": "Coque imperméable pour téléphone",
+      "optional3": "Gourde réutilisable",
+      "optional4": "Tapis de yoga (pour les activités bien-être)"
+    },
+    "legal": {
+      "title": "Conditions Légales",
+      "text": "Cette retraite est organisée selon le droit espagnol. En réservant, vous acceptez nos conditions générales et comprenez que tout litige sera traité par les tribunaux espagnols."
+    }
   }
 }
