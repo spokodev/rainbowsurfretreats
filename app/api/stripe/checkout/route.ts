@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { stripe, getStripe, calculateVat } from '@/lib/stripe'
 import { calculatePaymentSchedule, isEligibleForEarlyBird } from '@/lib/payment-schedule'
+import { getPaymentSettings } from '@/lib/settings'
 import type { ApiResponse, BookingInsert } from '@/lib/types/database'
 
 interface CheckoutRequest {
@@ -120,6 +121,9 @@ export async function POST(request: NextRequest) {
       eligibleForEarlyBird = true
     }
 
+    // Get payment settings from database
+    const paymentSettings = await getPaymentSettings()
+
     // Calculate payment schedule
     const paymentSchedule = calculatePaymentSchedule({
       totalPrice: effectivePrice,
@@ -127,6 +131,7 @@ export async function POST(request: NextRequest) {
       retreatStartDate,
       isEarlyBird: eligibleForEarlyBird,
       earlyBirdDiscountPercent: 10,
+      depositPercent: paymentSettings.depositPercentage,
     })
 
     // Determine charge amount based on payment type

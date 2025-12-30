@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { RetreatMap } from '@/components/retreat-map'
-import { MapPin, Calendar, Users, Clock, Utensils, Waves, Tag, Check, X, Loader2 } from 'lucide-react'
+import { MapPin, Calendar, Users, Clock, Utensils, Waves, Check, X, Loader2 } from 'lucide-react'
 
 interface RetreatRoom {
   id: string
@@ -112,23 +112,6 @@ export default function RetreatPage() {
     return monthsUntil >= 3
   }
 
-  // Get lowest prices among available rooms
-  const getLowestPrices = () => {
-    if (!retreat) return { regular: 0, earlyBird: null }
-    const availableRooms = sortedRooms.filter(r => !r.is_sold_out && r.available > 0)
-    if (availableRooms.length === 0) return { regular: retreat.price, earlyBird: null }
-
-    const lowestRegular = Math.min(...availableRooms.map(r => r.price))
-
-    // Find lowest Early Bird price among rooms with early_bird_enabled
-    const earlyBirdRooms = availableRooms.filter(r => r.early_bird_enabled && r.early_bird_price)
-    const lowestEarlyBird = earlyBirdRooms.length > 0
-      ? Math.min(...earlyBirdRooms.map(r => r.early_bird_price!))
-      : null
-
-    return { regular: lowestRegular, earlyBird: lowestEarlyBird }
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -149,10 +132,9 @@ export default function RetreatPage() {
     )
   }
 
-  // Sort rooms by sort_order (must be before getLowestPrices which uses it)
+  // Sort rooms by sort_order
   const sortedRooms = [...retreat.rooms].sort((a, b) => a.sort_order - b.sort_order)
   const eligible = isEligibleForEarlyBird()
-  const { regular: lowestRegular, earlyBird: lowestEarlyBird } = getLowestPrices()
 
   return (
     <main className="min-h-screen">
@@ -215,43 +197,6 @@ export default function RetreatPage() {
                 <Waves className="size-4 mr-2" />
                 <span>{retreat.gear}</span>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                {eligible && lowestEarlyBird ? (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg line-through text-muted-foreground">
-                        {formatPrice(lowestRegular)}
-                      </span>
-                      <span className="text-2xl font-bold text-green-600">
-                        {formatPrice(lowestEarlyBird)}
-                      </span>
-                      <span className="text-muted-foreground text-sm">/ {tCommon('perPerson')}</span>
-                    </div>
-                    <div className="flex items-center justify-end text-sm text-green-600">
-                      <Tag className="size-3 mr-1" />
-                      {t('earlyBird')} - Save {formatPrice(lowestRegular - lowestEarlyBird)}!
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold">{formatPrice(lowestRegular)}</span>
-                    <span className="text-muted-foreground text-sm">/ {tCommon('perPerson')}</span>
-                  </div>
-                )}
-              </div>
-              {retreat.availability_status === 'sold_out' ? (
-                <Button size="lg" disabled className="cursor-not-allowed">
-                  Sold Out
-                </Button>
-              ) : (
-                <Button asChild size="lg">
-                  <Link href={`/booking?slug=${retreat.slug}`}>
-                    {t('bookNow')}
-                  </Link>
-                </Button>
-              )}
             </div>
           </div>
         </div>

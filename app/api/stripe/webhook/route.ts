@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { getStripe } from '@/lib/stripe'
+import { getBookingSettings } from '@/lib/settings'
 import {
   sendBookingConfirmation,
   sendPaymentConfirmation,
@@ -200,11 +201,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
     paymentStatus = 'deposit'
   }
 
+  // Get booking settings to check autoConfirm
+  const bookingSettings = await getBookingSettings()
+
+  // Determine booking status based on autoConfirm setting
+  // If autoConfirm is true, booking is confirmed on payment
+  // If autoConfirm is false, booking stays pending until manually confirmed
+  const newBookingStatus = bookingSettings.autoConfirm ? 'confirmed' : 'pending'
+
   // Update booking status
   const { error: bookingError } = await supabase
     .from('bookings')
     .update({
-      status: 'confirmed',
+      status: newBookingStatus,
       payment_status: paymentStatus,
       balance_due: paymentStatus === 'paid' ? 0 : undefined,
     })

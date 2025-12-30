@@ -48,7 +48,6 @@ interface SiteSettings {
     currency: string;
     depositPercentage: number;
     stripeEnabled: boolean;
-    paypalEnabled: boolean;
   };
   booking: {
     autoConfirm: boolean;
@@ -79,7 +78,6 @@ const defaultSettings: SiteSettings = {
     currency: "EUR",
     depositPercentage: 30,
     stripeEnabled: true,
-    paypalEnabled: false,
   },
   booking: {
     autoConfirm: false,
@@ -426,18 +424,6 @@ export default function AdminSettingsPage() {
               <Switch
                 checked={settings.payment.stripeEnabled}
                 onCheckedChange={(checked) => updatePayment("stripeEnabled", checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>PayPal Payments</Label>
-                <p className="text-sm text-muted-foreground">
-                  Accept payments via PayPal
-                </p>
-              </div>
-              <Switch
-                checked={settings.payment.paypalEnabled}
-                onCheckedChange={(checked) => updatePayment("paypalEnabled", checked)}
               />
             </div>
           </CardContent>

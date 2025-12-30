@@ -12,6 +12,7 @@ import {
   CheckCircle,
   ArrowLeft,
 } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -172,7 +173,7 @@ export default function EmailTemplatesPage() {
       await fetchTemplates()
       setEditDialog({ open: false, template: null, isSaving: false })
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to save")
+      toast.error(err instanceof Error ? err.message : "Failed to save template")
       setEditDialog((prev) => ({ ...prev, isSaving: false }))
     }
   }
@@ -201,7 +202,7 @@ export default function EmailTemplatesPage() {
       })
     } catch {
       setPreviewDialog({ open: false, html: "", subject: "", isLoading: false })
-      alert("Failed to generate preview")
+      toast.error("Failed to generate preview")
     }
   }
 

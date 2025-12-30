@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, Calendar, Compass } from 'lucide-react';
+import { ChevronDown, Users, Compass } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { HOME_SLIDER } from '@/lib/images';
 import { Button } from '@/components/ui/button';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import ImageWithFallback from '@/components/ImageWithFallback';
+import { Logo } from '@/components/Logo';
 
 const sliderImages = [
   { src: HOME_SLIDER.silhouetteSunset, alt: 'Surfer silhouette at sunset' },
@@ -22,8 +23,8 @@ export default function Hero() {
 
   const stats = [
     { value: 500, suffix: '+', labelKey: 'stats.surfers' },
-    { value: 5, suffix: '', labelKey: 'stats.countries' },
-    { value: 10, suffix: '+', labelKey: 'stats.retreats' },
+    { value: 7, suffix: '', labelKey: 'stats.destinations' },
+    { value: 5, suffix: '+', labelKey: 'stats.experience' },
   ];
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -91,12 +92,14 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="max-w-4xl"
         >
+          {/* Logo */}
+          <div className="mb-8 mx-auto w-full max-w-md">
+            <Logo variant="light" className="w-full h-auto" />
+          </div>
+
           {/* Main Heading */}
-          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-            {t('title').split(',')[0]},{' '}
-            <span className="bg-gradient-to-r from-red-500 via-yellow-400 via-green-500 to-blue-500 bg-clip-text text-transparent italic">
-              {t('title').split(',')[1]?.trim() || t('title')}
-            </span>
+          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-white">
+            {t('title')}
           </h1>
 
           <motion.p
@@ -118,10 +121,10 @@ export default function Hero() {
             <Button
               asChild
               size="lg"
-              className="bg-teal-600 px-8 py-6 text-lg font-semibold hover:bg-teal-700"
+              className="bg-[var(--primary-teal)] px-8 py-6 text-lg font-semibold hover:bg-[var(--primary-teal-hover)]"
             >
-              <Link href="/retreats" className="flex items-center">
-                <Calendar className="mr-2 h-5 w-5" />
+              <Link href="/about" className="flex items-center">
+                <Users className="mr-2 h-5 w-5" />
                 {t('cta')}
               </Link>
             </Button>
@@ -131,7 +134,7 @@ export default function Hero() {
               size="lg"
               className="border-white/50 bg-white/10 px-8 py-6 text-lg font-semibold text-white backdrop-blur-sm hover:bg-white/20"
             >
-              <Link href="/destinations" className="flex items-center">
+              <Link href="/retreats" className="flex items-center">
                 <Compass className="mr-2 h-5 w-5" />
                 {t('explore')}
               </Link>

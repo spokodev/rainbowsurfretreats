@@ -2,9 +2,8 @@
  * Payment Schedule Logic for Rainbow Surf Retreats
  *
  * Standard Flow (booking > 2 months before retreat):
- * - Payment 1: 10% immediately (deposit)
- * - Payment 2: 50% after 1 month
- * - Payment 3: remaining balance 1 month before retreat
+ * - Payment 1: deposit % immediately (from settings, default 30%)
+ * - Payment 2: remaining balance 1 month before retreat
  *
  * Late Booking Flow (booking < 2 months before retreat):
  * - Payment 1: 50% immediately
@@ -36,6 +35,7 @@ export interface CalculateScheduleOptions {
   retreatStartDate: Date
   isEarlyBird?: boolean
   earlyBirdDiscountPercent?: number // Default 10%
+  depositPercent?: number // From settings, default 30%
 }
 
 /**
@@ -87,6 +87,7 @@ export function calculatePaymentSchedule(
     retreatStartDate,
     isEarlyBird = false,
     earlyBirdDiscountPercent = 10,
+    depositPercent = 30, // From settings
   } = options
 
   const monthsUntilRetreat = monthsBetween(bookingDate, retreatStartDate)
@@ -127,41 +128,33 @@ export function calculatePaymentSchedule(
       percentage: 50,
     })
   } else {
-    // Standard booking: 10% / 50% / 40%
-    const depositAmount = roundCurrency(totalPrice * 0.1)
-    const secondAmount = roundCurrency(totalPrice * 0.5)
+    // Standard booking: deposit% now / balance 1 month before retreat
+    const depositFraction = depositPercent / 100
+    const balancePercent = 100 - depositPercent
+    const depositAmount = roundCurrency(totalPrice * depositFraction)
     // Balance includes early bird discount
-    const balanceAmount = roundCurrency(adjustedTotal - depositAmount - secondAmount)
+    const balanceAmount = roundCurrency(adjustedTotal - depositAmount)
 
     schedules.push({
       paymentNumber: 1,
       amount: depositAmount,
       dueDate: bookingDate,
-      description: 'Deposit (10%)',
+      description: `Deposit (${depositPercent}%)`,
       type: 'deposit',
-      percentage: 10,
-    })
-
-    schedules.push({
-      paymentNumber: 2,
-      amount: secondAmount,
-      dueDate: addMonths(bookingDate, 1),
-      description: 'Second payment (50%)',
-      type: 'second',
-      percentage: 50,
+      percentage: depositPercent,
     })
 
     const balanceDescription = isEarlyBird
-      ? `Balance (40%) - Early Bird discount: €${earlyBirdDiscount}`
-      : 'Balance (40%)'
+      ? `Balance (${balancePercent}%) - Early Bird discount: €${earlyBirdDiscount}`
+      : `Balance (${balancePercent}%)`
 
     schedules.push({
-      paymentNumber: 3,
+      paymentNumber: 2,
       amount: balanceAmount,
       dueDate: subtractDays(retreatStartDate, 30), // 1 month before
       description: balanceDescription,
       type: 'balance',
-      percentage: 40,
+      percentage: balancePercent,
     })
   }
 
@@ -180,7 +173,8 @@ export function calculatePaymentSchedule(
 export function getFirstPaymentAmount(
   totalPrice: number,
   bookingDate: Date,
-  retreatStartDate: Date
+  retreatStartDate: Date,
+  depositPercent: number = 30
 ): number {
   const monthsUntilRetreat = monthsBetween(bookingDate, retreatStartDate)
   const isLateBooking = monthsUntilRetreat < 2
@@ -189,7 +183,7 @@ export function getFirstPaymentAmount(
     return roundCurrency(totalPrice * 0.5)
   }
 
-  return roundCurrency(totalPrice * 0.1)
+  return roundCurrency(totalPrice * (depositPercent / 100))
 }
 
 /**

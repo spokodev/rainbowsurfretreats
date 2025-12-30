@@ -1,11 +1,18 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Instagram, Facebook, Youtube } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Logo } from '@/components/Logo';
 
-const destinationKeys = ['bali', 'morocco', 'portugal', 'sriLanka', 'panama'] as const;
+interface FooterRetreat {
+  id: string;
+  slug: string;
+  destination: string;
+  start_date: string;
+  availability_status: 'available' | 'sold_out' | 'few_spots';
+}
 
 const socialLinks = [
   {
@@ -27,8 +34,34 @@ const socialLinks = [
 
 export default function Footer() {
   const t = useTranslations('footer');
-  const tDestinations = useTranslations('destinations');
   const currentYear = new Date().getFullYear();
+  const [upcomingRetreats, setUpcomingRetreats] = useState<FooterRetreat[]>([]);
+
+  useEffect(() => {
+    async function fetchUpcomingRetreats() {
+      try {
+        const response = await fetch('/api/retreats?published=true');
+        const data = await response.json();
+        if (data.data) {
+          const now = new Date();
+          now.setHours(0, 0, 0, 0);
+
+          // Filter: future retreats, not sold out, limit 5
+          const filtered = data.data
+            .filter((retreat: FooterRetreat) => {
+              const startDate = new Date(retreat.start_date);
+              return startDate >= now && retreat.availability_status !== 'sold_out';
+            })
+            .slice(0, 5);
+
+          setUpcomingRetreats(filtered);
+        }
+      } catch (error) {
+        console.error('Failed to fetch retreats for footer:', error);
+      }
+    }
+    fetchUpcomingRetreats();
+  }, []);
 
   const companyLinks = [
     { href: '/about', labelKey: 'aboutUs' },
@@ -49,7 +82,7 @@ export default function Footer() {
           {/* Logo and Description */}
           <div className="lg:col-span-1">
             <Link href="/" className="inline-block mb-4">
-              <Logo variant="dark" className="w-40 h-auto" />
+              <Logo variant="light" className="w-40 h-auto" />
             </Link>
             <p className="text-sm text-gray-400 mb-6 max-w-xs">
               {t('tagline')}
@@ -71,20 +104,24 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Destinations */}
+          {/* Upcoming Retreats */}
           <div>
-            <h3 className="text-white font-semibold mb-4">{t('destinations')}</h3>
+            <h3 className="text-white font-semibold mb-4">{t('upcomingRetreats')}</h3>
             <ul className="space-y-2">
-              {destinationKeys.map((key) => (
-                <li key={key}>
-                  <Link
-                    href={`/retreats/${key.toLowerCase().replace('lanka', '-lanka')}`}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
-                  >
-                    {tDestinations(key)}
-                  </Link>
-                </li>
-              ))}
+              {upcomingRetreats.length > 0 ? (
+                upcomingRetreats.map((retreat) => (
+                  <li key={retreat.id}>
+                    <Link
+                      href={`/retreats/${retreat.slug}`}
+                      className="text-sm text-gray-400 hover:text-white transition-colors"
+                    >
+                      {retreat.destination}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                <li className="text-sm text-gray-500">{t('noUpcomingRetreats')}</li>
+              )}
             </ul>
           </div>
 
