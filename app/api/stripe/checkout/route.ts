@@ -353,15 +353,25 @@ export async function POST(request: NextRequest) {
     const retreatDates = `${retreat.start_date} - ${retreat.end_date}`
 
     // Convert relative image URL to absolute URL for Stripe
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-    let absoluteImageUrl: string | undefined
-    if (retreat.image_url) {
-      if (retreat.image_url.startsWith('http')) {
-        absoluteImageUrl = retreat.image_url
-      } else {
-        // Convert relative path to absolute URL
-        absoluteImageUrl = `${siteUrl}${retreat.image_url.startsWith('/') ? '' : '/'}${retreat.image_url}`
+    // Skip images entirely for now to avoid validation issues
+    // Stripe image validation can be strict about URL formats
+    let absoluteImageUrl: string | undefined = undefined
+    try {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+      if (retreat.image_url) {
+        if (retreat.image_url.startsWith('http')) {
+          absoluteImageUrl = retreat.image_url
+        } else {
+          // Convert relative path to absolute URL
+          absoluteImageUrl = `${siteUrl}${retreat.image_url.startsWith('/') ? '' : '/'}${retreat.image_url}`
+        }
+        // Validate URL format
+        new URL(absoluteImageUrl)
       }
+    } catch {
+      // If URL construction fails, skip the image
+      console.warn('Invalid image URL, skipping:', retreat.image_url)
+      absoluteImageUrl = undefined
     }
 
     // Determine payment description
@@ -428,9 +438,21 @@ export async function POST(request: NextRequest) {
     let session
     try {
       session = await stripe.checkout.sessions.create(sessionParams)
-    } catch (stripeError) {
+    } catch (stripeError: unknown) {
       // Clean up orphaned booking if Stripe session creation fails
-      console.error('Stripe session creation failed:', stripeError)
+      const errorMessage = stripeError instanceof Error ? stripeError.message : 'Unknown error'
+      const errorDetails = stripeError && typeof stripeError === 'object' && 'code' in stripeError
+        ? (stripeError as { code?: string; param?: string }).code
+        : undefined
+      console.error('Stripe session creation failed:', {
+        error: errorMessage,
+        code: errorDetails,
+        param: stripeError && typeof stripeError === 'object' && 'param' in stripeError
+          ? (stripeError as { param?: string }).param
+          : undefined,
+        imageUrl: absoluteImageUrl,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+      })
       await supabase.from('payment_schedules').delete().eq('booking_id', booking.id)
       await supabase.from('bookings').delete().eq('id', booking.id)
       return NextResponse.json<ApiResponse<null>>(
