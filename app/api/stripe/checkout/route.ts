@@ -502,8 +502,16 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Checkout error:', error)
-    return NextResponse.json<ApiResponse<null>>(
-      { error: 'Internal server error' },
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    // Temporarily return detailed error for debugging
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        debug: {
+          message: errorMessage,
+          stack: error instanceof Error ? error.stack?.split('\n').slice(0, 5) : undefined,
+        }
+      },
       { status: 500 }
     )
   }
