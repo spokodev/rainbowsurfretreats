@@ -954,9 +954,10 @@ function BookingContent() {
 
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm">
                     <p className="text-yellow-900">
-                      <strong>Cancellation Policy:</strong> Cancellations more
-                      than 60 days before: full refund. 30-60 days: 50% refund.
-                      Less than 30 days: no refund.
+                      <strong>Cancellation Policy:</strong> We&apos;ll refund
+                      your deposit if we or you can find a replacement. If
+                      cancellation is less than 2 weeks before the retreat, the
+                      deposit is non-refundable. We recommend travel insurance.
                     </p>
                   </div>
                 </div>
