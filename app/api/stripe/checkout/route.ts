@@ -352,29 +352,8 @@ export async function POST(request: NextRequest) {
     // Format dates for display
     const retreatDates = `${retreat.start_date} - ${retreat.end_date}`
 
-    // Convert relative image URL to absolute URL for Stripe
-    // Stripe requires absolute URLs for product images
-    let absoluteImageUrl: string | undefined = undefined
-    try {
-      // Trim to handle any trailing whitespace/newlines in env var
-      const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').trim()
-      if (retreat.image_url) {
-        let imageUrl: string
-        if (retreat.image_url.startsWith('http')) {
-          imageUrl = retreat.image_url
-        } else {
-          // Convert relative path to absolute URL
-          imageUrl = `${siteUrl}${retreat.image_url.startsWith('/') ? '' : '/'}${retreat.image_url}`
-        }
-        // Validate URL format before using
-        new URL(imageUrl)
-        absoluteImageUrl = imageUrl
-      }
-    } catch {
-      // If URL construction fails, skip the image
-      console.warn('Invalid image URL, skipping:', retreat.image_url)
-      absoluteImageUrl = undefined
-    }
+    // Skip image for now to isolate Stripe connection issue
+    const absoluteImageUrl: string | undefined = undefined
 
     // Determine payment description
     let paymentDescription: string
@@ -459,7 +438,11 @@ export async function POST(request: NextRequest) {
       await supabase.from('bookings').delete().eq('id', booking.id)
       return NextResponse.json({
         error: 'Failed to create payment session. Please try again.',
-        _d: { m: errorMessage, c: errorDetails, i: absoluteImageUrl }
+        _d: {
+          m: errorMessage,
+          c: errorDetails,
+          k: process.env.STRIPE_SECRET_KEY?.substring(0, 12),
+        }
       }, { status: 500 })
     }
 
