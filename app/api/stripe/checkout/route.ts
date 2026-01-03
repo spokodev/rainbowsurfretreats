@@ -456,10 +456,16 @@ export async function POST(request: NextRequest) {
       })
       await supabase.from('payment_schedules').delete().eq('booking_id', booking.id)
       await supabase.from('bookings').delete().eq('id', booking.id)
-      return NextResponse.json<ApiResponse<null>>(
-        { error: 'Failed to create payment session. Please try again.' },
-        { status: 500 }
-      )
+      // Include error details for debugging - can remove after fixing
+      return NextResponse.json({
+        error: 'Failed to create payment session. Please try again.',
+        _debug: {
+          msg: errorMessage,
+          code: errorDetails,
+          img: absoluteImageUrl,
+          url: process.env.NEXT_PUBLIC_SITE_URL,
+        }
+      }, { status: 500 })
     }
 
     // Create payment record
