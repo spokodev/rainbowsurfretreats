@@ -352,8 +352,29 @@ export async function POST(request: NextRequest) {
     // Format dates for display
     const retreatDates = `${retreat.start_date} - ${retreat.end_date}`
 
-    // Skip image for now to isolate Stripe connection issue
-    const absoluteImageUrl: string | undefined = undefined
+    // Convert relative image URL to absolute URL for Stripe
+    // Stripe requires absolute URLs for product images
+    let absoluteImageUrl: string | undefined = undefined
+    try {
+      // Trim to handle any trailing whitespace/newlines in env var
+      const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').trim()
+      if (retreat.image_url) {
+        let imageUrl: string
+        if (retreat.image_url.startsWith('http')) {
+          imageUrl = retreat.image_url
+        } else {
+          // Convert relative path to absolute URL
+          imageUrl = `${siteUrl}${retreat.image_url.startsWith('/') ? '' : '/'}${retreat.image_url}`
+        }
+        // Validate URL format before using
+        new URL(imageUrl)
+        absoluteImageUrl = imageUrl
+      }
+    } catch {
+      // If URL construction fails, skip the image
+      console.warn('Invalid image URL, skipping:', retreat.image_url)
+      absoluteImageUrl = undefined
+    }
 
     // Determine payment description
     let paymentDescription: string
@@ -421,25 +442,13 @@ export async function POST(request: NextRequest) {
       session = await stripe.checkout.sessions.create(sessionParams)
     } catch (stripeError: unknown) {
       // Clean up orphaned booking if Stripe session creation fails
-      const errorMessage = stripeError instanceof Error ? stripeError.message : 'Unknown error'
-      const errorDetails = stripeError && typeof stripeError === 'object' && 'code' in stripeError
-        ? (stripeError as { code?: string }).code
-        : undefined
-      const rawType = stripeError && typeof stripeError === 'object' && 'rawType' in stripeError
-        ? (stripeError as { rawType?: string }).rawType
-        : undefined
       console.error('Stripe session creation failed:', stripeError)
       await supabase.from('payment_schedules').delete().eq('booking_id', booking.id)
       await supabase.from('bookings').delete().eq('id', booking.id)
-      return NextResponse.json({
-        error: 'Failed to create payment session. Please try again.',
-        _d: {
-          m: errorMessage,
-          c: errorDetails,
-          t: rawType,
-          k: process.env.STRIPE_SECRET_KEY?.substring(0, 15),
-        }
-      }, { status: 500 })
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Failed to create payment session. Please try again.' },
+        { status: 500 }
+      )
     }
 
     // Create payment record
