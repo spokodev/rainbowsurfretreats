@@ -458,14 +458,7 @@ export async function POST(request: NextRequest) {
       // Temporarily return detailed error for debugging
       return NextResponse.json(
         {
-          error: 'Failed to create payment session. Please try again.',
-          debug: {
-            message: errorMessage,
-            code: errorDetails,
-            siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
-            hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
-            stripeKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 10),
-          }
+          error: `Failed to create payment session: ${errorMessage} (code: ${errorDetails || 'none'})`,
         },
         { status: 500 }
       )
@@ -506,11 +499,7 @@ export async function POST(request: NextRequest) {
     // Temporarily return detailed error for debugging
     return NextResponse.json(
       {
-        error: 'Internal server error',
-        debug: {
-          message: errorMessage,
-          stack: error instanceof Error ? error.stack?.split('\n').slice(0, 5) : undefined,
-        }
+        error: `Internal server error: ${errorMessage}`,
       },
       { status: 500 }
     )
