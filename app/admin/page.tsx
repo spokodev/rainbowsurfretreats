@@ -50,7 +50,7 @@ interface UpcomingRetreat {
   start_date: string;
   end_date: string;
   price: number;
-  status: string;
+  availability_status: string;
 }
 
 async function getDashboardData(): Promise<{
@@ -106,7 +106,8 @@ async function getDashboardData(): Promise<{
   // Fetch upcoming retreats
   const { data: upcomingRetreats } = await supabase
     .from("retreats")
-    .select("id, destination, start_date, end_date, price, status")
+    .select("id, destination, start_date, end_date, price, availability_status")
+    .eq("is_published", true)
     .gte("start_date", new Date().toISOString().split("T")[0])
     .order("start_date", { ascending: true })
     .limit(4);
@@ -284,7 +285,7 @@ export default async function AdminDashboard() {
                     </div>
                     <div className="text-right">
                       <div className="font-semibold">€{retreat.price}</div>
-                      <Badge variant="outline">{retreat.status}</Badge>
+                      <Badge variant="outline">{retreat.availability_status}</Badge>
                     </div>
                   </div>
                 ))}

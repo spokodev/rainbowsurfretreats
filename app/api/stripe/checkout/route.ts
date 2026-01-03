@@ -352,6 +352,18 @@ export async function POST(request: NextRequest) {
     // Format dates for display
     const retreatDates = `${retreat.start_date} - ${retreat.end_date}`
 
+    // Convert relative image URL to absolute URL for Stripe
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    let absoluteImageUrl: string | undefined
+    if (retreat.image_url) {
+      if (retreat.image_url.startsWith('http')) {
+        absoluteImageUrl = retreat.image_url
+      } else {
+        // Convert relative path to absolute URL
+        absoluteImageUrl = `${siteUrl}${retreat.image_url.startsWith('/') ? '' : '/'}${retreat.image_url}`
+      }
+    }
+
     // Determine payment description
     let paymentDescription: string
     if (body.paymentType === 'full') {
@@ -375,7 +387,7 @@ export async function POST(request: NextRequest) {
             product_data: {
               name: `${retreat.destination} Surf Retreat`,
               description: `${retreatDates} | ${room?.name || 'Standard'} | ${paymentDescription}`,
-              images: retreat.image_url ? [retreat.image_url] : undefined,
+              images: absoluteImageUrl ? [absoluteImageUrl] : undefined,
             },
             unit_amount: Math.round(total * 100), // Stripe uses cents
           },
