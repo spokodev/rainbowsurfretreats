@@ -353,20 +353,21 @@ export async function POST(request: NextRequest) {
     const retreatDates = `${retreat.start_date} - ${retreat.end_date}`
 
     // Convert relative image URL to absolute URL for Stripe
-    // Skip images entirely for now to avoid validation issues
-    // Stripe image validation can be strict about URL formats
+    // Stripe requires absolute URLs for product images
     let absoluteImageUrl: string | undefined = undefined
     try {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
       if (retreat.image_url) {
+        let imageUrl: string
         if (retreat.image_url.startsWith('http')) {
-          absoluteImageUrl = retreat.image_url
+          imageUrl = retreat.image_url
         } else {
           // Convert relative path to absolute URL
-          absoluteImageUrl = `${siteUrl}${retreat.image_url.startsWith('/') ? '' : '/'}${retreat.image_url}`
+          imageUrl = `${siteUrl}${retreat.image_url.startsWith('/') ? '' : '/'}${retreat.image_url}`
         }
-        // Validate URL format
-        new URL(absoluteImageUrl)
+        // Validate URL format before using
+        new URL(imageUrl)
+        absoluteImageUrl = imageUrl
       }
     } catch {
       // If URL construction fails, skip the image
@@ -455,11 +456,8 @@ export async function POST(request: NextRequest) {
       })
       await supabase.from('payment_schedules').delete().eq('booking_id', booking.id)
       await supabase.from('bookings').delete().eq('id', booking.id)
-      // Temporarily return detailed error for debugging
-      return NextResponse.json(
-        {
-          error: `Failed to create payment session: ${errorMessage} (code: ${errorDetails || 'none'})`,
-        },
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Failed to create payment session. Please try again.' },
         { status: 500 }
       )
     }
@@ -495,12 +493,8 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Checkout error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    // Temporarily return detailed error for debugging
-    return NextResponse.json(
-      {
-        error: `Internal server error: ${errorMessage}`,
-      },
+    return NextResponse.json<ApiResponse<null>>(
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
