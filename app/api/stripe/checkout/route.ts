@@ -423,17 +423,12 @@ export async function POST(request: NextRequest) {
       // Clean up orphaned booking if Stripe session creation fails
       const errorMessage = stripeError instanceof Error ? stripeError.message : 'Unknown error'
       const errorDetails = stripeError && typeof stripeError === 'object' && 'code' in stripeError
-        ? (stripeError as { code?: string; param?: string }).code
+        ? (stripeError as { code?: string }).code
         : undefined
-      console.error('Stripe session creation failed:', {
-        error: errorMessage,
-        code: errorDetails,
-        param: stripeError && typeof stripeError === 'object' && 'param' in stripeError
-          ? (stripeError as { param?: string }).param
-          : undefined,
-        imageUrl: absoluteImageUrl,
-        siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
-      })
+      const rawType = stripeError && typeof stripeError === 'object' && 'rawType' in stripeError
+        ? (stripeError as { rawType?: string }).rawType
+        : undefined
+      console.error('Stripe session creation failed:', stripeError)
       await supabase.from('payment_schedules').delete().eq('booking_id', booking.id)
       await supabase.from('bookings').delete().eq('id', booking.id)
       return NextResponse.json({
@@ -441,7 +436,8 @@ export async function POST(request: NextRequest) {
         _d: {
           m: errorMessage,
           c: errorDetails,
-          k: process.env.STRIPE_SECRET_KEY?.substring(0, 12),
+          t: rawType,
+          k: process.env.STRIPE_SECRET_KEY?.substring(0, 15),
         }
       }, { status: 500 })
     }

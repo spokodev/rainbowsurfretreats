@@ -4,10 +4,11 @@ let stripeInstance: Stripe | null = null
 
 export function getStripe(): Stripe {
   if (!stripeInstance) {
-    if (!process.env.STRIPE_SECRET_KEY) {
+    const stripeKey = process.env.STRIPE_SECRET_KEY?.trim()
+    if (!stripeKey) {
       throw new Error('Missing STRIPE_SECRET_KEY environment variable')
     }
-    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    stripeInstance = new Stripe(stripeKey, {
       apiVersion: '2025-12-15.clover',
       typescript: true,
     })
