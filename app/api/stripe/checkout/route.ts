@@ -356,7 +356,8 @@ export async function POST(request: NextRequest) {
     // Stripe requires absolute URLs for product images
     let absoluteImageUrl: string | undefined = undefined
     try {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+      // Trim to handle any trailing whitespace/newlines in env var
+      const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').trim()
       if (retreat.image_url) {
         let imageUrl: string
         if (retreat.image_url.startsWith('http')) {
@@ -422,8 +423,8 @@ export async function POST(request: NextRequest) {
         company_name: customerType === 'business' ? (body.companyName || '') : '',
         vat_id: customerType === 'business' ? (body.vatId || '') : '',
       },
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${booking.id}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/booking?slug=${retreat.slug}${body.roomId ? `&room_id=${body.roomId}` : ''}`,
+      success_url: `${(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').trim()}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${booking.id}`,
+      cancel_url: `${(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').trim()}/booking?slug=${retreat.slug}${body.roomId ? `&room_id=${body.roomId}` : ''}`,
     }
 
     // If scheduled payments, we need to save the payment method for future charges
@@ -456,16 +457,10 @@ export async function POST(request: NextRequest) {
       })
       await supabase.from('payment_schedules').delete().eq('booking_id', booking.id)
       await supabase.from('bookings').delete().eq('id', booking.id)
-      // Include error details for debugging - can remove after fixing
-      return NextResponse.json({
-        error: 'Failed to create payment session. Please try again.',
-        _debug: {
-          msg: errorMessage,
-          code: errorDetails,
-          img: absoluteImageUrl,
-          url: process.env.NEXT_PUBLIC_SITE_URL,
-        }
-      }, { status: 500 })
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Failed to create payment session. Please try again.' },
+        { status: 500 }
+      )
     }
 
     // Create payment record
