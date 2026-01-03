@@ -610,3 +610,457 @@ export async function sendRefundConfirmation(data: {
   const fullHtml = wrapInLayout(htmlContent)
   return sendEmail({ to: data.email, subject, html: fullHtml })
 }
+
+// ==========================================
+// NEW EMAIL FUNCTIONS FOR PAYMENT FLOW
+// ==========================================
+
+export interface FailedPaymentData {
+  bookingNumber: string
+  firstName: string
+  lastName: string
+  email: string
+  retreatDestination: string
+  retreatDates: string
+  amount: number
+  paymentNumber: number
+  totalPayments: number
+  failureReason?: string
+  paymentDeadline: string // Date string
+  daysRemaining: number
+  updatePaymentUrl: string // Stripe Customer Portal URL
+  myBookingUrl: string
+  language?: string
+}
+
+/**
+ * Send failed payment email with 14-day deadline info
+ * Sent immediately when a scheduled payment fails
+ */
+export async function sendPaymentFailedWithDeadline(data: FailedPaymentData) {
+  const template = await getTemplate('payment_failed_initial', data.language || 'en')
+
+  const templateData: Record<string, unknown> = {
+    ...data,
+    amount: data.amount.toFixed(2),
+    paymentDeadline: new Date(data.paymentDeadline).toLocaleDateString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric'
+    }),
+  }
+
+  let subject: string
+  let htmlContent: string
+
+  if (template) {
+    subject = renderTemplate(template.subject, templateData)
+    htmlContent = renderTemplate(template.html_content, templateData)
+  } else {
+    // Fallback hardcoded template
+    subject = `Action Required: Payment Failed - ${data.bookingNumber}`
+    htmlContent = `
+      <h2>Payment Failed</h2>
+      <p>Hi ${data.firstName},</p>
+      <p>We were unable to process your scheduled payment of <strong>€${data.amount.toFixed(2)}</strong>
+      for your ${data.retreatDestination} retreat.</p>
+
+      ${data.failureReason ? `<p><strong>Reason:</strong> ${data.failureReason}</p>` : ''}
+
+      <div class="warning-box">
+        <p><strong>Important:</strong> You have <strong>${data.daysRemaining} days</strong> to update your payment method and complete this payment.</p>
+        <p>Deadline: <strong>${templateData.paymentDeadline}</strong></p>
+        <p>If payment is not received by this date, your booking will be automatically cancelled.</p>
+      </div>
+
+      <div class="highlight-box">
+        <p><strong>Booking:</strong> ${data.bookingNumber}</p>
+        <p><strong>Payment:</strong> ${data.paymentNumber} of ${data.totalPayments}</p>
+        <p><strong>Amount Due:</strong> €${data.amount.toFixed(2)}</p>
+      </div>
+
+      <p style="text-align: center; margin: 30px 0;">
+        <a href="${data.updatePaymentUrl}" class="button">Update Payment Method</a>
+      </p>
+
+      <p>You can also view your booking details and payment schedule at:</p>
+      <p><a href="${data.myBookingUrl}">${data.myBookingUrl}</a></p>
+
+      <p>If you have any questions, please don't hesitate to contact us.</p>
+
+      <p style="margin-top: 30px;">
+        Best regards,<br>
+        <strong>Rainbow Surf Retreats Team</strong>
+      </p>
+    `
+  }
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({ to: data.email, subject, html: fullHtml })
+}
+
+/**
+ * Send deadline reminder for failed payment
+ * Used for Day 11 (3 days left) and Day 13 (1 day left) reminders
+ */
+export async function sendDeadlineReminder(
+  data: FailedPaymentData,
+  reminderType: '3_days' | '1_day'
+) {
+  const templateSlug = reminderType === '3_days' ? 'payment_failed_3days' : 'payment_failed_1day'
+  const template = await getTemplate(templateSlug, data.language || 'en')
+
+  const urgency = reminderType === '1_day' ? 'URGENT: ' : ''
+
+  const templateData: Record<string, unknown> = {
+    ...data,
+    amount: data.amount.toFixed(2),
+    paymentDeadline: new Date(data.paymentDeadline).toLocaleDateString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric'
+    }),
+    isLastDay: reminderType === '1_day',
+  }
+
+  let subject: string
+  let htmlContent: string
+
+  if (template) {
+    subject = renderTemplate(template.subject, templateData)
+    htmlContent = renderTemplate(template.html_content, templateData)
+  } else {
+    const daysText = reminderType === '3_days' ? '3 days' : '1 day'
+    subject = `${urgency}${daysText} remaining to complete payment - ${data.bookingNumber}`
+    htmlContent = `
+      <h2>${urgency}Payment Deadline Approaching</h2>
+      <p>Hi ${data.firstName},</p>
+
+      <div class="warning-box" style="background: ${reminderType === '1_day' ? '#fee2e2' : '#fef3c7'}; border-color: ${reminderType === '1_day' ? '#ef4444' : '#f59e0b'};">
+        <p><strong>You have only ${daysText} left</strong> to complete your payment.</p>
+        <p>Deadline: <strong>${templateData.paymentDeadline}</strong></p>
+        ${reminderType === '1_day' ? '<p style="color: #dc2626;"><strong>This is your final reminder. If payment is not received, your booking will be cancelled tomorrow.</strong></p>' : ''}
+      </div>
+
+      <div class="highlight-box">
+        <p><strong>Booking:</strong> ${data.bookingNumber}</p>
+        <p><strong>Amount Due:</strong> €${data.amount.toFixed(2)}</p>
+        <p><strong>Retreat:</strong> ${data.retreatDestination}</p>
+      </div>
+
+      <p style="text-align: center; margin: 30px 0;">
+        <a href="${data.updatePaymentUrl}" class="button" style="${reminderType === '1_day' ? 'background: #dc2626;' : ''}">
+          Update Payment Method Now
+        </a>
+      </p>
+
+      <p>If you've already updated your payment method, we will automatically retry the charge.</p>
+
+      <p style="margin-top: 30px;">
+        Best regards,<br>
+        <strong>Rainbow Surf Retreats Team</strong>
+      </p>
+    `
+  }
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({ to: data.email, subject, html: fullHtml })
+}
+
+/**
+ * Send booking cancelled due to non-payment email
+ * Sent when the 14-day deadline passes without payment
+ */
+export async function sendBookingCancelledDueToNonPayment(data: {
+  bookingNumber: string
+  firstName: string
+  lastName: string
+  email: string
+  retreatDestination: string
+  retreatDates: string
+  unpaidAmount: number
+  language?: string
+}) {
+  const template = await getTemplate('payment_cancelled', data.language || 'en')
+
+  const templateData: Record<string, unknown> = {
+    ...data,
+    unpaidAmount: data.unpaidAmount.toFixed(2),
+  }
+
+  let subject: string
+  let htmlContent: string
+
+  if (template) {
+    subject = renderTemplate(template.subject, templateData)
+    htmlContent = renderTemplate(template.html_content, templateData)
+  } else {
+    subject = `Booking Cancelled - ${data.bookingNumber}`
+    htmlContent = `
+      <h2>Booking Cancelled</h2>
+      <p>Hi ${data.firstName},</p>
+
+      <p>We regret to inform you that your booking has been cancelled due to non-payment.</p>
+
+      <div class="highlight-box">
+        <p><strong>Booking Number:</strong> ${data.bookingNumber}</p>
+        <p><strong>Retreat:</strong> ${data.retreatDestination}</p>
+        <p><strong>Dates:</strong> ${data.retreatDates}</p>
+        <p><strong>Unpaid Amount:</strong> €${data.unpaidAmount.toFixed(2)}</p>
+      </div>
+
+      <p>Despite multiple reminders, we did not receive the outstanding payment within the 14-day grace period.</p>
+
+      <p>If you believe this was an error or would like to rebook, please contact us as soon as possible.
+      Subject to availability, we may be able to reinstate your booking.</p>
+
+      <p style="margin-top: 30px;">
+        Best regards,<br>
+        <strong>Rainbow Surf Retreats Team</strong>
+      </p>
+    `
+  }
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({ to: data.email, subject, html: fullHtml })
+}
+
+export interface PaymentSuccessData {
+  bookingNumber: string
+  firstName: string
+  lastName: string
+  email: string
+  retreatDestination: string
+  retreatDates: string
+  checkInDate: string
+  checkOutDate: string
+  roomName?: string
+  paidAmount: number
+  paymentNumber: number
+  totalPayments: number
+  nextPaymentAmount?: number
+  nextPaymentDate?: string
+  totalPaid: number
+  balanceDue: number
+  myBookingUrl: string
+  language?: string
+}
+
+/**
+ * Send payment success email with next payment info
+ * Sent after each scheduled payment (except the first deposit which uses booking confirmation)
+ */
+export async function sendPaymentSuccessWithNextInfo(data: PaymentSuccessData) {
+  const hasNextPayment = data.nextPaymentAmount && data.nextPaymentDate
+  const templateSlug = hasNextPayment ? 'payment_success_with_next' : 'payment_success_final'
+  const template = await getTemplate(templateSlug, data.language || 'en')
+
+  const templateData: Record<string, unknown> = {
+    ...data,
+    paidAmount: data.paidAmount.toFixed(2),
+    nextPaymentAmount: data.nextPaymentAmount?.toFixed(2),
+    nextPaymentDate: data.nextPaymentDate
+      ? new Date(data.nextPaymentDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      : undefined,
+    totalPaid: data.totalPaid.toFixed(2),
+    balanceDue: data.balanceDue.toFixed(2),
+    isFullyPaid: data.balanceDue === 0,
+  }
+
+  let subject: string
+  let htmlContent: string
+
+  if (template) {
+    subject = renderTemplate(template.subject, templateData)
+    htmlContent = renderTemplate(template.html_content, templateData)
+  } else {
+    if (hasNextPayment) {
+      subject = `Payment ${data.paymentNumber} received - Next payment on ${templateData.nextPaymentDate}`
+      htmlContent = `
+        <h2>Payment Received - Thank You!</h2>
+        <p>Hi ${data.firstName},</p>
+
+        <div class="success-box">
+          <p><strong>Payment ${data.paymentNumber} of ${data.totalPayments} received successfully!</strong></p>
+          <p class="amount">€${data.paidAmount.toFixed(2)}</p>
+        </div>
+
+        <div class="highlight-box">
+          <p><strong>Booking:</strong> ${data.bookingNumber}</p>
+          <p><strong>Retreat:</strong> ${data.retreatDestination}</p>
+          <p><strong>Dates:</strong> ${data.retreatDates}</p>
+        </div>
+
+        <h3>Payment Progress</h3>
+        <p><strong>Total Paid:</strong> €${data.totalPaid.toFixed(2)}</p>
+        <p><strong>Remaining Balance:</strong> €${data.balanceDue.toFixed(2)}</p>
+
+        <div class="highlight-box" style="margin-top: 20px;">
+          <h4>Next Payment</h4>
+          <p><strong>Payment ${data.paymentNumber + 1} of ${data.totalPayments}:</strong> €${data.nextPaymentAmount?.toFixed(2)}</p>
+          <p><strong>Due Date:</strong> ${templateData.nextPaymentDate}</p>
+          <p style="font-size: 14px; color: #64748b;">This payment will be automatically charged to your saved card.</p>
+        </div>
+
+        <p style="margin-top: 20px;">
+          <a href="${data.myBookingUrl}">View your full payment schedule</a>
+        </p>
+
+        <p style="margin-top: 30px;">
+          Best regards,<br>
+          <strong>Rainbow Surf Retreats Team</strong>
+        </p>
+      `
+    } else {
+      subject = `All payments complete for your ${data.retreatDestination} retreat!`
+      htmlContent = `
+        <h2>All Payments Complete!</h2>
+        <p>Hi ${data.firstName},</p>
+
+        <div class="success-box">
+          <p><strong>Congratulations! Your retreat is fully paid!</strong></p>
+          <p class="amount">Total Paid: €${data.totalPaid.toFixed(2)}</p>
+        </div>
+
+        <div class="highlight-box">
+          <p><strong>Booking:</strong> ${data.bookingNumber}</p>
+          <p><strong>Retreat:</strong> ${data.retreatDestination}</p>
+          <p><strong>Check-in:</strong> ${new Date(data.checkInDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+          <p><strong>Check-out:</strong> ${new Date(data.checkOutDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+          ${data.roomName ? `<p><strong>Room:</strong> ${data.roomName}</p>` : ''}
+        </div>
+
+        <p>We're excited to see you at the retreat! You'll receive a pre-retreat information email closer to your arrival date with everything you need to know.</p>
+
+        <p style="margin-top: 20px;">
+          <a href="${data.myBookingUrl}">View your booking details</a>
+        </p>
+
+        <p style="margin-top: 30px;">
+          See you soon!<br>
+          <strong>Rainbow Surf Retreats Team</strong>
+        </p>
+      `
+    }
+  }
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({ to: data.email, subject, html: fullHtml })
+}
+
+/**
+ * Send admin notification when a payment fails
+ */
+export async function sendAdminPaymentFailedNotification(data: {
+  bookingNumber: string
+  customerName: string
+  customerEmail: string
+  retreatName: string
+  amount: number
+  paymentNumber: number
+  failureReason: string
+  adminDashboardUrl: string
+}) {
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@rainbowsurfretreats.com'
+
+  const subject = `Payment Failed: ${data.bookingNumber}`
+  const htmlContent = `
+    <h2>Payment Failed Alert</h2>
+
+    <div class="warning-box">
+      <p><strong>A scheduled payment has failed.</strong></p>
+    </div>
+
+    <div class="highlight-box">
+      <p><strong>Booking:</strong> ${data.bookingNumber}</p>
+      <p><strong>Customer:</strong> ${data.customerName} (${data.customerEmail})</p>
+      <p><strong>Retreat:</strong> ${data.retreatName}</p>
+      <p><strong>Payment:</strong> #${data.paymentNumber}</p>
+      <p><strong>Amount:</strong> €${data.amount.toFixed(2)}</p>
+      <p><strong>Reason:</strong> ${data.failureReason}</p>
+    </div>
+
+    <p>The customer has been notified and given 14 days to update their payment method.</p>
+
+    <p style="text-align: center; margin: 30px 0;">
+      <a href="${data.adminDashboardUrl}" class="button">View in Admin Dashboard</a>
+    </p>
+  `
+
+  const fullHtml = wrapInLayout(htmlContent)
+
+  // Send to all admin emails if multiple are configured
+  const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || [adminEmail]
+
+  for (const email of adminEmails) {
+    await sendEmail({ to: email, subject, html: fullHtml })
+  }
+}
+
+/**
+ * Send booking restored email to customer
+ */
+export async function sendBookingRestored(data: {
+  bookingNumber: string
+  firstName: string
+  lastName: string
+  email: string
+  retreatDestination: string
+  retreatDates: string
+  newDueDate: string
+  amountDue: number
+  paymentLinkUrl?: string
+  myBookingUrl: string
+  language?: string
+}) {
+  const template = await getTemplate('booking_restored', data.language || 'en')
+
+  const templateData: Record<string, unknown> = {
+    ...data,
+    amountDue: data.amountDue.toFixed(2),
+    newDueDate: new Date(data.newDueDate).toLocaleDateString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric'
+    }),
+  }
+
+  let subject: string
+  let htmlContent: string
+
+  if (template) {
+    subject = renderTemplate(template.subject, templateData)
+    htmlContent = renderTemplate(template.html_content, templateData)
+  } else {
+    subject = `Your booking has been restored - ${data.bookingNumber}`
+    htmlContent = `
+      <h2>Booking Restored</h2>
+      <p>Hi ${data.firstName},</p>
+
+      <p>Great news! Your booking has been restored.</p>
+
+      <div class="highlight-box">
+        <p><strong>Booking:</strong> ${data.bookingNumber}</p>
+        <p><strong>Retreat:</strong> ${data.retreatDestination}</p>
+        <p><strong>Dates:</strong> ${data.retreatDates}</p>
+      </div>
+
+      <div class="warning-box">
+        <p><strong>Amount Due:</strong> €${data.amountDue.toFixed(2)}</p>
+        <p><strong>New Payment Deadline:</strong> ${templateData.newDueDate}</p>
+      </div>
+
+      ${data.paymentLinkUrl ? `
+        <p style="text-align: center; margin: 30px 0;">
+          <a href="${data.paymentLinkUrl}" class="button">Pay Now</a>
+        </p>
+      ` : ''}
+
+      <p>
+        <a href="${data.myBookingUrl}">View your booking details</a>
+      </p>
+
+      <p style="margin-top: 30px;">
+        Best regards,<br>
+        <strong>Rainbow Surf Retreats Team</strong>
+      </p>
+    `
+  }
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({ to: data.email, subject, html: fullHtml })
+}

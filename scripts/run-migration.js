@@ -1,37 +1,53 @@
-const pg = require('pg');
+const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-// Read the .env.local file manually
-const envPath = path.join(__dirname, '../.env.local');
-const envContent = fs.readFileSync(envPath, 'utf8');
-const envVars = {};
-envContent.split('\n').forEach(line => {
-  const match = line.match(/^([^=]+)=(.*)$/);
-  if (match) {
-    envVars[match[1]] = match[2];
+async function runMigration() {
+  const connectionString = process.env.DATABASE_URL;
+
+  if (!connectionString) {
+    console.error('ERROR: DATABASE_URL required');
+    process.exit(1);
   }
-});
 
-const SUPABASE_URL = envVars.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_KEY = envVars.SUPABASE_SERVICE_ROLE_KEY;
+  const pool = new Pool({
+    connectionString,
+    ssl: { rejectUnauthorized: false }
+  });
 
-// Extract project ref from URL
-const projectRef = SUPABASE_URL.match(/https:\/\/([^.]+)\./)[1];
-console.log('Project ref:', projectRef);
+  try {
+    console.log('Connecting to database...');
+    const client = await pool.connect();
 
-// Read migration file
-const migrationPath = path.join(__dirname, '../supabase/migrations/019_promo_codes.sql');
-const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+    console.log('Running B2B VAT migration...\n');
 
-// We need the database password. Check if it's available.
-// For now, just output instructions
-console.log(`
-To run the migration, you need to execute this SQL in Supabase Dashboard:
+    const migrationPath = path.join(__dirname, '../supabase/migrations/023_b2b_vat_fields.sql');
+    const migration = fs.readFileSync(migrationPath, 'utf8');
 
-1. Go to: https://supabase.com/dashboard/project/${projectRef}/sql/new
-2. Paste the content of: supabase/migrations/019_promo_codes.sql
-3. Click "Run"
+    await client.query(migration);
 
-Or set DATABASE_URL in .env.local with your database password.
-`);
+    console.log('Migration completed successfully!');
+
+    const { rows } = await client.query(
+      "SELECT column_name, data_type, column_default " +
+      "FROM information_schema.columns " +
+      "WHERE table_name = 'bookings' " +
+      "AND column_name IN ('customer_type', 'company_name', 'vat_id', 'vat_id_valid', 'vat_id_validated_at') " +
+      "ORDER BY column_name"
+    );
+
+    console.log('\nNew columns added:');
+    rows.forEach(function(row) {
+      console.log('  - ' + row.column_name + ': ' + row.data_type + ' (default: ' + (row.column_default || 'null') + ')');
+    });
+
+    client.release();
+  } catch (error) {
+    console.error('Migration failed:', error.message);
+    process.exit(1);
+  } finally {
+    await pool.end();
+  }
+}
+
+runMigration();

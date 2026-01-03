@@ -1,0 +1,165 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - complementary [ref=e4]:
+        - generic [ref=e5]:
+          - heading "Rainbow Surf Admin" [level=1] [ref=e7]
+          - navigation [ref=e8]:
+            - link "Dashboard" [ref=e9] [cursor=pointer]:
+              - /url: /admin
+              - img [ref=e10]
+              - generic [ref=e15]: Dashboard
+            - link "Retreats" [ref=e16] [cursor=pointer]:
+              - /url: /admin/retreats
+              - img [ref=e17]
+              - generic [ref=e22]: Retreats
+            - link "Bookings" [ref=e23] [cursor=pointer]:
+              - /url: /admin/bookings
+              - img [ref=e24]
+              - generic [ref=e27]: Bookings
+            - link "Payments" [ref=e28] [cursor=pointer]:
+              - /url: /admin/payments
+              - img [ref=e29]
+              - generic [ref=e31]: Payments
+            - link "Promo Codes" [ref=e32] [cursor=pointer]:
+              - /url: /admin/promo-codes
+              - img [ref=e33]
+              - generic [ref=e36]: Promo Codes
+            - link "Blog" [ref=e37] [cursor=pointer]:
+              - /url: /admin/blog
+              - img [ref=e38]
+              - generic [ref=e41]: Blog
+            - link "Policies" [ref=e42] [cursor=pointer]:
+              - /url: /admin/policies
+              - img [ref=e43]
+              - generic [ref=e46]: Policies
+            - link "Trash" [ref=e47] [cursor=pointer]:
+              - /url: /admin/trash
+              - img [ref=e48]
+              - generic [ref=e51]: Trash
+            - link "Settings" [ref=e52] [cursor=pointer]:
+              - /url: /admin/settings
+              - img [ref=e53]
+              - generic [ref=e56]: Settings
+          - button "Logout" [ref=e58]:
+            - img
+            - generic [ref=e59]: Logout
+      - main [ref=e60]:
+        - generic [ref=e62]:
+          - generic [ref=e63]:
+            - link [ref=e64] [cursor=pointer]:
+              - /url: /admin/bookings
+              - img
+            - generic [ref=e65]:
+              - generic [ref=e66]:
+                - heading "Booking TEST-CONFIRMED-001" [level=1] [ref=e67]
+                - generic [ref=e68]: confirmed
+                - generic [ref=e69]: paid
+              - paragraph [ref=e70]: Created Dec 30, 2025, 09:17 PM
+            - generic [ref=e71]:
+              - link "Email Guest" [ref=e72] [cursor=pointer]:
+                - /url: mailto:test.confirmed@example.com
+                - img
+                - text: Email Guest
+              - generic [ref=e73]:
+                - button "Process Refund" [ref=e74]:
+                  - img
+                  - text: Process Refund
+                - button "Cancel Booking" [ref=e75]:
+                  - img
+                  - text: Cancel Booking
+          - generic [ref=e76]:
+            - generic [ref=e77]:
+              - generic [ref=e78]:
+                - heading "Guest Information" [level=4] [ref=e80]:
+                  - img [ref=e81]
+                  - text: Guest Information
+                - generic [ref=e84]:
+                  - generic [ref=e85]:
+                    - generic [ref=e86]:
+                      - paragraph [ref=e87]: Name
+                      - paragraph [ref=e88]: Test Confirmed
+                    - generic [ref=e89]:
+                      - paragraph [ref=e90]: Guests
+                      - paragraph [ref=e91]: "1"
+                    - generic [ref=e92]:
+                      - paragraph [ref=e93]: Email
+                      - paragraph [ref=e94]: test.confirmed@example.com
+                    - generic [ref=e95]:
+                      - paragraph [ref=e96]: Phone
+                      - paragraph [ref=e97]: "+1234567891"
+                  - generic [ref=e98]:
+                    - paragraph [ref=e99]: Billing Address
+                    - generic [ref=e100]:
+                      - img [ref=e101]
+                      - generic [ref=e104]:
+                        - paragraph [ref=e105]: 456 Test Avenue
+                        - paragraph [ref=e106]: 12345 Test Town
+                        - paragraph [ref=e107]: DE
+                  - generic [ref=e108]:
+                    - generic [ref=e109]:
+                      - paragraph [ref=e110]: Language
+                      - paragraph [ref=e111]: de
+                    - generic [ref=e112]:
+                      - paragraph [ref=e113]: Newsletter
+                      - paragraph [ref=e114]: Not subscribed
+                    - generic [ref=e115]:
+                      - paragraph [ref=e116]: Source
+                      - paragraph [ref=e117]: website
+              - generic [ref=e118]:
+                - heading "Retreat Details" [level=4] [ref=e120]:
+                  - img [ref=e121]
+                  - text: Retreat Details
+                - generic [ref=e126]:
+                  - generic [ref=e127]:
+                    - generic [ref=e128]:
+                      - paragraph [ref=e129]: Morocco
+                      - paragraph [ref=e130]: Shared Twin Suite
+                    - link "View Retreat" [ref=e131] [cursor=pointer]:
+                      - /url: /admin/retreats/5f042ed9-7599-4694-a003-249a039d1db2/edit
+                  - generic [ref=e132]:
+                    - generic [ref=e133]:
+                      - img [ref=e134]
+                      - generic [ref=e136]:
+                        - paragraph [ref=e137]: Check-in
+                        - paragraph [ref=e138]: Sat, Mar 21, 2026
+                    - generic [ref=e139]:
+                      - img [ref=e140]
+                      - generic [ref=e142]:
+                        - paragraph [ref=e143]: Check-out
+                        - paragraph [ref=e144]: Sat, Mar 28, 2026
+            - generic [ref=e145]:
+              - generic [ref=e146]:
+                - heading "Pricing Summary" [level=4] [ref=e148]:
+                  - img [ref=e149]
+                  - text: Pricing Summary
+                - generic [ref=e151]:
+                  - generic [ref=e153]:
+                    - generic [ref=e154]: Subtotal
+                    - generic [ref=e155]: €1495.00
+                  - generic [ref=e156]:
+                    - generic [ref=e157]: Total
+                    - generic [ref=e158]: €1495.00
+                  - generic [ref=e159]:
+                    - generic [ref=e160]:
+                      - generic [ref=e161]: Deposit Paid
+                      - generic [ref=e162]: €747.50
+                    - generic [ref=e163]:
+                      - generic [ref=e164]: Balance Due
+                      - generic [ref=e165]: €0.00
+              - generic [ref=e166]:
+                - heading "Quick Actions" [level=4] [ref=e168]
+                - generic [ref=e169]:
+                  - link "Send Email" [ref=e170] [cursor=pointer]:
+                    - /url: mailto:test.confirmed@example.com
+                    - img
+                    - text: Send Email
+                  - link "Call Guest" [ref=e171] [cursor=pointer]:
+                    - /url: tel:+1234567891
+                    - img
+                    - text: Call Guest
+  - alert [ref=e172]
+```

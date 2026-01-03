@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { stripe, getStripe, calculateVat } from '@/lib/stripe'
+import { stripe, getStripe, calculateVat, isEUCountry, COMPANY_COUNTRY } from '@/lib/stripe'
 import { calculatePaymentSchedule, isEligibleForEarlyBird } from '@/lib/payment-schedule'
 import { getPaymentSettings } from '@/lib/settings'
 import { validatePromoCode, determineBestDiscount, recordPromoCodeRedemption } from '@/lib/promo-codes'
@@ -159,13 +159,16 @@ export async function POST(request: NextRequest) {
     const paymentSettings = await getPaymentSettings()
 
     // Calculate payment schedule
+    // Note: Deposit percentages are handled internally by the function:
+    // - Standard (>=2 months): 10% now, 50% at 2 months before, 40% at 1 month before
+    // - Late (<2 months): 50% now, 50% at 1 month before
     const paymentSchedule = calculatePaymentSchedule({
       totalPrice: effectivePrice,
       bookingDate,
       retreatStartDate,
       isEarlyBird: eligibleForEarlyBird,
       earlyBirdDiscountPercent: 10,
-      depositPercent: paymentSettings.depositPercentage,
+      paymentType: body.paymentType === 'full' ? 'full' : 'deposit',
     })
 
     // Determine charge amount based on payment type
@@ -182,8 +185,22 @@ export async function POST(request: NextRequest) {
       depositAmount = chargeAmount
     }
 
-    // Calculate VAT on the charge amount
-    const { vatRate, vatAmount, total } = calculateVat(chargeAmount, body.country)
+    // Determine if B2B reverse charge applies
+    // B2B from different EU country with valid VAT ID = 0% VAT
+    const customerType = body.customerType || 'private'
+    const isB2BReverseCharge =
+      customerType === 'business' &&
+      body.vatIdValid === true &&
+      isEUCountry(body.country) &&
+      body.country !== COMPANY_COUNTRY
+
+    // Calculate VAT on the charge amount (with B2B logic)
+    const { vatRate, vatAmount, total, isReverseCharge } = calculateVat({
+      amount: chargeAmount,
+      country: body.country,
+      customerType,
+      vatIdValid: body.vatIdValid,
+    })
 
     // Calculate balance due
     const balanceDue = body.paymentType === 'full'
@@ -191,7 +208,12 @@ export async function POST(request: NextRequest) {
       : paymentSchedule.totalAmount - depositAmount
 
     // Calculate VAT on full amount (not deposit) for accurate booking records
-    const fullAmountVat = calculateVat(paymentSchedule.totalAmount, body.country)
+    const fullAmountVat = calculateVat({
+      amount: paymentSchedule.totalAmount,
+      country: body.country,
+      customerType,
+      vatIdValid: body.vatIdValid,
+    })
 
     // Create booking record
     const bookingData: BookingInsert = {
@@ -229,6 +251,12 @@ export async function POST(request: NextRequest) {
       discount_code: discountSource === 'promo_code' && validatedPromoCode ? validatedPromoCode.code : null,
       discount_source: discountSource,
       promo_code_id: discountSource === 'promo_code' && validatedPromoCode ? validatedPromoCode.id : null,
+      // B2B fields
+      customer_type: customerType,
+      company_name: customerType === 'business' ? body.companyName || null : null,
+      vat_id: customerType === 'business' ? body.vatId || null : null,
+      vat_id_valid: customerType === 'business' ? body.vatIdValid || false : false,
+      vat_id_validated_at: customerType === 'business' && body.vatIdValid ? new Date().toISOString() : null,
     }
 
     const { data: booking, error: bookingError } = await supabase
@@ -363,6 +391,13 @@ export async function POST(request: NextRequest) {
         is_late_booking: paymentSchedule.isLateBooking.toString(),
         is_early_bird: paymentSchedule.isEarlyBird.toString(),
         language: body.language || 'en',
+        // VAT/Tax metadata for Stripe reporting
+        vat_rate: vatRate.toString(),
+        vat_amount: vatAmount.toFixed(2),
+        customer_type: customerType,
+        is_reverse_charge: isReverseCharge.toString(),
+        company_name: customerType === 'business' ? (body.companyName || '') : '',
+        vat_id: customerType === 'business' ? (body.vatId || '') : '',
       },
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${booking.id}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/booking?slug=${retreat.slug}${body.roomId ? `&room_id=${body.roomId}` : ''}`,

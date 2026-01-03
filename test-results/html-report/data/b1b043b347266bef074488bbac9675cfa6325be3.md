@@ -1,0 +1,205 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - main:
+    - generic:
+      - complementary:
+        - generic:
+          - generic:
+            - heading [level=1]: Rainbow Surf Admin
+          - navigation:
+            - link:
+              - /url: /admin
+              - img
+              - generic: Dashboard
+            - link:
+              - /url: /admin/retreats
+              - img
+              - generic: Retreats
+            - link:
+              - /url: /admin/bookings
+              - img
+              - generic: Bookings
+            - link:
+              - /url: /admin/payments
+              - img
+              - generic: Payments
+            - link:
+              - /url: /admin/promo-codes
+              - img
+              - generic: Promo Codes
+            - link:
+              - /url: /admin/blog
+              - img
+              - generic: Blog
+            - link:
+              - /url: /admin/policies
+              - img
+              - generic: Policies
+            - link:
+              - /url: /admin/trash
+              - img
+              - generic: Trash
+            - link:
+              - /url: /admin/settings
+              - img
+              - generic: Settings
+          - generic:
+            - button:
+              - img
+              - generic: Logout
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - link:
+                - /url: /admin/bookings
+                - img
+              - generic:
+                - generic:
+                  - heading [level=1]: Booking TEST-PENDING-001
+                  - generic: pending
+                  - generic: deposit
+                - paragraph: Created Dec 30, 2025, 09:17 PM
+              - generic:
+                - link:
+                  - /url: mailto:test.pending@example.com
+                  - img
+                  - text: Email Guest
+                - generic:
+                  - button:
+                    - img
+                    - text: Confirm Booking
+                  - button:
+                    - img
+                    - text: Process Refund
+                  - button:
+                    - img
+                    - text: Cancel Booking
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - heading [level=4]:
+                      - img
+                      - text: Guest Information
+                  - generic:
+                    - generic:
+                      - generic:
+                        - paragraph: Name
+                        - paragraph: Test Pending
+                      - generic:
+                        - paragraph: Guests
+                        - paragraph: "1"
+                      - generic:
+                        - paragraph: Email
+                        - paragraph: test.pending@example.com
+                      - generic:
+                        - paragraph: Phone
+                        - paragraph: "+1234567890"
+                    - generic:
+                      - paragraph: Billing Address
+                      - generic:
+                        - img
+                        - generic:
+                          - paragraph: 123 Test Street
+                          - paragraph: 1234AB Test City
+                          - paragraph: NL
+                    - generic:
+                      - generic:
+                        - paragraph: Language
+                        - paragraph: en
+                      - generic:
+                        - paragraph: Newsletter
+                        - paragraph: Not subscribed
+                      - generic:
+                        - paragraph: Source
+                        - paragraph: website
+                - generic:
+                  - generic:
+                    - heading [level=4]:
+                      - img
+                      - text: Retreat Details
+                  - generic:
+                    - generic:
+                      - generic:
+                        - paragraph: Morocco
+                        - paragraph: Shared Twin Suite
+                      - link:
+                        - /url: /admin/retreats/5f042ed9-7599-4694-a003-249a039d1db2/edit
+                        - text: View Retreat
+                    - generic:
+                      - generic:
+                        - img
+                        - generic:
+                          - paragraph: Check-in
+                          - paragraph: Sat, Mar 21, 2026
+                      - generic:
+                        - img
+                        - generic:
+                          - paragraph: Check-out
+                          - paragraph: Sat, Mar 28, 2026
+              - generic:
+                - generic:
+                  - generic:
+                    - heading [level=4]:
+                      - img
+                      - text: Pricing Summary
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: Subtotal
+                        - generic: €1495.00
+                    - generic:
+                      - generic: Total
+                      - generic: €1495.00
+                    - generic:
+                      - generic:
+                        - generic: Deposit Paid
+                        - generic: €747.50
+                      - generic:
+                        - generic: Balance Due
+                        - generic: €747.50
+                - generic:
+                  - generic:
+                    - heading [level=4]: Quick Actions
+                  - generic:
+                    - link:
+                      - /url: mailto:test.pending@example.com
+                      - img
+                      - text: Send Email
+                    - link:
+                      - /url: tel:+1234567890
+                      - img
+                      - text: Call Guest
+  - alert
+  - dialog "Cancel Booking" [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Cancel Booking" [level=2] [ref=e4]:
+        - img [ref=e5]
+        - text: Cancel Booking
+      - paragraph [ref=e7]:
+        - text: Are you sure you want to cancel booking
+        - strong [ref=e8]: TEST-PENDING-001
+        - text: "? This action cannot be undone."
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - paragraph [ref=e11]: Payment received
+        - paragraph [ref=e12]: This booking has payments. Cancelling will NOT automatically refund. You will need to process a refund separately.
+      - generic [ref=e13]:
+        - generic [ref=e14]: Cancellation Reason (optional)
+        - textbox "Cancellation Reason (optional)" [active] [ref=e15]:
+          - /placeholder: e.g., Customer requested cancellation
+      - generic [ref=e16]:
+        - checkbox "Send cancellation email to customer" [checked] [ref=e17]:
+          - generic:
+            - img
+        - generic [ref=e18]: Send cancellation email to customer
+    - generic [ref=e19]:
+      - button "Keep Booking" [ref=e20]
+      - button "Cancel Booking" [ref=e21]
+    - button "Close" [ref=e22]:
+      - img
+      - generic [ref=e23]: Close
+```

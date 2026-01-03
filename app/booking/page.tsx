@@ -26,10 +26,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { countries, vatRates, isEUCountry, COMPANY_COUNTRY } from "@/lib/stripe";
 
 interface RetreatRoom {
   id: string;
@@ -99,7 +102,16 @@ function BookingContent() {
     country: "DE",
     acceptTerms: false,
     newsletter: false,
+    // B2B fields
+    customerType: "private" as "private" | "business",
+    companyName: "",
+    vatId: "",
   });
+
+  // VAT ID validation state
+  const [vatIdValidating, setVatIdValidating] = useState(false);
+  const [vatIdValid, setVatIdValid] = useState<boolean | null>(null);
+  const [vatIdError, setVatIdError] = useState<string | null>(null);
 
   // Promo code state
   const [promoCode, setPromoCode] = useState("");
@@ -157,6 +169,22 @@ function BookingContent() {
   const isRoomSoldOut = selectedRoom?.is_sold_out || selectedRoom?.available === 0;
 
   const handleNext = () => {
+    // Validate step 2 (Billing) before proceeding
+    if (currentStep === 2) {
+      // For business customers, require company name and VAT ID
+      if (formData.customerType === "business") {
+        if (!formData.companyName.trim()) {
+          setError("Company name is required for business customers");
+          return;
+        }
+        if (!formData.vatId.trim()) {
+          setError("VAT ID is required for business customers");
+          return;
+        }
+      }
+      // Clear any previous error
+      setError(null);
+    }
     if (currentStep < 3) setCurrentStep(currentStep + 1);
   };
 
@@ -219,6 +247,74 @@ function BookingContent() {
     setPromoError(null);
   };
 
+  // Validate VAT ID
+  const handleValidateVatId = async () => {
+    if (!formData.vatId.trim()) {
+      setVatIdError("Please enter a VAT ID");
+      return;
+    }
+
+    setVatIdValidating(true);
+    setVatIdError(null);
+    setVatIdValid(null);
+
+    try {
+      const response = await fetch("/api/vat/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vatId: formData.vatId.trim().toUpperCase(),
+          country: formData.country,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.valid) {
+        setVatIdValid(true);
+        setVatIdError(null);
+      } else {
+        setVatIdValid(false);
+        setVatIdError(data.error || "Invalid VAT ID");
+      }
+    } catch {
+      setVatIdError("Failed to validate VAT ID");
+      setVatIdValid(false);
+    } finally {
+      setVatIdValidating(false);
+    }
+  };
+
+  // Reset VAT validation when country or VAT ID changes
+  const handleVatIdChange = (value: string) => {
+    setFormData({ ...formData, vatId: value.toUpperCase() });
+    setVatIdValid(null);
+    setVatIdError(null);
+  };
+
+  const handleCountryChange = (value: string) => {
+    setFormData({ ...formData, country: value });
+    // Reset VAT validation when country changes
+    if (formData.customerType === "business") {
+      setVatIdValid(null);
+      setVatIdError(null);
+    }
+  };
+
+  const handleCustomerTypeChange = (isBusinessChecked: boolean) => {
+    const newType = isBusinessChecked ? "business" : "private";
+    setFormData({
+      ...formData,
+      customerType: newType,
+      companyName: newType === "private" ? "" : formData.companyName,
+      vatId: newType === "private" ? "" : formData.vatId,
+    });
+    if (newType === "private") {
+      setVatIdValid(null);
+      setVatIdError(null);
+    }
+  };
+
   const handleCheckout = async () => {
     if (!formData.acceptTerms) {
       setError("Please accept the terms and conditions");
@@ -250,6 +346,11 @@ function BookingContent() {
           newsletterOptIn: formData.newsletter,
           language: navigator.language?.split("-")[0] || "en",
           promoCode: promoCode || undefined,
+          // B2B fields
+          customerType: formData.customerType,
+          companyName: formData.customerType === "business" ? formData.companyName : undefined,
+          vatId: formData.customerType === "business" ? formData.vatId : undefined,
+          vatIdValid: formData.customerType === "business" ? vatIdValid === true : undefined,
         }),
       });
 
@@ -314,7 +415,16 @@ function BookingContent() {
   const finalPrice = regularPrice - bestDiscountAmount;
   const depositAmount = (finalPrice * 0.5).toFixed(2);
 
-  const vatRate = formData.country === "DE" ? 0.19 : 0;
+  // Calculate VAT rate based on country and customer type
+  // For display purposes: shows expected VAT before B2B validation
+  // B2B reverse charge: EU business with valid VAT from different country = 0%
+  const isB2BReverseCharge =
+    formData.customerType === "business" &&
+    vatIdValid === true &&
+    isEUCountry(formData.country) &&
+    formData.country !== COMPANY_COUNTRY;
+
+  const vatRate = isB2BReverseCharge ? 0 : (vatRates[formData.country] || 0);
   const vatAmount = (parseFloat(depositAmount) * vatRate).toFixed(2);
   const totalWithVat = (
     parseFloat(depositAmount) + parseFloat(vatAmount)
@@ -534,22 +644,28 @@ function BookingContent() {
                     <Label htmlFor="country">Country *</Label>
                     <Select
                       value={formData.country}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, country: value })
-                      }
+                      onValueChange={handleCountryChange}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select country" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="DE">Germany</SelectItem>
-                        <SelectItem value="FR">France</SelectItem>
-                        <SelectItem value="ES">Spain</SelectItem>
-                        <SelectItem value="IT">Italy</SelectItem>
-                        <SelectItem value="NL">Netherlands</SelectItem>
-                        <SelectItem value="UA">Ukraine</SelectItem>
-                        <SelectItem value="UK">United Kingdom</SelectItem>
-                        <SelectItem value="US">United States</SelectItem>
+                        <SelectGroup>
+                          <SelectLabel>EU Countries</SelectLabel>
+                          {countries.filter(c => c.isEU).map((country) => (
+                            <SelectItem key={country.code} value={country.code}>
+                              {country.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel>Other Countries</SelectLabel>
+                          {countries.filter(c => !c.isEU).map((country) => (
+                            <SelectItem key={country.code} value={country.code}>
+                              {country.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
                       </SelectContent>
                     </Select>
                   </div>
@@ -601,6 +717,80 @@ function BookingContent() {
                     </div>
                   </div>
 
+                  {/* B2B Business Customer Toggle */}
+                  {isEUCountry(formData.country) && (
+                    <div className="border rounded-lg p-4 space-y-4">
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          id="business-customer"
+                          checked={formData.customerType === "business"}
+                          onCheckedChange={handleCustomerTypeChange}
+                        />
+                        <label htmlFor="business-customer" className="cursor-pointer">
+                          <div className="font-medium">I&apos;m booking as a business</div>
+                          <div className="text-sm text-gray-600">
+                            If you have an EU VAT number, you may be eligible for VAT exemption
+                          </div>
+                        </label>
+                      </div>
+
+                      {formData.customerType === "business" && (
+                        <div className="space-y-4 pt-2 border-t">
+                          <div>
+                            <Label htmlFor="companyName">Company Name *</Label>
+                            <Input
+                              id="companyName"
+                              value={formData.companyName}
+                              onChange={(e) =>
+                                setFormData({ ...formData, companyName: e.target.value })
+                              }
+                              placeholder="Your company name"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="vatId">VAT ID *</Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id="vatId"
+                                value={formData.vatId}
+                                onChange={(e) => handleVatIdChange(e.target.value)}
+                                placeholder={`${formData.country}123456789`}
+                                className="flex-1"
+                                required
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleValidateVatId}
+                                disabled={vatIdValidating || !formData.vatId.trim()}
+                              >
+                                {vatIdValidating ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : vatIdValid === true ? (
+                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                ) : (
+                                  "Validate"
+                                )}
+                              </Button>
+                            </div>
+                            {vatIdError && (
+                              <p className="text-xs text-red-600 mt-1">{vatIdError}</p>
+                            )}
+                            {vatIdValid === true && (
+                              <p className="text-xs text-green-600 mt-1">
+                                VAT ID validated successfully
+                                {formData.country !== COMPANY_COUNTRY && " - Reverse charge applies (0% VAT)"}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* VAT Info Message */}
                   {vatRate > 0 && (
                     <div className="bg-[var(--sand-light)] rounded-lg p-4 text-sm">
                       <div className="flex items-start gap-2">
@@ -613,6 +803,30 @@ function BookingContent() {
                           </div>
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Reverse Charge Info */}
+                  {isB2BReverseCharge && (
+                    <div className="bg-green-50 rounded-lg p-4 text-sm">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600 mt-0.5" />
+                        <div>
+                          <div className="text-green-800 font-medium mb-1">Reverse Charge Applied</div>
+                          <div className="text-green-700">
+                            As an EU business with a valid VAT ID from a different EU country,
+                            0% VAT applies. You are responsible for reporting the VAT in your country.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* B2B Validation Error */}
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-red-600">{error}</p>
                     </div>
                   )}
                 </div>

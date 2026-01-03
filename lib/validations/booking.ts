@@ -45,6 +45,11 @@ export const checkoutRequestSchema = z.object({
   notes: z.string().max(1000, 'Notes too long').optional(),
   language: z.enum(['en', 'de', 'es', 'fr', 'nl']).optional().default('en'),
   promoCode: z.string().max(50, 'Promo code too long').optional(),
+  // B2B fields
+  customerType: z.enum(['private', 'business']).optional().default('private'),
+  companyName: z.string().max(255, 'Company name too long').optional(),
+  vatId: z.string().max(50, 'VAT ID too long').optional(),
+  vatIdValid: z.boolean().optional(),
 }).refine(
   (data) => data.retreatId || data.retreatSlug,
   { message: 'Either retreatId or retreatSlug is required' }

@@ -1,15 +1,18 @@
 /**
  * Payment Schedule Logic for Rainbow Surf Retreats
  *
- * Standard Flow (booking > 2 months before retreat):
- * - Payment 1: deposit % immediately (from settings, default 30%)
- * - Payment 2: remaining balance 1 month before retreat
+ * Standard Flow (booking >= 2 months before retreat) - 3 payments:
+ * - Payment 1: 10% deposit immediately
+ * - Payment 2: 50% 2 months before retreat
+ * - Payment 3: 40% 1 month before retreat
  *
- * Late Booking Flow (booking < 2 months before retreat):
+ * Late Booking Flow (booking < 2 months before retreat) - 2 payments:
  * - Payment 1: 50% immediately
- * - Payment 2: 50% 2 weeks before retreat
+ * - Payment 2: 50% 1 month before retreat
  *
- * Early Bird: 10% discount on final payment only
+ * Full Payment: 100% immediately (1 payment)
+ *
+ * Early Bird: 10% discount on total amount (applied when booking >3 months before)
  */
 
 export interface PaymentScheduleItem {
@@ -17,7 +20,7 @@ export interface PaymentScheduleItem {
   amount: number
   dueDate: Date
   description: string
-  type: 'deposit' | 'second' | 'balance' | 'late_first' | 'late_second'
+  type: 'deposit' | 'second' | 'balance' | 'late_first' | 'late_second' | 'full'
   percentage: number
 }
 
@@ -35,7 +38,7 @@ export interface CalculateScheduleOptions {
   retreatStartDate: Date
   isEarlyBird?: boolean
   earlyBirdDiscountPercent?: number // Default 10%
-  depositPercent?: number // From settings, default 30%
+  paymentType?: 'deposit' | 'full' // 'deposit' creates scheduled payments, 'full' is single payment
 }
 
 /**
@@ -76,7 +79,20 @@ function roundCurrency(amount: number): number {
 }
 
 /**
+ * Subtract months from a date
+ */
+function subtractMonths(date: Date, months: number): Date {
+  const result = new Date(date)
+  result.setMonth(result.getMonth() - months)
+  return result
+}
+
+/**
  * Calculate payment schedule based on booking date and retreat date
+ *
+ * Standard (>=2 months): 10% now, 50% at 2 months before, 40% at 1 month before
+ * Late (<2 months): 50% now, 50% at 1 month before
+ * Full: 100% now
  */
 export function calculatePaymentSchedule(
   options: CalculateScheduleOptions
@@ -87,26 +103,47 @@ export function calculatePaymentSchedule(
     retreatStartDate,
     isEarlyBird = false,
     earlyBirdDiscountPercent = 10,
-    depositPercent = 30, // From settings
+    paymentType = 'deposit',
   } = options
 
   const monthsUntilRetreat = monthsBetween(bookingDate, retreatStartDate)
   const isLateBooking = monthsUntilRetreat < 2
 
-  // Calculate early bird discount (only on final payment)
+  // Calculate early bird discount (applied to total amount)
   let earlyBirdDiscount = 0
   let adjustedTotal = totalPrice
 
   if (isEarlyBird && !isLateBooking) {
-    // Early bird discount is 10% of total price, applied to final payment
     earlyBirdDiscount = roundCurrency(totalPrice * (earlyBirdDiscountPercent / 100))
     adjustedTotal = roundCurrency(totalPrice - earlyBirdDiscount)
   }
 
   const schedules: PaymentScheduleItem[] = []
 
+  // Full payment - single payment
+  if (paymentType === 'full') {
+    schedules.push({
+      paymentNumber: 1,
+      amount: adjustedTotal,
+      dueDate: bookingDate,
+      description: isEarlyBird
+        ? `Full payment (100%) - Early Bird discount: €${earlyBirdDiscount}`
+        : 'Full payment (100%)',
+      type: 'full',
+      percentage: 100,
+    })
+
+    return {
+      isLateBooking: false,
+      isEarlyBird,
+      totalAmount: adjustedTotal,
+      earlyBirdDiscount,
+      schedules,
+    }
+  }
+
   if (isLateBooking) {
-    // Late booking: 50% / 50%
+    // Late booking: 50% now, 50% 1 month before retreat
     const firstPayment = roundCurrency(adjustedTotal * 0.5)
     const secondPayment = roundCurrency(adjustedTotal - firstPayment)
 
@@ -122,39 +159,44 @@ export function calculatePaymentSchedule(
     schedules.push({
       paymentNumber: 2,
       amount: secondPayment,
-      dueDate: subtractDays(retreatStartDate, 14), // 2 weeks before
+      dueDate: subtractMonths(retreatStartDate, 1), // 1 month before retreat
       description: 'Final payment (50%)',
       type: 'late_second',
       percentage: 50,
     })
   } else {
-    // Standard booking: deposit% now / balance 1 month before retreat
-    const depositFraction = depositPercent / 100
-    const balancePercent = 100 - depositPercent
-    const depositAmount = roundCurrency(totalPrice * depositFraction)
-    // Balance includes early bird discount
-    const balanceAmount = roundCurrency(adjustedTotal - depositAmount)
+    // Standard booking: 10% now, 50% 2 months before, 40% 1 month before
+    const depositAmount = roundCurrency(adjustedTotal * 0.10) // 10%
+    const secondPayment = roundCurrency(adjustedTotal * 0.50) // 50%
+    const balanceAmount = roundCurrency(adjustedTotal - depositAmount - secondPayment) // 40%
 
     schedules.push({
       paymentNumber: 1,
       amount: depositAmount,
       dueDate: bookingDate,
-      description: `Deposit (${depositPercent}%)`,
+      description: isEarlyBird
+        ? `Deposit (10%) - Early Bird discount: €${earlyBirdDiscount} applied`
+        : 'Deposit (10%)',
       type: 'deposit',
-      percentage: depositPercent,
+      percentage: 10,
     })
-
-    const balanceDescription = isEarlyBird
-      ? `Balance (${balancePercent}%) - Early Bird discount: €${earlyBirdDiscount}`
-      : `Balance (${balancePercent}%)`
 
     schedules.push({
       paymentNumber: 2,
+      amount: secondPayment,
+      dueDate: subtractMonths(retreatStartDate, 2), // 2 months before retreat
+      description: 'Second payment (50%)',
+      type: 'second',
+      percentage: 50,
+    })
+
+    schedules.push({
+      paymentNumber: 3,
       amount: balanceAmount,
-      dueDate: subtractDays(retreatStartDate, 30), // 1 month before
-      description: balanceDescription,
+      dueDate: subtractMonths(retreatStartDate, 1), // 1 month before retreat
+      description: 'Final payment (40%)',
       type: 'balance',
-      percentage: balancePercent,
+      percentage: 40,
     })
   }
 
@@ -169,21 +211,28 @@ export function calculatePaymentSchedule(
 
 /**
  * Get the first payment amount (for checkout)
+ * Standard: 10% deposit
+ * Late booking: 50%
+ * Full: 100%
  */
 export function getFirstPaymentAmount(
   totalPrice: number,
   bookingDate: Date,
   retreatStartDate: Date,
-  depositPercent: number = 30
+  paymentType: 'deposit' | 'full' = 'deposit'
 ): number {
+  if (paymentType === 'full') {
+    return totalPrice
+  }
+
   const monthsUntilRetreat = monthsBetween(bookingDate, retreatStartDate)
   const isLateBooking = monthsUntilRetreat < 2
 
   if (isLateBooking) {
-    return roundCurrency(totalPrice * 0.5)
+    return roundCurrency(totalPrice * 0.5) // 50% for late booking
   }
 
-  return roundCurrency(totalPrice * (depositPercent / 100))
+  return roundCurrency(totalPrice * 0.10) // 10% deposit for standard
 }
 
 /**
@@ -232,11 +281,13 @@ export function formatPaymentScheduleForEmail(
  * Determine payment deadline status
  */
 export type PaymentDeadlineStatus =
-  | 'upcoming'      // > 7 days
-  | 'due_soon'      // 3-7 days
-  | 'due_very_soon' // 1-3 days
-  | 'due_today'     // today
-  | 'overdue'       // past due
+  | 'upcoming'         // > 14 days
+  | 'due_2_weeks'      // 14 days
+  | 'due_1_week'       // 7 days
+  | 'due_3_days'       // 3 days
+  | 'due_1_day'        // 1 day
+  | 'due_today'        // today
+  | 'overdue'          // past due
 
 export function getPaymentDeadlineStatus(dueDate: Date): PaymentDeadlineStatus {
   const today = new Date()
@@ -249,45 +300,91 @@ export function getPaymentDeadlineStatus(dueDate: Date): PaymentDeadlineStatus {
 
   if (diffDays < 0) return 'overdue'
   if (diffDays === 0) return 'due_today'
-  if (diffDays <= 3) return 'due_very_soon'
-  if (diffDays <= 7) return 'due_soon'
+  if (diffDays === 1) return 'due_1_day'
+  if (diffDays === 3) return 'due_3_days'
+  if (diffDays === 7) return 'due_1_week'
+  if (diffDays === 14) return 'due_2_weeks'
   return 'upcoming'
 }
 
 /**
+ * Get days until due date
+ */
+export function getDaysUntilDue(dueDate: Date): number {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const due = new Date(dueDate)
+  due.setHours(0, 0, 0, 0)
+
+  return Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+}
+
+/**
+ * Payment reminder schedule:
+ * - 14 days before: Early reminder
+ * - 7 days before: Standard reminder
+ * - 3 days before: Reminder
+ * - 1 day before: Urgent reminder
+ * - Due today: Final reminder
+ * - Overdue: Daily reminders
+ */
+export type ReminderType = '14_days' | '7_days' | '3_days' | '1_day' | 'today' | 'overdue'
+
+/**
  * Check if we should send a reminder for a payment
+ * Returns the reminder type if a reminder should be sent, null otherwise
  */
 export function shouldSendReminder(
   dueDate: Date,
   lastReminderSent: Date | null
-): boolean {
-  const status = getPaymentDeadlineStatus(dueDate)
+): ReminderType | null {
+  const daysUntil = getDaysUntilDue(dueDate)
 
-  // Always remind if overdue or due today (if not reminded today)
-  if (status === 'overdue' || status === 'due_today') {
-    if (!lastReminderSent) return true
+  // Helper to check if we already reminded today
+  const alreadyRemindedToday = (): boolean => {
+    if (!lastReminderSent) return false
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const lastReminder = new Date(lastReminderSent)
     lastReminder.setHours(0, 0, 0, 0)
-    return today.getTime() > lastReminder.getTime()
+    return today.getTime() <= lastReminder.getTime()
   }
 
-  // Remind at 7 days, 3 days, 1 day before
-  if (status === 'due_soon' && !lastReminderSent) return true
-  if (status === 'due_very_soon') {
-    const daysUntil = Math.ceil(
-      (dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-    )
-    // Remind at 3 days and 1 day
-    if (daysUntil === 3 || daysUntil === 1) {
-      if (!lastReminderSent) return true
-      const daysSinceReminder = Math.floor(
-        (new Date().getTime() - lastReminderSent.getTime()) / (1000 * 60 * 60 * 24)
-      )
-      return daysSinceReminder >= 1
+  // Overdue - remind daily if not reminded today
+  if (daysUntil < 0) {
+    return alreadyRemindedToday() ? null : 'overdue'
+  }
+
+  // Due today
+  if (daysUntil === 0) {
+    return alreadyRemindedToday() ? null : 'today'
+  }
+
+  // Reminder days: 14, 7, 3, 1
+  const reminderDays: { days: number; type: ReminderType }[] = [
+    { days: 14, type: '14_days' },
+    { days: 7, type: '7_days' },
+    { days: 3, type: '3_days' },
+    { days: 1, type: '1_day' },
+  ]
+
+  for (const { days, type } of reminderDays) {
+    if (daysUntil === days) {
+      return alreadyRemindedToday() ? null : type
     }
   }
 
-  return false
+  return null
+}
+
+/**
+ * Legacy function for backward compatibility
+ * Returns boolean instead of reminder type
+ */
+export function shouldSendReminderBool(
+  dueDate: Date,
+  lastReminderSent: Date | null
+): boolean {
+  return shouldSendReminder(dueDate, lastReminderSent) !== null
 }

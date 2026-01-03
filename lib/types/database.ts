@@ -9,6 +9,7 @@ export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed'
 export type PaymentStatus = 'unpaid' | 'deposit' | 'paid' | 'refunded' | 'partial_refund'
 export type PaymentType = 'deposit' | 'balance' | 'full' | 'refund'
 export type StripePaymentStatus = 'pending' | 'processing' | 'succeeded' | 'failed' | 'cancelled' | 'refunded'
+export type CustomerType = 'private' | 'business'
 
 export interface AboutSection {
   title?: string
@@ -238,6 +239,12 @@ export interface Booking {
   // Consent
   accept_terms: boolean
   newsletter_opt_in: boolean
+  // B2B fields
+  customer_type: CustomerType
+  company_name: string | null
+  vat_id: string | null
+  vat_id_valid: boolean
+  vat_id_validated_at: string | null
   // Metadata
   notes: string | null
   internal_notes: string | null
@@ -290,6 +297,12 @@ export interface BookingInsert {
   // Promo code support
   discount_source?: DiscountSource | null
   promo_code_id?: string | null
+  // B2B fields
+  customer_type?: CustomerType
+  company_name?: string | null
+  vat_id?: string | null
+  vat_id_valid?: boolean
+  vat_id_validated_at?: string | null
 }
 
 // =====================

@@ -57,6 +57,12 @@ interface BookingDetails {
   payment_status: string;
   accept_terms: boolean;
   newsletter_opt_in: boolean;
+  // B2B fields
+  customer_type: "private" | "business";
+  company_name: string | null;
+  vat_id: string | null;
+  vat_id_valid: boolean;
+  vat_id_validated_at: string | null;
   notes: string | null;
   internal_notes: string | null;
   source: string;
@@ -340,7 +346,47 @@ export default async function BookingDetailsPage({ params }: RouteParams) {
 
               <Separator />
 
+              {/* B2B Business Information */}
+              {booking.customer_type === "business" && (
+                <>
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <p className="text-sm font-medium text-blue-800 mb-2">Business Customer</p>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div>
+                        <p className="text-sm text-blue-600">Company Name</p>
+                        <p className="font-medium text-blue-900">{booking.company_name || "Not provided"}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-blue-600">VAT ID</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-blue-900 font-mono">{booking.vat_id || "Not provided"}</p>
+                          {booking.vat_id && (
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              booking.vat_id_valid
+                                ? "bg-green-100 text-green-700"
+                                : "bg-yellow-100 text-yellow-700"
+                            }`}>
+                              {booking.vat_id_valid ? "Validated" : "Unvalidated"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {booking.vat_id_valid && booking.vat_rate === 0 && (
+                      <div className="mt-2 text-sm text-green-700 font-medium">
+                        Reverse Charge Applied (0% VAT)
+                      </div>
+                    )}
+                  </div>
+                  <Separator />
+                </>
+              )}
+
               <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <p className="text-sm text-muted-foreground">Customer Type</p>
+                  <p className="font-medium capitalize">{booking.customer_type || "private"}</p>
+                </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Language</p>
                   <p className="font-medium uppercase">{booking.language}</p>
