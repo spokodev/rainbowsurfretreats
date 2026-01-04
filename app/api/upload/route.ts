@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Upload error:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
+        { error: 'Failed to upload file' },
         { status: 500 }
       )
     }
@@ -125,8 +125,9 @@ export async function DELETE(request: NextRequest) {
       .remove([path])
 
     if (error) {
+      console.error('Delete file error:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
+        { error: 'Failed to delete file' },
         { status: 500 }
       )
     }

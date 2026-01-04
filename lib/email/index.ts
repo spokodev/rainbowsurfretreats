@@ -25,6 +25,17 @@ export const FROM_EMAIL = process.env.FROM_EMAIL || 'Rainbow Surf Retreats <nore
 export const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || 'info@rainbowsurfretreats.com'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreats.com'
 
+// XSS Prevention: Escape HTML entities in user-provided data
+export function escapeHtml(unsafe: string | null | undefined): string {
+  if (unsafe === null || unsafe === undefined) return ''
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 export interface SendEmailOptions {
   to: string | string[]
   subject: string
@@ -59,7 +70,14 @@ export async function sendEmail(options: SendEmailOptions) {
   }
 }
 
-// Template rendering
+// Template rendering with XSS protection
+// Variables that should NOT be escaped (contain safe HTML or URLs):
+const SAFE_VARIABLES = new Set([
+  'content', 'htmlContent', 'unsubscribeLink', 'viewInBrowser',
+  'myBookingUrl', 'updatePaymentUrl', 'paymentLinkUrl', 'adminDashboardUrl',
+  'payNowUrl', 'paymentScheduleHtml', 'siteUrl'
+])
+
 function renderTemplate(template: string, data: Record<string, unknown>): string {
   let result = template
 
@@ -68,11 +86,18 @@ function renderTemplate(template: string, data: Record<string, unknown>): string
     return data[variable] ? content : ''
   })
 
-  // Handle {{variable}} replacements
+  // Handle {{variable}} replacements with XSS protection
   result = result.replace(/\{\{(\w+)\}\}/g, (_, variable) => {
     const value = data[variable]
     if (value === undefined || value === null) return ''
-    return String(value)
+
+    // Don't escape safe variables (URLs, pre-sanitized HTML)
+    if (SAFE_VARIABLES.has(variable)) {
+      return String(value)
+    }
+
+    // Escape user-provided content to prevent XSS
+    return escapeHtml(String(value))
   })
 
   return result
@@ -227,6 +252,9 @@ export interface ReminderData {
   dueDate: string
   paymentNumber: number
   language?: string
+  // Optional: Early payment URL for "Pay Now" button in reminder emails
+  payNowUrl?: string
+  paymentScheduleId?: string
 }
 
 // Send booking confirmation email
@@ -359,6 +387,9 @@ export async function sendPaymentReminder(
   const t = urgencyTranslations[lang] || urgencyTranslations.en
   const { title, message } = t[urgency]
 
+  // Use payNowUrl if provided (allows early payment), otherwise fallback to legacy URL
+  const paymentUrl = data.payNowUrl || `${SITE_URL}/booking/pay?booking_id=${data.bookingNumber}`
+
   const templateData: Record<string, unknown> = {
     ...data,
     amount: data.amount.toFixed(2),
@@ -366,7 +397,8 @@ export async function sendPaymentReminder(
     title,
     message,
     isOverdue: urgency === 'overdue',
-    paymentUrl: `${SITE_URL}/booking/pay?booking_id=${data.bookingNumber}`,
+    paymentUrl,
+    payNowUrl: data.payNowUrl, // For templates that use this variable
   }
 
   let subject: string

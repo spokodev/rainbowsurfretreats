@@ -22,8 +22,13 @@ export default function NewsletterPopup() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    // Check if popup was dismissed recently
+    // Check if user already subscribed (never show again)
     const dismissed = localStorage.getItem(POPUP_STORAGE_KEY)
+    if (dismissed === 'subscribed') {
+      return // Never show to subscribers
+    }
+
+    // Check if popup was dismissed recently (show again after 30 days)
     if (dismissed) {
       const dismissedDate = new Date(dismissed)
       const now = new Date()
@@ -80,7 +85,8 @@ export default function NewsletterPopup() {
       }
 
       setStatus('success')
-      localStorage.setItem(POPUP_STORAGE_KEY, new Date().toISOString())
+      // Mark as subscribed - popup will never show again
+      localStorage.setItem(POPUP_STORAGE_KEY, 'subscribed')
 
       // Auto close after success
       setTimeout(() => {

@@ -128,6 +128,11 @@ export async function GET(request: NextRequest) {
                                bookingLanguage === 'nl' ? 'nl-NL' : 'en-US'
             const retreatDates = `${new Date(booking.retreat.start_date).toLocaleDateString(dateLocale, { month: 'long', day: 'numeric' })} - ${new Date(booking.retreat.end_date).toLocaleDateString(dateLocale, { month: 'long', day: 'numeric', year: 'numeric' })}`
 
+            // Generate early payment URL if booking has access_token
+            const payNowUrl = booking.access_token
+              ? `${SITE_URL}/api/payments/${payment.id}/checkout?token=${booking.access_token}`
+              : undefined
+
             await sendPaymentReminder(
               {
                 bookingNumber: booking.booking_number,
@@ -142,6 +147,8 @@ export async function GET(request: NextRequest) {
                 dueDate: payment.due_date,
                 paymentNumber: payment.payment_number,
                 language: bookingLanguage,
+                payNowUrl,
+                paymentScheduleId: payment.id,
               },
               urgency
             )
@@ -182,7 +189,6 @@ export async function GET(request: NextRequest) {
           stripe_customer_id,
           total_amount,
           retreat:retreats!inner(
-            title,
             destination,
             start_date,
             end_date
@@ -211,7 +217,6 @@ export async function GET(request: NextRequest) {
           stripe_customer_id: string | null
           total_amount: number
           retreat: {
-            title: string
             destination: string
             start_date: string
             end_date: string

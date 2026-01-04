@@ -31,8 +31,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           { status: 404 }
         )
       }
+      console.error('Error fetching blog post:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
+        { error: 'Failed to fetch blog post' },
         { status: 500 }
       )
     }
@@ -122,8 +123,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           { status: 404 }
         )
       }
+      console.error('Error updating blog post:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
+        { error: 'Failed to update blog post' },
         { status: 500 }
       )
     }
@@ -174,8 +176,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       .is('deleted_at', null) // Only delete if not already deleted
 
     if (error) {
+      console.error('Error deleting blog post:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
+        { error: 'Failed to delete blog post' },
         { status: 500 }
       )
     }

@@ -14,8 +14,9 @@ export async function GET() {
       .order('name', { ascending: true })
 
     if (error) {
+      console.error('Error fetching categories:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
+        { error: 'Failed to fetch categories' },
         { status: 500 }
       )
     }
@@ -73,8 +74,9 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
+      console.error('Error creating category:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
+        { error: 'Failed to create category' },
         { status: 500 }
       )
     }

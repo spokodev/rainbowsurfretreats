@@ -30,6 +30,32 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const body: Partial<Omit<RetreatRoomInsert, 'retreat_id'>> = await request.json()
 
+    // Validate price values if provided
+    if (body.price !== undefined) {
+      if (typeof body.price !== 'number' || body.price <= 0) {
+        return NextResponse.json<ApiResponse<null>>(
+          { error: 'Price must be a positive number' },
+          { status: 400 }
+        )
+      }
+    }
+    if (body.deposit_price !== undefined) {
+      if (typeof body.deposit_price !== 'number' || body.deposit_price < 0) {
+        return NextResponse.json<ApiResponse<null>>(
+          { error: 'Deposit price must be a non-negative number' },
+          { status: 400 }
+        )
+      }
+    }
+    if (body.early_bird_price !== undefined && body.early_bird_price !== null) {
+      if (typeof body.early_bird_price !== 'number' || body.early_bird_price <= 0) {
+        return NextResponse.json<ApiResponse<null>>(
+          { error: 'Early bird price must be a positive number' },
+          { status: 400 }
+        )
+      }
+    }
+
     const { data, error } = await supabase
       .from('retreat_rooms')
       .update(body)
@@ -45,8 +71,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           { status: 404 }
         )
       }
+      console.error('Error updating room:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
+        { error: 'Failed to update room' },
         { status: 500 }
       )
     }
@@ -92,8 +119,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       .eq('retreat_id', id)
 
     if (error) {
+      console.error('Error deleting room:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
+        { error: 'Failed to delete room' },
         { status: 500 }
       )
     }

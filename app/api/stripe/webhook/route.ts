@@ -87,6 +87,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
   const paymentType = session.metadata?.payment_type as 'deposit' | 'full' | 'scheduled'
   const paymentNumber = session.metadata?.payment_number
   const language = session.metadata?.language || 'en'
+  const earlyPaymentType = session.metadata?.type // 'early_payment' for customer-initiated payments
+  const paymentScheduleId = session.metadata?.payment_schedule_id
+
+  // Handle early_payment from reminder emails (customer-initiated)
+  if (earlyPaymentType === 'early_payment' && paymentScheduleId) {
+    await handleEarlyPayment(session, eventId, paymentScheduleId)
+    return
+  }
 
   if (!bookingId) {
     console.error('No booking_id in session metadata')
@@ -552,4 +560,194 @@ async function handleRefund(charge: Stripe.Charge) {
   }
 
   console.log(`Refund processed for booking ${originalPayment.booking_id}`)
+}
+
+/**
+ * Handle early payment from reminder emails (customer-initiated payment before due date)
+ * This is triggered when a customer clicks "Pay Now" in a payment reminder email
+ */
+async function handleEarlyPayment(
+  session: Stripe.Checkout.Session,
+  eventId: string,
+  paymentScheduleId: string
+) {
+  const supabase = getSupabase()
+  const stripe = getStripe()
+  const bookingId = session.metadata?.booking_id
+
+  console.log(`[EarlyPayment] Processing early payment for schedule ${paymentScheduleId}`)
+
+  // Find the payment schedule
+  const { data: schedule, error: scheduleError } = await supabase
+    .from('payment_schedules')
+    .select('*')
+    .eq('id', paymentScheduleId)
+    .single()
+
+  if (scheduleError || !schedule) {
+    console.error('[EarlyPayment] Payment schedule not found:', scheduleError)
+    return
+  }
+
+  // Check if already paid (idempotency)
+  if (schedule.status === 'paid') {
+    console.log(`[EarlyPayment] Schedule ${paymentScheduleId} already paid, skipping`)
+    return
+  }
+
+  // Update payment schedule to paid
+  const { error: updateError } = await supabase
+    .from('payment_schedules')
+    .update({
+      status: 'paid',
+      paid_at: new Date().toISOString(),
+      stripe_payment_intent_id: session.payment_intent as string,
+      // Clear any failed payment fields
+      failed_at: null,
+      payment_deadline: null,
+      failure_reason: null,
+      reminder_stage: null,
+    })
+    .eq('id', paymentScheduleId)
+    .in('status', ['pending', 'processing', 'failed']) // Only update if not already paid
+
+  if (updateError) {
+    console.error('[EarlyPayment] Error updating payment schedule:', updateError)
+    return
+  }
+
+  // Create payment record
+  // Use 'deposit' for first payment, 'balance' for subsequent payments
+  const paymentType = schedule.payment_number === 1 ? 'deposit' : 'balance'
+  const { error: paymentError } = await supabase
+    .from('payments')
+    .insert({
+      booking_id: schedule.booking_id,
+      stripe_payment_intent_id: session.payment_intent as string,
+      stripe_checkout_session_id: session.id,
+      stripe_customer_id: session.customer as string,
+      stripe_webhook_event_id: eventId,
+      amount: schedule.amount,
+      currency: 'EUR',
+      payment_type: paymentType,
+      status: 'succeeded',
+      payment_method: 'card',
+    })
+
+  if (paymentError) {
+    console.error('[EarlyPayment] Error creating payment record:', paymentError)
+  }
+
+  // Update booking with payment method if available
+  if (session.customer && session.payment_intent) {
+    try {
+      const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent as string)
+      if (paymentIntent.payment_method) {
+        await supabase
+          .from('bookings')
+          .update({
+            stripe_customer_id: session.customer as string,
+            stripe_payment_method_id: paymentIntent.payment_method as string,
+          })
+          .eq('id', schedule.booking_id)
+      }
+    } catch (err) {
+      console.error('[EarlyPayment] Error saving payment method:', err)
+    }
+  }
+
+  // Fetch booking for email and balance update
+  const { data: booking, error: bookingError } = await supabase
+    .from('bookings')
+    .select(`
+      *,
+      retreat:retreats(destination, start_date, end_date),
+      room:retreat_rooms(name),
+      access_token
+    `)
+    .eq('id', schedule.booking_id)
+    .single()
+
+  if (bookingError || !booking) {
+    console.error('[EarlyPayment] Error fetching booking:', bookingError)
+    return
+  }
+
+  // Calculate new balance
+  const newBalance = booking.balance_due - schedule.amount
+
+  // Check if all payments are complete
+  const { data: pendingPayments } = await supabase
+    .from('payment_schedules')
+    .select('id')
+    .eq('booking_id', schedule.booking_id)
+    .in('status', ['pending', 'processing', 'failed'])
+
+  const allPaid = !pendingPayments || pendingPayments.length === 0
+  const paymentStatus = allPaid ? 'paid' : 'deposit'
+
+  // Update booking balance
+  const { error: balanceError } = await supabase
+    .from('bookings')
+    .update({
+      balance_due: Math.max(0, newBalance),
+      payment_status: paymentStatus,
+    })
+    .eq('id', schedule.booking_id)
+
+  if (balanceError) {
+    console.error('[EarlyPayment] Error updating booking balance:', balanceError)
+  }
+
+  // Get all payment schedules for next payment info
+  const { data: allSchedules } = await supabase
+    .from('payment_schedules')
+    .select('*')
+    .eq('booking_id', schedule.booking_id)
+    .order('payment_number', { ascending: true })
+
+  const nextSchedule = allSchedules?.find(s => s.status === 'pending')
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreats.com'
+
+  // Send payment confirmation email
+  try {
+    const bookingLanguage = booking.language || 'en'
+    const dateLocale = bookingLanguage === 'de' ? 'de-DE' :
+                       bookingLanguage === 'es' ? 'es-ES' :
+                       bookingLanguage === 'fr' ? 'fr-FR' :
+                       bookingLanguage === 'nl' ? 'nl-NL' : 'en-US'
+    const retreatDates = `${new Date(booking.retreat.start_date).toLocaleDateString(dateLocale, { month: 'long', day: 'numeric' })} - ${new Date(booking.retreat.end_date).toLocaleDateString(dateLocale, { month: 'long', day: 'numeric', year: 'numeric' })}`
+
+    // Import sendPaymentSuccessWithNextInfo
+    const { sendPaymentSuccessWithNextInfo } = await import('@/lib/email')
+
+    await sendPaymentSuccessWithNextInfo({
+      bookingNumber: booking.booking_number,
+      firstName: booking.first_name,
+      lastName: booking.last_name,
+      email: booking.email,
+      retreatDestination: booking.retreat.destination,
+      retreatDates,
+      checkInDate: booking.check_in_date || booking.retreat.start_date,
+      checkOutDate: booking.check_out_date || booking.retreat.end_date,
+      roomName: booking.room?.name,
+      paidAmount: schedule.amount,
+      paymentNumber: schedule.payment_number,
+      totalPayments: allSchedules?.length || 3,
+      nextPaymentAmount: nextSchedule?.amount,
+      nextPaymentDate: nextSchedule?.due_date,
+      totalPaid: booking.total_amount - Math.max(0, newBalance),
+      balanceDue: Math.max(0, newBalance),
+      myBookingUrl: booking.access_token
+        ? `${SITE_URL}/my-booking?token=${booking.access_token}`
+        : `${SITE_URL}/booking?booking_id=${booking.booking_number}`,
+      language: bookingLanguage,
+    })
+
+    console.log(`[EarlyPayment] Payment confirmation sent to ${booking.email}`)
+  } catch (emailError) {
+    console.error('[EarlyPayment] Error sending confirmation email:', emailError)
+  }
+
+  console.log(`[EarlyPayment] Early payment processed for booking ${booking.booking_number}, schedule ${schedule.payment_number}`)
 }

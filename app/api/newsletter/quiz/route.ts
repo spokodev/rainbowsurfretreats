@@ -9,16 +9,33 @@ function getSupabase() {
 }
 
 // POST /api/newsletter/quiz
+// Requires token for authentication - prevents unauthorized quiz submissions
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { subscriberId, responses } = body
+    const { token, responses } = body
 
-    if (!subscriberId || !responses) {
-      return NextResponse.json({ error: 'Missing data' }, { status: 400 })
+    // Token is required for security (prevents unauthorized submissions)
+    if (!token || typeof token !== 'string' || token.length !== 64) {
+      return NextResponse.json({ error: 'Invalid or missing token' }, { status: 401 })
+    }
+
+    if (!responses || typeof responses !== 'object') {
+      return NextResponse.json({ error: 'Missing quiz responses' }, { status: 400 })
     }
 
     const supabase = getSupabase()
+
+    // Find subscriber by their unsubscribe_token (used for all subscriber actions)
+    const { data: subscriber, error: findError } = await supabase
+      .from('newsletter_subscribers')
+      .select('id')
+      .eq('unsubscribe_token', token)
+      .single()
+
+    if (findError || !subscriber) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
 
     // Generate tags based on responses
     const tags: string[] = []
@@ -36,7 +53,7 @@ export async function POST(request: NextRequest) {
       tags.push(`destination:${responses.destination}`)
     }
 
-    // Update subscriber
+    // Update subscriber (use token-verified subscriber.id for safety)
     const { error } = await supabase
       .from('newsletter_subscribers')
       .update({
@@ -44,7 +61,7 @@ export async function POST(request: NextRequest) {
         quiz_responses: responses,
         tags,
       })
-      .eq('id', subscriberId)
+      .eq('id', subscriber.id)
 
     if (error) {
       console.error('Quiz save error:', error)

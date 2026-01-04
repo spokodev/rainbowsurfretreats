@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkAdminAuth } from '@/lib/settings'
 import type { ApiResponse, TrashItem } from '@/lib/types/database'
 
-// GET /api/admin/trash - Get all deleted items
+// GET /api/admin/trash - Get all deleted items (admin only)
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    // Check admin authentication
+    const { user, isAdmin } = await checkAdminAuth()
+    if (!user) {
       return NextResponse.json<ApiResponse<null>>(
         { error: 'Unauthorized' },
         { status: 401 }
+      )
+    }
+    if (!isAdmin) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Forbidden - Admin access required' },
+        { status: 403 }
       )
     }
 

@@ -61,7 +61,6 @@ export async function GET(request: NextRequest) {
       stripe_customer_id,
       retreat:retreats(
         id,
-        title,
         destination,
         location,
         start_date,

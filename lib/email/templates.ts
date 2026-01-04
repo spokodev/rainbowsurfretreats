@@ -238,6 +238,9 @@ export function paymentReminderEmail(data: ReminderData, urgency: 'week' | 'days
 
   const { title, message, boxClass } = urgencyMessages[urgency]
 
+  // Use payNowUrl if provided (early payment), otherwise fallback to legacy URL
+  const paymentUrl = data.payNowUrl || `${SITE_URL}/booking/pay?booking_id=${data.bookingNumber}`
+
   const content = `
     <h2>${title}</h2>
     <p>Dear ${data.firstName},</p>
@@ -271,7 +274,11 @@ export function paymentReminderEmail(data: ReminderData, urgency: 'week' | 'days
     </div>
 
     <p style="text-align: center; margin-top: 30px;">
-      <a href="${SITE_URL}/booking/pay?booking_id=${data.bookingNumber}" class="button">Pay Now</a>
+      <a href="${paymentUrl}" class="button">Pay Now (€${data.amount.toFixed(2)})</a>
+    </p>
+
+    <p style="font-size: 14px; color: #64748b; text-align: center;">
+      Click the button above to pay now, or wait for the automatic charge on the due date.
     </p>
 
     <p style="font-size: 14px; color: #64748b;">

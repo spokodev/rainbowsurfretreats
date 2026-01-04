@@ -173,29 +173,34 @@ export async function GET(request: NextRequest) {
             .eq('booking_id', booking.id)
             .in('status', ['pending', 'failed'])
 
-          // Return room availability
+          // Return room availability - properly awaited to catch errors
           if (booking.room_id) {
-            await supabase.rpc('increment_room_availability', {
+            const { error: rpcError } = await supabase.rpc('increment_room_availability', {
               room_id: booking.room_id,
               amount: booking.guests_count || 1,
-            }).then(({ error }) => {
-              if (error) {
-                // Fallback to direct update
-                supabase
-                  .from('retreat_rooms')
-                  .select('available')
-                  .eq('id', booking.room_id!)
-                  .single()
-                  .then(({ data: room }) => {
-                    if (room) {
-                      supabase
-                        .from('retreat_rooms')
-                        .update({ available: room.available + (booking.guests_count || 1) })
-                        .eq('id', booking.room_id!)
-                    }
-                  })
-              }
             })
+
+            if (rpcError) {
+              console.error(`[Cron] RPC error incrementing room availability:`, rpcError)
+              // Fallback to direct update - also properly awaited
+              const { data: room } = await supabase
+                .from('retreat_rooms')
+                .select('available')
+                .eq('id', booking.room_id)
+                .single()
+
+              if (room) {
+                const { error: updateError } = await supabase
+                  .from('retreat_rooms')
+                  .update({ available: room.available + (booking.guests_count || 1) })
+                  .eq('id', booking.room_id)
+
+                if (updateError) {
+                  console.error(`[Cron] Error updating room availability:`, updateError)
+                  results.errors.push(`Room availability update failed for ${booking.room_id}`)
+                }
+              }
+            }
           }
 
           // Send cancellation email to customer
@@ -390,23 +395,30 @@ export async function GET(request: NextRequest) {
             .eq('id', payment.id)
 
           // Create payment intent with saved payment method
-          const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(payment.amount * 100), // Stripe uses cents
-            currency: 'eur',
-            customer: booking.stripe_customer_id,
-            payment_method: booking.stripe_payment_method_id,
-            off_session: true,
-            confirm: true,
-            description: `${booking.retreat.destination} Retreat - Payment ${payment.payment_number}`,
-            metadata: {
-              booking_id: booking.id,
-              payment_schedule_id: payment.id,
-              payment_number: payment.payment_number.toString(),
-              booking_number: booking.booking_number,
-              language: booking.language || 'en',
-              off_session: 'true',
+          // CRITICAL: idempotencyKey prevents double charging if cron runs twice
+          const paymentIntent = await stripe.paymentIntents.create(
+            {
+              amount: Math.round(payment.amount * 100), // Stripe uses cents
+              currency: 'eur',
+              customer: booking.stripe_customer_id,
+              payment_method: booking.stripe_payment_method_id,
+              off_session: true,
+              confirm: true,
+              description: `${booking.retreat.destination} Retreat - Payment ${payment.payment_number}`,
+              metadata: {
+                booking_id: booking.id,
+                payment_schedule_id: payment.id,
+                payment_number: payment.payment_number.toString(),
+                booking_number: booking.booking_number,
+                language: booking.language || 'en',
+                off_session: 'true',
+              },
             },
-          })
+            {
+              // Unique key based on schedule ID and due date - prevents double charging
+              idempotencyKey: `cron-payment-${payment.id}-${payment.due_date}`,
+            }
+          )
 
           // Check if payment succeeded
           if (paymentIntent.status === 'succeeded') {

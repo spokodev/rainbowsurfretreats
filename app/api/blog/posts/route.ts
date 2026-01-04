@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkAdminAuth } from '@/lib/settings'
 import type { BlogPost, BlogPostInsert, ApiResponse } from '@/lib/types/database'
 
 // GET /api/blog/posts - List all blog posts
@@ -64,8 +65,9 @@ export async function GET(request: NextRequest) {
     const { data, error, count } = await query
 
     if (error) {
+      console.error('Error fetching blog posts:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
+        { error: 'Failed to fetch blog posts' },
         { status: 500 }
       )
     }
@@ -83,17 +85,23 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/blog/posts - Create a new blog post
+// POST /api/blog/posts - Create a new blog post (admin only)
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    // Check admin authentication
+    const { user, isAdmin } = await checkAdminAuth()
+    if (!user) {
       return NextResponse.json<ApiResponse<null>>(
         { error: 'Unauthorized' },
         { status: 401 }
+      )
+    }
+    if (!isAdmin) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Forbidden - Admin access required' },
+        { status: 403 }
       )
     }
 
@@ -141,8 +149,9 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
+      console.error('Error creating blog post:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
+        { error: 'Failed to create blog post' },
         { status: 500 }
       )
     }

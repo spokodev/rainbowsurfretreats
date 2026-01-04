@@ -1,0 +1,199 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - navigation [ref=e5]:
+        - link "Home" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Retreats" [ref=e7] [cursor=pointer]:
+          - /url: /retreats
+        - link "Blog" [ref=e8] [cursor=pointer]:
+          - /url: /blog
+        - link "About Us" [ref=e9] [cursor=pointer]:
+          - /url: /about
+        - link "Contact" [ref=e10] [cursor=pointer]:
+          - /url: /contact
+        - link "Policies" [ref=e11] [cursor=pointer]:
+          - /url: /policies
+      - generic [ref=e12]:
+        - button "🇺🇸 en" [ref=e13]:
+          - generic [ref=e14]: 🇺🇸
+          - generic [ref=e15]: en
+          - img
+        - link "Book Now" [ref=e17] [cursor=pointer]:
+          - /url: /retreats
+  - main [ref=e18]:
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - button "Back to retreat" [ref=e22]:
+          - img
+          - text: Back to retreat
+        - heading "Complete Your Booking" [level=1] [ref=e23]
+        - paragraph [ref=e24]: Siargao, Philippines Surf Retreat • Jan 25 - Feb 1, 2026
+      - generic [ref=e26]:
+        - generic [ref=e28]:
+          - generic [ref=e29]: "1"
+          - generic [ref=e30]: Personal Info
+        - generic [ref=e33]:
+          - generic [ref=e34]: "2"
+          - generic [ref=e35]: Billing Details
+        - generic [ref=e38]:
+          - generic [ref=e39]: "3"
+          - generic [ref=e40]: Payment
+      - generic [ref=e41]:
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - generic [ref=e45]:
+              - heading "Personal Information" [level=2] [ref=e46]
+              - paragraph [ref=e47]: Please provide your contact details
+            - generic [ref=e48]:
+              - generic [ref=e49]:
+                - generic [ref=e50]: First Name *
+                - generic [ref=e51]:
+                  - img [ref=e52]
+                  - textbox "First Name *" [ref=e55]
+              - generic [ref=e56]:
+                - generic [ref=e57]: Last Name *
+                - generic [ref=e58]:
+                  - img [ref=e59]
+                  - textbox "Last Name *" [ref=e62]
+            - generic [ref=e63]:
+              - generic [ref=e64]: Email Address *
+              - generic [ref=e65]:
+                - img [ref=e66]
+                - textbox "Email Address *" [ref=e69]
+            - generic [ref=e70]:
+              - generic [ref=e71]: Phone Number *
+              - generic [ref=e72]:
+                - img [ref=e73]
+                - textbox "Phone Number *" [ref=e75]
+          - button "Continue" [ref=e77]
+        - generic [ref=e79]:
+          - heading "Order Summary" [level=3] [ref=e80]
+          - generic [ref=e82]:
+            - generic [ref=e83]: Siargao, Philippines Surf Retreat
+            - generic [ref=e84]: Jan 25 - Feb 1, 2026
+            - generic [ref=e85]: Room 4
+          - generic [ref=e86]:
+            - generic [ref=e87]: Promo Code
+            - generic [ref=e88]:
+              - textbox "Enter code" [ref=e89]: TESTCODE20
+              - button "Apply" [ref=e90]
+            - paragraph [ref=e91]: Promo code is not valid for this room
+          - generic [ref=e92]:
+            - generic [ref=e93]:
+              - generic [ref=e94]: "Room price:"
+              - generic [ref=e95]: €1000
+            - generic [ref=e96]:
+              - generic [ref=e97]: "Subtotal:"
+              - generic [ref=e98]: €1000
+            - generic [ref=e99]:
+              - generic [ref=e100]: "Deposit today (50%):"
+              - generic [ref=e101]: €500.00
+            - generic [ref=e102]:
+              - generic [ref=e103]: "VAT (19%):"
+              - generic [ref=e104]: €95.00
+          - generic [ref=e105]:
+            - generic [ref=e106]: "Total due today:"
+            - generic [ref=e107]: €595.00
+          - generic [ref=e108]:
+            - generic [ref=e109]:
+              - img [ref=e110]
+              - generic [ref=e112]: Secure payment via Stripe
+            - generic [ref=e113]:
+              - img [ref=e114]
+              - generic [ref=e117]: GDPR compliant
+            - generic [ref=e118]:
+              - img [ref=e119]
+              - generic [ref=e122]: EU consumer protection
+  - contentinfo [ref=e123]:
+    - generic [ref=e124]:
+      - generic [ref=e125]:
+        - generic [ref=e126]:
+          - link "Rainbow Surf Retreats Logo" [ref=e127] [cursor=pointer]:
+            - /url: /
+            - img "Rainbow Surf Retreats Logo" [ref=e128]
+          - paragraph [ref=e163]: Transformative surf and wellness retreats in the world's most beautiful destinations. Find your wave, find yourself.
+          - generic [ref=e164]:
+            - link "Instagram" [ref=e165] [cursor=pointer]:
+              - /url: https://instagram.com/rainbowsurfretreats
+              - img [ref=e166]
+            - link "Facebook" [ref=e169] [cursor=pointer]:
+              - /url: https://facebook.com/rainbowsurfretreats
+              - img [ref=e170]
+            - link "YouTube" [ref=e172] [cursor=pointer]:
+              - /url: https://youtube.com/@rainbowsurfretreats
+              - img [ref=e173]
+        - generic [ref=e176]:
+          - heading "Upcoming Retreats" [level=3] [ref=e177]
+          - list [ref=e178]:
+            - listitem [ref=e179]:
+              - link "Siargao, Philippines" [ref=e180] [cursor=pointer]:
+                - /url: /retreats/siargao-philippines-jan-2026
+            - listitem [ref=e181]:
+              - link "France" [ref=e182] [cursor=pointer]:
+                - /url: /retreats/france-june-2026
+            - listitem [ref=e183]:
+              - link "Bali" [ref=e184] [cursor=pointer]:
+                - /url: /retreats/bali-september-2026
+            - listitem [ref=e185]:
+              - link "Portugal" [ref=e186] [cursor=pointer]:
+                - /url: /retreats/portugal-october-2026
+        - generic [ref=e187]:
+          - heading "Company" [level=3] [ref=e188]
+          - list [ref=e189]:
+            - listitem [ref=e190]:
+              - link "About Us" [ref=e191] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e192]:
+              - link "Blog" [ref=e193] [cursor=pointer]:
+                - /url: /blog
+            - listitem [ref=e194]:
+              - link "Contact" [ref=e195] [cursor=pointer]:
+                - /url: /contact
+        - generic [ref=e196]:
+          - heading "Legal" [level=3] [ref=e197]
+          - list [ref=e198]:
+            - listitem [ref=e199]:
+              - link "Policies" [ref=e200] [cursor=pointer]:
+                - /url: /policies
+            - listitem [ref=e201]:
+              - link "Privacy Policy" [ref=e202] [cursor=pointer]:
+                - /url: /privacy
+            - listitem [ref=e203]:
+              - link "Terms of Service" [ref=e204] [cursor=pointer]:
+                - /url: /terms
+      - generic [ref=e206]:
+        - paragraph [ref=e207]: © 2026 Rainbow Surf Retreats. All rights reserved.
+        - generic [ref=e208]:
+          - link "Privacy" [ref=e209] [cursor=pointer]:
+            - /url: /privacy
+          - link "Terms" [ref=e210] [cursor=pointer]:
+            - /url: /terms
+          - link "Cookies" [ref=e211] [cursor=pointer]:
+            - /url: /cookies
+  - link "Chat with us on WhatsApp" [ref=e213] [cursor=pointer]:
+    - /url: https://wa.me/34662424563?text=Hi!%20I'm%20interested%20in%20your%20surf%20retreats.
+    - img [ref=e216]
+  - alert [ref=e218]
+  - generic [ref=e221]:
+    - generic [ref=e222]:
+      - img [ref=e223]
+      - generic [ref=e225]:
+        - heading "We value your privacy" [level=3] [ref=e226]
+        - paragraph [ref=e227]:
+          - text: We use cookies to enhance your browsing experience, analyze site traffic, and personalize content. By clicking "Accept All", you consent to our use of cookies.
+          - link "Learn more" [ref=e228] [cursor=pointer]:
+            - /url: /privacy-policy
+    - generic [ref=e229]:
+      - button "Customize" [ref=e230]:
+        - img
+        - text: Customize
+      - button "Necessary Only" [ref=e231]
+      - button "Accept All" [ref=e232]
+    - button "Close" [ref=e233]:
+      - img
+      - generic [ref=e234]: Close
+```

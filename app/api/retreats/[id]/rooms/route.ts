@@ -20,8 +20,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .order('sort_order', { ascending: true })
 
     if (error) {
+      console.error('Error fetching rooms:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
+        { error: 'Failed to fetch rooms' },
         { status: 500 }
       )
     }
@@ -67,6 +68,28 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
+    // Validate price values are positive numbers
+    if (typeof body.price !== 'number' || body.price <= 0) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Price must be a positive number' },
+        { status: 400 }
+      )
+    }
+    if (typeof body.deposit_price !== 'number' || body.deposit_price < 0) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Deposit price must be a non-negative number' },
+        { status: 400 }
+      )
+    }
+    if (body.early_bird_price !== undefined && body.early_bird_price !== null) {
+      if (typeof body.early_bird_price !== 'number' || body.early_bird_price <= 0) {
+        return NextResponse.json<ApiResponse<null>>(
+          { error: 'Early bird price must be a positive number' },
+          { status: 400 }
+        )
+      }
+    }
+
     const { data, error } = await supabase
       .from('retreat_rooms')
       .insert({ ...body, retreat_id: id })
@@ -74,8 +97,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .single()
 
     if (error) {
+      console.error('Error creating room:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: error.message },
+        { error: 'Failed to create room' },
         { status: 500 }
       )
     }

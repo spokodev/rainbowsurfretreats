@@ -10,31 +10,52 @@ function getSupabase() {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreats.com'
 
-// GET /api/newsletter/unsubscribe?email=xxx
+// GET /api/newsletter/unsubscribe?token=xxx
+// Token-based unsubscribe for security (prevents unauthorized unsubscribes)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const email = searchParams.get('email')
+    const token = searchParams.get('token')
 
-    if (!email) {
-      return NextResponse.redirect(`${SITE_URL}/newsletter/unsubscribed?error=missing_email`)
+    // Token is required for security
+    if (!token || token.length !== 64) {
+      return NextResponse.redirect(`${SITE_URL}/newsletter/unsubscribed?error=invalid_token`)
     }
 
     const supabase = getSupabase()
 
-    const { error } = await supabase
+    // Find subscriber by unsubscribe token
+    const { data: subscriber, error: findError } = await supabase
+      .from('newsletter_subscribers')
+      .select('id, email, status')
+      .eq('unsubscribe_token', token)
+      .single()
+
+    if (findError || !subscriber) {
+      console.error('Unsubscribe token not found:', token.substring(0, 8) + '...')
+      return NextResponse.redirect(`${SITE_URL}/newsletter/unsubscribed?error=invalid_token`)
+    }
+
+    // Already unsubscribed
+    if (subscriber.status === 'unsubscribed') {
+      return NextResponse.redirect(`${SITE_URL}/newsletter/unsubscribed?status=already`)
+    }
+
+    // Update subscriber status
+    const { error: updateError } = await supabase
       .from('newsletter_subscribers')
       .update({
         status: 'unsubscribed',
         unsubscribed_at: new Date().toISOString(),
       })
-      .eq('email', email.toLowerCase())
+      .eq('id', subscriber.id)
 
-    if (error) {
-      console.error('Unsubscribe error:', error)
+    if (updateError) {
+      console.error('Unsubscribe update error:', updateError)
+      return NextResponse.redirect(`${SITE_URL}/newsletter/unsubscribed?error=server_error`)
     }
 
-    return NextResponse.redirect(`${SITE_URL}/newsletter/unsubscribed`)
+    return NextResponse.redirect(`${SITE_URL}/newsletter/unsubscribed?status=success`)
   } catch (error) {
     console.error('Unsubscribe error:', error)
     return NextResponse.redirect(`${SITE_URL}/newsletter/unsubscribed?error=server_error`)

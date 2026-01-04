@@ -134,23 +134,32 @@ export async function POST(
       .eq('id', paymentScheduleId)
 
     try {
-      // Create PaymentIntent
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(schedule.amount * 100),
-        currency: 'eur',
-        customer: booking.stripe_customer_id,
-        payment_method: booking.stripe_payment_method_id,
-        off_session: true,
-        confirm: true,
-        metadata: {
-          booking_id: bookingId,
-          payment_schedule_id: paymentScheduleId,
-          booking_number: booking.booking_number,
-          triggered_by: 'admin_manual_retry',
-          admin_email: user.email || user.id,
+      // Create PaymentIntent with idempotency key to prevent double charging
+      // Key includes timestamp to allow retry after failures while preventing rapid double-clicks
+      const retryTimestamp = Math.floor(Date.now() / 60000) // Changes every minute
+      const paymentIntent = await stripe.paymentIntents.create(
+        {
+          amount: Math.round(schedule.amount * 100),
+          currency: 'eur',
+          customer: booking.stripe_customer_id,
+          payment_method: booking.stripe_payment_method_id,
+          off_session: true,
+          confirm: true,
+          metadata: {
+            booking_id: bookingId,
+            payment_schedule_id: paymentScheduleId,
+            booking_number: booking.booking_number,
+            triggered_by: 'admin_manual_retry',
+            admin_email: user.email || user.id,
+          },
+          description: `Payment for ${booking.booking_number} - ${schedule.description || 'Scheduled payment'}`,
         },
-        description: `Payment for ${booking.booking_number} - ${schedule.description || 'Scheduled payment'}`,
-      })
+        {
+          // Unique key based on schedule ID, attempts count, and minute timestamp
+          // This prevents double-click issues while allowing legitimate retries
+          idempotencyKey: `admin-retry-${paymentScheduleId}-${schedule.attempts}-${retryTimestamp}`,
+        }
+      )
 
       if (paymentIntent.status === 'succeeded') {
         // Payment successful
