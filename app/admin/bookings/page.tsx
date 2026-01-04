@@ -7,7 +7,6 @@ import {
   Calendar,
   User,
   MapPin,
-  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +36,8 @@ interface Booking {
   email: string;
   guests_count: number;
   total_amount: number;
+  deposit_amount: number;
+  balance_due: number;
   status: string;
   payment_status: string;
   check_in_date: string;
@@ -72,6 +73,8 @@ async function getBookings(): Promise<{
       email,
       guests_count,
       total_amount,
+      deposit_amount,
+      balance_due,
       status,
       payment_status,
       check_in_date,
@@ -214,7 +217,9 @@ export default async function AdminBookingsPage() {
                   <TableHead>Room</TableHead>
                   <TableHead>Dates</TableHead>
                   <TableHead>Guests</TableHead>
-                  <TableHead>Amount</TableHead>
+                  <TableHead className="text-right">Paid</TableHead>
+                  <TableHead className="text-right">Balance</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Payment</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -267,13 +272,20 @@ export default async function AdminBookingsPage() {
                       </div>
                     </TableCell>
                     <TableCell>{booking.guests_count}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-semibold">
-                          €{booking.total_amount?.toFixed(2)}
-                        </span>
-                      </div>
+                    <TableCell className="text-right">
+                      <span className="text-green-600 font-medium">
+                        €{booking.deposit_amount?.toFixed(2) || "0.00"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className={booking.balance_due > 0 ? "text-orange-600 font-medium" : "text-muted-foreground"}>
+                        €{booking.balance_due?.toFixed(2) || "0.00"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="font-semibold">
+                        €{booking.total_amount?.toFixed(2)}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge variant={getStatusBadgeVariant(booking.status)}>

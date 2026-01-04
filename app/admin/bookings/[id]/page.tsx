@@ -614,7 +614,7 @@ export default async function BookingDetailsPage({ params }: RouteParams) {
                 {booking.vat_amount > 0 && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      VAT ({booking.vat_rate}%)
+                      VAT ({(booking.vat_rate * 100).toFixed(0)}%)
                     </span>
                     <span>{formatCurrency(booking.vat_amount)}</span>
                   </div>

@@ -202,18 +202,20 @@ export async function POST(request: NextRequest) {
       vatIdValid: body.vatIdValid,
     })
 
-    // Calculate balance due
-    const balanceDue = body.paymentType === 'full'
-      ? 0
-      : paymentSchedule.totalAmount - depositAmount
-
-    // Calculate VAT on full amount (not deposit) for accurate booking records
+    // Calculate VAT on full amount for accurate booking records
     const fullAmountVat = calculateVat({
       amount: paymentSchedule.totalAmount,
       country: body.country,
       customerType,
       vatIdValid: body.vatIdValid,
     })
+
+    // Calculate deposit and balance WITH VAT included
+    // The deposit amount with VAT is what's actually charged via Stripe (total from calculateVat)
+    const depositAmountWithVat = total // 'total' includes VAT from the charge amount calculation
+    const balanceDueWithVat = body.paymentType === 'full'
+      ? 0
+      : fullAmountVat.total - depositAmountWithVat
 
     // Create booking record
     const bookingData: BookingInsert = {
@@ -234,8 +236,8 @@ export async function POST(request: NextRequest) {
       vat_rate: fullAmountVat.vatRate,
       vat_amount: fullAmountVat.vatAmount,
       total_amount: fullAmountVat.total,
-      deposit_amount: depositAmount,
-      balance_due: balanceDue,
+      deposit_amount: depositAmountWithVat,
+      balance_due: balanceDueWithVat,
       status: 'pending',
       payment_status: 'unpaid',
       accept_terms: body.acceptTerms,
@@ -337,14 +339,23 @@ export async function POST(request: NextRequest) {
         .eq('id', booking.id)
 
       // Create payment schedule records for future payments
-      const scheduleInserts = paymentSchedule.schedules.map((schedule) => ({
-        booking_id: booking.id,
-        payment_number: schedule.paymentNumber,
-        amount: schedule.amount,
-        due_date: schedule.dueDate.toISOString().split('T')[0],
-        description: schedule.description,
-        status: schedule.paymentNumber === 1 ? 'processing' : 'pending',
-      }))
+      // Each schedule amount should include VAT proportionally
+      const scheduleInserts = paymentSchedule.schedules.map((schedule) => {
+        const scheduleVat = calculateVat({
+          amount: schedule.amount,
+          country: body.country,
+          customerType,
+          vatIdValid: body.vatIdValid,
+        })
+        return {
+          booking_id: booking.id,
+          payment_number: schedule.paymentNumber,
+          amount: scheduleVat.total, // Store amount WITH VAT
+          due_date: schedule.dueDate.toISOString().split('T')[0],
+          description: schedule.description,
+          status: schedule.paymentNumber === 1 ? 'processing' : 'pending',
+        }
+      })
 
       await supabase.from('payment_schedules').insert(scheduleInserts)
     }
