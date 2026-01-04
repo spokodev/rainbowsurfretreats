@@ -216,6 +216,7 @@ export interface BookingData {
   isEarlyBird?: boolean
   earlyBirdDiscount?: number
   language?: string
+  myBookingUrl?: string
   paymentSchedule?: {
     number: number
     amount: number

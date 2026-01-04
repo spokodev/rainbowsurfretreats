@@ -255,6 +255,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
                      bookingLanguage === 'nl' ? 'nl-NL' : 'en-US'
   const retreatDates = `${new Date(booking.retreat.start_date).toLocaleDateString(dateLocale, { month: 'long', day: 'numeric' })} - ${new Date(booking.retreat.end_date).toLocaleDateString(dateLocale, { month: 'long', day: 'numeric', year: 'numeric' })}`
 
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreats.com'
+  const myBookingUrl = booking.access_token
+    ? `${SITE_URL}/my-booking?token=${booking.access_token}`
+    : `${SITE_URL}/booking?booking_id=${booking.booking_number}`
+
   try {
     if (isFirstPayment) {
       // Send booking confirmation email with language support
@@ -272,6 +277,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
         isEarlyBird: booking.is_early_bird,
         earlyBirdDiscount: booking.early_bird_discount,
         language: bookingLanguage,
+        myBookingUrl,
         paymentSchedule: paymentSchedules?.map((ps) => ({
           number: ps.payment_number,
           amount: ps.amount,
