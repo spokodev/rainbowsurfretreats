@@ -8,8 +8,9 @@ import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { RetreatMap } from '@/components/retreat-map'
-import { MapPin, Calendar, Users, Clock, Utensils, Waves, Check, X, Loader2 } from 'lucide-react'
+import { MapPin, Calendar, Users, Clock, Utensils, Waves, Check, X, Loader2, CreditCard, FileText, Shield, Backpack } from 'lucide-react'
 
 interface RetreatRoom {
   id: string
@@ -23,6 +24,18 @@ interface RetreatRoom {
   sort_order: number
   early_bird_price: number | null
   early_bird_enabled: boolean
+}
+
+interface AboutSection {
+  title?: string
+  paragraphs: string[]
+}
+
+interface ImportantInfo {
+  paymentTerms?: string
+  cancellationPolicy?: string
+  travelInsurance?: string
+  whatToBring?: string
 }
 
 interface Retreat {
@@ -47,9 +60,13 @@ interface Retreat {
   included: string[]
   not_included: string[]
   exact_address: string
+  address_note: string | null
+  pricing_note: string | null
   latitude: number | null
   longitude: number | null
   availability_status: 'available' | 'sold_out' | 'few_spots'
+  about_sections: AboutSection[]
+  important_info: ImportantInfo
   rooms: RetreatRoom[]
 }
 
@@ -195,7 +212,7 @@ export default function RetreatPage() {
               </div>
               <div className="flex items-center text-muted-foreground">
                 <Waves className="size-4 mr-2" />
-                <span>{retreat.gear}</span>
+                <span>Gear: {retreat.gear}</span>
               </div>
             </div>
           </div>
@@ -274,10 +291,103 @@ export default function RetreatPage() {
                 </div>
               </section>
             )}
+
+            {/* About Sections */}
+            {retreat.about_sections && retreat.about_sections.length > 0 && (
+              <section>
+                {retreat.about_sections.map((section, idx) => (
+                  <div key={idx} className="mb-6">
+                    {section.title && (
+                      <h2 className="text-2xl font-bold mb-4">{section.title}</h2>
+                    )}
+                    <div className="prose prose-gray max-w-none">
+                      {section.paragraphs.map((paragraph, pIdx) => (
+                        <p key={pIdx} className="mb-4 text-muted-foreground">
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </section>
+            )}
+
+            {/* Important Information */}
+            {retreat.important_info && (
+              retreat.important_info.paymentTerms ||
+              retreat.important_info.cancellationPolicy ||
+              retreat.important_info.travelInsurance ||
+              retreat.important_info.whatToBring
+            ) && (
+              <section>
+                <h2 className="text-2xl font-bold mb-4">{t('importantInfo')}</h2>
+                <Accordion type="multiple" className="w-full">
+                  {retreat.important_info.paymentTerms && (
+                    <AccordionItem value="payment-terms">
+                      <AccordionTrigger>
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="size-4" />
+                          <span>{t('paymentTerms')}</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-muted-foreground whitespace-pre-wrap">{retreat.important_info.paymentTerms}</p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                  {retreat.important_info.cancellationPolicy && (
+                    <AccordionItem value="cancellation-policy">
+                      <AccordionTrigger>
+                        <div className="flex items-center gap-2">
+                          <FileText className="size-4" />
+                          <span>{t('cancellationPolicy')}</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-muted-foreground whitespace-pre-wrap">{retreat.important_info.cancellationPolicy}</p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                  {retreat.important_info.travelInsurance && (
+                    <AccordionItem value="travel-insurance">
+                      <AccordionTrigger>
+                        <div className="flex items-center gap-2">
+                          <Shield className="size-4" />
+                          <span>{t('travelInsurance')}</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-muted-foreground whitespace-pre-wrap">{retreat.important_info.travelInsurance}</p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                  {retreat.important_info.whatToBring && (
+                    <AccordionItem value="what-to-bring">
+                      <AccordionTrigger>
+                        <div className="flex items-center gap-2">
+                          <Backpack className="size-4" />
+                          <span>{t('whatToBring')}</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-muted-foreground whitespace-pre-wrap">{retreat.important_info.whatToBring}</p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                </Accordion>
+              </section>
+            )}
           </div>
 
           {/* Right Column - Sidebar */}
           <div className="space-y-6">
+            {/* Pricing Note */}
+            {retreat.pricing_note && (
+              <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
+                <p className="text-sm text-amber-800">{retreat.pricing_note}</p>
+              </div>
+            )}
+
             {/* Room Options */}
             {sortedRooms.length > 0 && (
               <Card>
@@ -295,6 +405,11 @@ export default function RetreatPage() {
                           <h4 className="font-semibold">{room.name}</h4>
                           {room.description && (
                             <p className="text-sm text-muted-foreground">{room.description}</p>
+                          )}
+                          {room.capacity > 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Capacity: {room.capacity} {room.capacity === 1 ? 'person' : 'people'}
+                            </p>
                           )}
                         </div>
                         {room.is_sold_out && (
@@ -359,7 +474,9 @@ export default function RetreatPage() {
                   longitude={retreat.longitude}
                   address={retreat.exact_address}
                 />
-
+                {retreat.address_note && (
+                  <p className="text-sm text-muted-foreground">{retreat.address_note}</p>
+                )}
               </CardContent>
             </Card>
           </div>

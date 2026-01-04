@@ -305,7 +305,12 @@
     "location": "Locatie",
     "bookNow": "Nu boeken",
     "book": "Boeken",
-    "earlyBird": "Vroegboekkorting"
+    "earlyBird": "Vroegboekkorting",
+    "importantInfo": "Belangrijke Informatie",
+    "paymentTerms": "Betalingsvoorwaarden",
+    "cancellationPolicy": "Annuleringsbeleid",
+    "travelInsurance": "Reisverzekering",
+    "whatToBring": "Wat mee te nemen"
   },
   "policies": {
     "title": "Beleid",

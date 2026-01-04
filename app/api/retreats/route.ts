@@ -132,6 +132,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Auto-calculate duration from dates
+    const nights = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+    retreatData.duration = `${nights} ${nights === 1 ? 'night' : 'nights'}`
+
     const { data, error } = await supabase
       .from('retreats')
       .insert(retreatData)

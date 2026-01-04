@@ -305,7 +305,12 @@
     "location": "Location",
     "bookNow": "Book Now",
     "book": "Book",
-    "earlyBird": "Early Bird"
+    "earlyBird": "Early Bird",
+    "importantInfo": "Important Information",
+    "paymentTerms": "Payment Terms",
+    "cancellationPolicy": "Cancellation Policy",
+    "travelInsurance": "Travel Insurance",
+    "whatToBring": "What to Bring"
   },
   "policies": {
     "title": "Policies",

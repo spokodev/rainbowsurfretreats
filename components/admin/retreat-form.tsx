@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -65,7 +65,7 @@ const retreatSchema = z.object({
   location: z.string().min(1, 'Location is required'),
   image_url: z.string().nullable().optional(),
   level: z.enum(['Beginners', 'Intermediate', 'Advanced', 'All Levels']),
-  duration: z.string().min(1, 'Duration is required'),
+  duration: z.string().optional(), // Auto-calculated from dates
   participants: z.string().min(1, 'Participants info is required'),
   food: z.string().min(1, 'Food info is required'),
   type: z.enum(['Budget', 'Standard', 'Premium']),
@@ -124,7 +124,7 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
     location: retreat?.location || '',
     image_url: retreat?.image_url || null,
     level: retreat?.level || 'All Levels',
-    duration: retreat?.duration || '7 nights',
+    duration: retreat?.duration || '', // Auto-calculated
     participants: retreat?.participants || '10-16',
     food: retreat?.food || 'Breakfast & Dinner',
     type: retreat?.type || 'Standard',
@@ -196,6 +196,22 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
     control,
     name: 'about_sections',
   })
+
+  // Watch dates to auto-calculate duration
+  const startDate = watch('start_date')
+  const endDate = watch('end_date')
+
+  // Calculate duration from dates
+  const calculatedDuration = useMemo(() => {
+    if (!startDate || !endDate) return null
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return null
+    const diffTime = end.getTime() - start.getTime()
+    const nights = Math.round(diffTime / (1000 * 60 * 60 * 24))
+    if (nights <= 0) return null
+    return `${nights} ${nights === 1 ? 'night' : 'nights'}`
+  }, [startDate, endDate])
 
   const { fields: roomFields, append: appendRoom, remove: removeRoom } = useFieldArray({
     control,
@@ -479,12 +495,11 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration *</Label>
-                <Input
-                  id="duration"
-                  {...register('duration')}
-                  placeholder="e.g., 7 nights"
-                />
+                <Label>Duration</Label>
+                <div className="flex items-center h-10 px-3 rounded-md border bg-muted text-muted-foreground">
+                  {calculatedDuration || 'Select start and end dates'}
+                </div>
+                <p className="text-xs text-muted-foreground">Auto-calculated from dates</p>
               </div>
 
               <div className="space-y-2">

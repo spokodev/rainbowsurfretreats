@@ -75,6 +75,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           { status: 400 }
         )
       }
+
+      // Auto-calculate duration from dates
+      const nights = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      updateData.duration = `${nights} ${nights === 1 ? 'night' : 'nights'}`
     }
 
     const { data, error } = await supabase

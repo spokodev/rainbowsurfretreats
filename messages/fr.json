@@ -305,7 +305,12 @@
     "location": "Emplacement",
     "bookNow": "Réserver maintenant",
     "book": "Réserver",
-    "earlyBird": "Réservation anticipée"
+    "earlyBird": "Réservation anticipée",
+    "importantInfo": "Informations Importantes",
+    "paymentTerms": "Conditions de Paiement",
+    "cancellationPolicy": "Politique d'Annulation",
+    "travelInsurance": "Assurance Voyage",
+    "whatToBring": "Quoi apporter"
   },
   "policies": {
     "title": "Politiques",

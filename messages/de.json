@@ -305,7 +305,12 @@
     "location": "Lage",
     "bookNow": "Jetzt buchen",
     "book": "Buchen",
-    "earlyBird": "Frühbucher"
+    "earlyBird": "Frühbucher",
+    "importantInfo": "Wichtige Informationen",
+    "paymentTerms": "Zahlungsbedingungen",
+    "cancellationPolicy": "Stornierungsbedingungen",
+    "travelInsurance": "Reiseversicherung",
+    "whatToBring": "Was mitbringen"
   },
   "policies": {
     "title": "Richtlinien",
