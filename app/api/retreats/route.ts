@@ -96,19 +96,34 @@ export async function POST(request: NextRequest) {
 
   try {
     const supabase = await createClient()
-    const body: RetreatInsert = await request.json()
+    const body = await request.json()
+
+    // Remove 'rooms' from body as it's a relation, not a column
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { rooms, ...retreatData } = body as RetreatInsert & { rooms?: unknown }
 
     // Validate required fields
-    if (!body.destination || !body.location || !body.start_date || !body.end_date) {
+    if (!retreatData.destination || !retreatData.location || !retreatData.start_date || !retreatData.end_date) {
       return NextResponse.json<ApiResponse<null>>(
         { error: 'Missing required fields: destination, location, start_date, end_date' },
         { status: 400 }
       )
     }
 
+    // Auto-generate slug if not provided
+    if (!retreatData.slug) {
+      const baseSlug = retreatData.destination
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+      // Add start date for uniqueness (e.g., "bali-2026-04")
+      const dateStr = retreatData.start_date.slice(0, 7) // YYYY-MM
+      retreatData.slug = `${baseSlug}-${dateStr}`
+    }
+
     // Validate dates
-    const startDate = new Date(body.start_date)
-    const endDate = new Date(body.end_date)
+    const startDate = new Date(retreatData.start_date)
+    const endDate = new Date(retreatData.end_date)
 
     if (endDate <= startDate) {
       return NextResponse.json<ApiResponse<null>>(
@@ -117,8 +132,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate early bird price
-    if (body.early_bird_price && body.price && body.early_bird_price >= body.price) {
+    // Validate early bird price (if provided at retreat level)
+    if (retreatData.early_bird_price && retreatData.price && retreatData.early_bird_price >= retreatData.price) {
       return NextResponse.json<ApiResponse<null>>(
         { error: 'Early bird price must be less than regular price' },
         { status: 400 }
@@ -127,7 +142,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase
       .from('retreats')
-      .insert(body)
+      .insert(retreatData)
       .select()
       .single()
 
