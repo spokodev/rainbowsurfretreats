@@ -43,7 +43,7 @@ interface Retreat {
   slug: string
   destination: string
   location: string
-  image_url: string
+  image_url: string | null
   level: string
   duration: string
   participants: string
@@ -157,13 +157,18 @@ export default function RetreatPage() {
     <main className="min-h-screen">
       {/* Hero Section */}
       <section className="relative h-[50vh] md:h-[60vh] w-full">
-        <Image
-          src={retreat.image_url}
-          alt={retreat.destination}
-          fill
-          priority
-          className="object-cover"
-        />
+        {retreat.image_url ? (
+          <Image
+            src={retreat.image_url}
+            alt={retreat.destination}
+            fill
+            priority
+            className="object-cover"
+            unoptimized={retreat.image_url.includes('drive.google.com')}
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12">
           <div className="container mx-auto">

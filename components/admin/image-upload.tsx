@@ -2,8 +2,9 @@
 
 import { useState, useCallback } from 'react'
 import Image from 'next/image'
-import { Upload, X, Loader2, ImageIcon } from 'lucide-react'
+import { Upload, X, Loader2, ImageIcon, Link, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 
 interface ImageUploadProps {
@@ -21,6 +22,8 @@ export function ImageUpload({
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [showUrlInput, setShowUrlInput] = useState(false)
+  const [urlInputValue, setUrlInputValue] = useState('')
 
   const handleUpload = useCallback(async (file: File) => {
     if (!file) return
@@ -129,6 +132,44 @@ export function ImageUpload({
     }
   }, [handleUpload])
 
+  const handleUrlSubmit = useCallback(() => {
+    const url = urlInputValue.trim()
+    if (!url) {
+      toast.error('Please enter a URL')
+      return
+    }
+
+    // Basic URL validation
+    try {
+      new URL(url)
+    } catch {
+      toast.error('Please enter a valid URL')
+      return
+    }
+
+    // Convert Google Drive sharing links to direct image URLs
+    let finalUrl = url
+
+    // Handle Google Drive links: https://drive.google.com/file/d/FILE_ID/view
+    const driveMatch = url.match(/drive\.google\.com\/file\/d\/([^/]+)/)
+    if (driveMatch) {
+      const fileId = driveMatch[1]
+      finalUrl = `https://drive.google.com/uc?export=view&id=${fileId}`
+    }
+
+    // Handle Google Drive open links: https://drive.google.com/open?id=FILE_ID
+    const driveOpenMatch = url.match(/drive\.google\.com\/open\?id=([^&]+)/)
+    if (driveOpenMatch) {
+      const fileId = driveOpenMatch[1]
+      finalUrl = `https://drive.google.com/uc?export=view&id=${fileId}`
+    }
+
+    onChange(finalUrl)
+    setUrlInputValue('')
+    setShowUrlInput(false)
+    toast.success('Image URL added')
+  }, [urlInputValue, onChange])
+
   if (value) {
     return (
       <div className={`relative group ${className}`}>
@@ -155,51 +196,114 @@ export function ImageUpload({
     )
   }
 
-  return (
-    <div
-      className={`
-        relative border-2 border-dashed rounded-lg p-8
-        ${isDragging ? 'border-[var(--primary-teal)] bg-[var(--primary-teal)]/5' : 'border-gray-300'}
-        ${isUploading ? 'pointer-events-none opacity-50' : ''}
-        ${className}
-      `}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <input
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        onChange={handleFileSelect}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-        disabled={isUploading}
-      />
-
-      <div className="flex flex-col items-center justify-center text-center">
-        {isUploading ? (
-          <>
-            <Loader2 className="w-10 h-10 text-[var(--primary-teal)] animate-spin mb-4" />
-            <p className="text-sm text-gray-600">Uploading...</p>
-          </>
-        ) : (
-          <>
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              {isDragging ? (
-                <Upload className="w-8 h-8 text-[var(--primary-teal)]" />
-              ) : (
-                <ImageIcon className="w-8 h-8 text-gray-400" />
-              )}
-            </div>
-            <p className="text-sm text-gray-600 mb-1">
-              <span className="font-medium text-[var(--primary-teal)]">Click to upload</span>
-              {' '}or drag and drop
-            </p>
-            <p className="text-xs text-gray-500">
-              PNG, JPG, WebP or GIF (max 5MB)
-            </p>
-          </>
-        )}
+  // Show URL input mode
+  if (showUrlInput) {
+    return (
+      <div className={`border-2 border-dashed rounded-lg p-6 ${className}`}>
+        <div className="flex items-center gap-2 mb-4">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setShowUrlInput(false)
+              setUrlInputValue('')
+            }}
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back
+          </Button>
+          <span className="text-sm text-gray-600">Paste image URL</span>
+        </div>
+        <div className="flex gap-2">
+          <Input
+            type="url"
+            placeholder="https://drive.google.com/file/d/... or any image URL"
+            value={urlInputValue}
+            onChange={(e) => setUrlInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                handleUrlSubmit()
+              }
+            }}
+            className="flex-1"
+          />
+          <Button type="button" onClick={handleUrlSubmit}>
+            Add
+          </Button>
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Supports direct image URLs and Google Drive sharing links
+        </p>
       </div>
+    )
+  }
+
+  return (
+    <div className={`space-y-3 ${className}`}>
+      {/* File upload area */}
+      <div
+        className={`
+          relative border-2 border-dashed rounded-lg p-8
+          ${isDragging ? 'border-[var(--primary-teal)] bg-[var(--primary-teal)]/5' : 'border-gray-300'}
+          ${isUploading ? 'pointer-events-none opacity-50' : ''}
+        `}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          onChange={handleFileSelect}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          disabled={isUploading}
+        />
+
+        <div className="flex flex-col items-center justify-center text-center">
+          {isUploading ? (
+            <>
+              <Loader2 className="w-10 h-10 text-[var(--primary-teal)] animate-spin mb-4" />
+              <p className="text-sm text-gray-600">Uploading...</p>
+            </>
+          ) : (
+            <>
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                {isDragging ? (
+                  <Upload className="w-8 h-8 text-[var(--primary-teal)]" />
+                ) : (
+                  <ImageIcon className="w-8 h-8 text-gray-400" />
+                )}
+              </div>
+              <p className="text-sm text-gray-600 mb-1">
+                <span className="font-medium text-[var(--primary-teal)]">Click to upload</span>
+                {' '}or drag and drop
+              </p>
+              <p className="text-xs text-gray-500">
+                PNG, JPG, WebP or GIF (max 5MB)
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* URL option */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 border-t border-gray-200" />
+        <span className="text-xs text-gray-400">or</span>
+        <div className="flex-1 border-t border-gray-200" />
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full"
+        onClick={() => setShowUrlInput(true)}
+      >
+        <Link className="w-4 h-4 mr-2" />
+        Paste image URL (Google Drive, etc.)
+      </Button>
     </div>
   )
 }

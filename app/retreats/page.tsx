@@ -44,7 +44,7 @@ interface Retreat {
   slug: string
   destination: string
   location: string
-  image_url: string
+  image_url: string | null
   level: string
   duration: string
   participants: string
@@ -313,12 +313,17 @@ export default function RetreatsPage() {
                 >
                   <Card className="overflow-hidden h-full flex flex-col group hover:shadow-xl transition-shadow duration-300 bg-white border-0">
                     <div className="relative aspect-[4/3] overflow-hidden">
-                      <Image
-                        src={retreat.image_url}
-                        alt={retreat.destination}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
+                      {retreat.image_url ? (
+                        <Image
+                          src={retreat.image_url}
+                          alt={retreat.destination}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          unoptimized={retreat.image_url.includes('drive.google.com')}
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
+                      )}
                       <div className="absolute top-3 left-3 flex gap-2">
                         <Badge
                           variant="secondary"
