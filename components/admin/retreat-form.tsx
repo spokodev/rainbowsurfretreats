@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Trash2, Save, Loader2, GripVertical, MapPin, Tag, Bed, Info, Image as ImageIcon, FileText, Calendar } from 'lucide-react'
+import { Plus, Trash2, Save, Loader2, GripVertical, MapPin, Tag, Bed, Info, Image as ImageIcon, FileText, Calendar, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -43,6 +44,15 @@ const roomSchema = z.object({
   is_sold_out: z.boolean().default(false),
   early_bird_price: z.coerce.number().nullable().optional(),
   early_bird_enabled: z.boolean().default(false),
+}).refine((data) => {
+  // Validate early bird price is less than regular price
+  if (data.early_bird_enabled && data.early_bird_price != null && data.early_bird_price >= data.price) {
+    return false
+  }
+  return true
+}, {
+  message: 'Early bird price must be less than regular price',
+  path: ['early_bird_price'],
 })
 
 const aboutSectionSchema = z.object({
@@ -84,6 +94,26 @@ const retreatSchema = z.object({
   }),
   is_published: z.boolean().default(false),
   rooms: z.array(roomSchema),
+}).refine((data) => {
+  // Validate end date is after start date
+  if (data.start_date && data.end_date) {
+    const start = new Date(data.start_date)
+    const end = new Date(data.end_date)
+    return end > start
+  }
+  return true
+}, {
+  message: 'End date must be after start date',
+  path: ['end_date'],
+}).refine((data) => {
+  // Validate early bird price is less than regular price (if both provided)
+  if (data.early_bird_enabled && data.early_bird_price != null && data.price && data.early_bird_price >= data.price) {
+    return false
+  }
+  return true
+}, {
+  message: 'Early bird price must be less than regular price',
+  path: ['early_bird_price'],
 })
 
 type RetreatFormData = z.infer<typeof retreatSchema>
@@ -299,8 +329,35 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
     }
   }, [isEdit, retreat?.id, router])
 
+  // Get all form errors for summary display
+  const errorMessages = Object.entries(errors).flatMap(([key, value]) => {
+    if (key === 'rooms' && Array.isArray(value)) {
+      return value.flatMap((roomError, index) =>
+        roomError ? Object.entries(roomError).map(([field, err]) =>
+          `Room ${index + 1}: ${(err as { message?: string })?.message || field}`
+        ) : []
+      )
+    }
+    return (value as { message?: string })?.message ? [`${key}: ${(value as { message?: string }).message}`] : []
+  })
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {/* Error Summary - Show all validation errors at top */}
+      {errorMessages.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="font-medium mb-2">Please fix the following errors:</div>
+            <ul className="list-disc list-inside space-y-1">
+              {errorMessages.map((msg, i) => (
+                <li key={i}>{msg}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Publishing Status - Always visible at top */}
       <Card className="border-2 border-dashed">
         <CardContent className="py-4">
