@@ -382,6 +382,21 @@ function BookingContent() {
     return monthsUntil >= 3;
   };
 
+  // Calculate deposit percentage based on time until retreat
+  // Standard booking (>= 2 months): 10% deposit
+  // Late booking (< 2 months): 50% deposit
+  const getDepositPercentage = () => {
+    if (!retreat) return 50;
+    const now = new Date();
+    const retreatStart = new Date(retreat.start_date);
+    const monthsUntil =
+      (retreatStart.getFullYear() - now.getFullYear()) * 12 +
+      (retreatStart.getMonth() - now.getMonth());
+    return monthsUntil >= 2 ? 10 : 50;
+  };
+
+  const depositPercentage = getDepositPercentage();
+
   const eligible = isEligibleForEarlyBird();
   const regularPrice = selectedRoom?.price || retreat?.price || 599;
 
@@ -413,7 +428,7 @@ function BookingContent() {
   }
 
   const finalPrice = regularPrice - bestDiscountAmount;
-  const depositAmount = (finalPrice * 0.5).toFixed(2);
+  const depositAmount = (finalPrice * (depositPercentage / 100)).toFixed(2);
 
   // Calculate VAT rate based on country and customer type
   // For display purposes: shows expected VAT before B2B validation
@@ -849,13 +864,26 @@ function BookingContent() {
                     </h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-700">Today (50% deposit):</span>
+                        <span className="text-gray-700">Today ({depositPercentage}% deposit):</span>
                         <span className="font-semibold">€{totalWithVat}</span>
                       </div>
-                      <div className="flex justify-between text-gray-600">
-                        <span>Final payment (50%) - Due 30 days before:</span>
-                        <span>€{(finalPrice * 0.5).toFixed(2)}</span>
-                      </div>
+                      {depositPercentage === 10 ? (
+                        <>
+                          <div className="flex justify-between text-gray-600">
+                            <span>Payment 2 (50%) - Due 2 months before:</span>
+                            <span>€{(finalPrice * 0.5).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-gray-600">
+                            <span>Payment 3 (40%) - Due 1 month before:</span>
+                            <span>€{(finalPrice * 0.4).toFixed(2)}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex justify-between text-gray-600">
+                          <span>Final payment (50%) - Due 1 month before:</span>
+                          <span>€{(finalPrice * 0.5).toFixed(2)}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1098,7 +1126,7 @@ function BookingContent() {
                   <span>€{finalPrice}</span>
                 </div>
                 <div className="flex justify-between text-[var(--primary-teal)]">
-                  <span>Deposit today (50%):</span>
+                  <span>Deposit today ({depositPercentage}%):</span>
                   <span>€{depositAmount}</span>
                 </div>
                 {vatRate > 0 && (
