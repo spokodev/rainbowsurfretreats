@@ -38,7 +38,7 @@ export interface Retreat {
   food: string
   type: RetreatType
   gear: string
-  price: number
+  price: number | null
   early_bird_price: number | null
   start_date: string
   end_date: string
@@ -97,7 +97,7 @@ export interface RetreatInsert {
   food: string
   type: RetreatType
   gear: string
-  price: number
+  price?: number | null
   early_bird_price?: number | null
   start_date: string
   end_date: string
@@ -400,8 +400,7 @@ export interface PaginatedResponse<T> {
 // FORM TYPES (for admin forms)
 // =====================
 export interface RetreatFormData extends Omit<RetreatInsert, 'price' | 'early_bird_price'> {
-  price: string // Form uses string for input
-  early_bird_price: string
+  // Price is now only set at room level
   rooms: RetreatRoomFormData[]
 }
 

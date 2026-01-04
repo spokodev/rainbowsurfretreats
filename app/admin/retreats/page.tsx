@@ -8,8 +8,6 @@ import {
   Trash2,
   MapPin,
   Calendar,
-  Users,
-  DollarSign,
   Loader2,
   RefreshCw,
   Eye,
@@ -217,7 +215,11 @@ export default function AdminRetreatsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <span className="font-semibold">€{retreat.price}</span>
+                        <span className="font-semibold">
+                          {retreat.rooms && retreat.rooms.length > 0
+                            ? `from €${Math.min(...retreat.rooms.map(r => r.price))}`
+                            : 'No rooms'}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>

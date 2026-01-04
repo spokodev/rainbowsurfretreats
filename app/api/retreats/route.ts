@@ -132,14 +132,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate early bird price (if provided at retreat level)
-    if (retreatData.early_bird_price && retreatData.price && retreatData.early_bird_price >= retreatData.price) {
-      return NextResponse.json<ApiResponse<null>>(
-        { error: 'Early bird price must be less than regular price' },
-        { status: 400 }
-      )
-    }
-
     const { data, error } = await supabase
       .from('retreats')
       .insert(retreatData)

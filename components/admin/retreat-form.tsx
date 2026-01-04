@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Trash2, Save, Loader2, GripVertical, MapPin, Tag, Bed, Info, Image as ImageIcon, FileText, Calendar, AlertCircle } from 'lucide-react'
+import { Plus, Trash2, Save, Loader2, GripVertical, MapPin, Bed, Info, Image as ImageIcon, FileText, Calendar, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -70,9 +70,6 @@ const retreatSchema = z.object({
   food: z.string().min(1, 'Food info is required'),
   type: z.enum(['Budget', 'Standard', 'Premium']),
   gear: z.string().min(1, 'Gear info is required'),
-  price: z.coerce.number().min(0, 'Price must be positive'),
-  early_bird_enabled: z.boolean().default(false),
-  early_bird_price: z.coerce.number().nullable().optional(),
   start_date: z.string().min(1, 'Start date is required'),
   end_date: z.string().min(1, 'End date is required'),
   description: z.string().nullable().optional(),
@@ -105,15 +102,6 @@ const retreatSchema = z.object({
 }, {
   message: 'End date must be after start date',
   path: ['end_date'],
-}).refine((data) => {
-  // Validate early bird price is less than regular price (if both provided)
-  if (data.early_bird_enabled && data.early_bird_price != null && data.price && data.early_bird_price >= data.price) {
-    return false
-  }
-  return true
-}, {
-  message: 'Early bird price must be less than regular price',
-  path: ['early_bird_price'],
 })
 
 type RetreatFormData = z.infer<typeof retreatSchema>
@@ -141,9 +129,6 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
     food: retreat?.food || 'Breakfast & Dinner',
     type: retreat?.type || 'Standard',
     gear: retreat?.gear || 'Included',
-    price: retreat?.price || 0,
-    early_bird_enabled: !!retreat?.early_bird_price,
-    early_bird_price: retreat?.early_bird_price || null,
     start_date: retreat?.start_date || '',
     end_date: retreat?.end_date || '',
     description: retreat?.description || null,
@@ -218,7 +203,6 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
   })
 
   const watchedImageUrl = watch('image_url')
-  const watchedEarlyBirdEnabled = watch('early_bird_enabled')
   const watchedLatitude = watch('latitude') as number | null
   const watchedLongitude = watch('longitude') as number | null
 
@@ -262,8 +246,6 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
       // Filter out empty strings from arrays
       const cleanedData = {
         ...data,
-        // If early bird is disabled, set price to null
-        early_bird_price: data.early_bird_enabled ? data.early_bird_price : null,
         highlights: data.highlights.filter(h => h.trim() !== ''),
         included: data.included.filter(i => i.trim() !== ''),
         not_included: data.not_included.filter(n => n.trim() !== ''),
@@ -275,9 +257,7 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
         })),
       }
 
-      // Remove early_bird_enabled from the data (it's not in the DB schema)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { early_bird_enabled, ...dataToSave } = cleanedData
+      const dataToSave = cleanedData
 
       const url = isEdit ? `/api/retreats/${retreat?.id}` : '/api/retreats'
       const method = isEdit ? 'PUT' : 'POST'
@@ -497,20 +477,7 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="price">Base Price (EUR) *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  {...register('price')}
-                />
-                {errors.price && (
-                  <p className="text-sm text-red-500">{errors.price.message}</p>
-                )}
-              </div>
-
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="duration">Duration *</Label>
                 <Input
@@ -542,48 +509,6 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
             </div>
           </AccordionTrigger>
           <AccordionContent className="pt-4 pb-6 space-y-4">
-            {/* Early Bird */}
-            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-              <div className="flex items-center gap-3">
-                <Tag className="w-5 h-5 text-green-600" />
-                <div className="flex items-center gap-3 flex-1">
-                  <Controller
-                    name="early_bird_enabled"
-                    control={control}
-                    render={({ field }) => (
-                      <Switch
-                        id="early_bird_enabled"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    )}
-                  />
-                  <Label htmlFor="early_bird_enabled" className="font-medium">
-                    Enable Early Bird Discount
-                  </Label>
-                </div>
-              </div>
-
-              {watchedEarlyBirdEnabled && (
-                <div className="ml-8 space-y-2">
-                  <Label htmlFor="early_bird_price">Early Bird Price (EUR)</Label>
-                  <Input
-                    id="early_bird_price"
-                    type="number"
-                    step="0.01"
-                    {...register('early_bird_price')}
-                    className="max-w-[200px]"
-                    placeholder="e.g., 1350"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Applies to bookings made 3+ months before retreat starts
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <Separator />
-
             {/* Rooms */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">

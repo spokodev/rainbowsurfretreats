@@ -49,8 +49,8 @@ interface UpcomingRetreat {
   destination: string;
   start_date: string;
   end_date: string;
-  price: number;
   availability_status: string;
+  rooms: { price: number }[];
 }
 
 async function getDashboardData(): Promise<{
@@ -103,10 +103,10 @@ async function getDashboardData(): Promise<{
     .order("created_at", { ascending: false })
     .limit(5);
 
-  // Fetch upcoming retreats
+  // Fetch upcoming retreats with rooms to get min price
   const { data: upcomingRetreats } = await supabase
     .from("retreats")
-    .select("id, destination, start_date, end_date, price, availability_status")
+    .select("id, destination, start_date, end_date, availability_status, rooms:retreat_rooms(price)")
     .eq("is_published", true)
     .gte("start_date", new Date().toISOString().split("T")[0])
     .order("start_date", { ascending: true })
@@ -284,7 +284,11 @@ export default async function AdminDashboard() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold">€{retreat.price}</div>
+                      <div className="font-semibold">
+                        {retreat.rooms?.length > 0
+                          ? `from €${Math.min(...retreat.rooms.map(r => r.price))}`
+                          : 'No rooms'}
+                      </div>
                       <Badge variant="outline">{retreat.availability_status}</Badge>
                     </div>
                   </div>

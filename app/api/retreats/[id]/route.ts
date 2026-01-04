@@ -77,14 +77,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Validate early bird price
-    if (updateData.early_bird_price && updateData.price && updateData.early_bird_price >= updateData.price) {
-      return NextResponse.json<ApiResponse<null>>(
-        { error: 'Early bird price must be less than regular price' },
-        { status: 400 }
-      )
-    }
-
     const { data, error } = await supabase
       .from('retreats')
       .update(updateData)
