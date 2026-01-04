@@ -929,17 +929,17 @@ function BookingContent() {
                           <>
                             <div className="flex justify-between text-gray-600">
                               <span>Payment 2 (50%) - Due 2 months before:</span>
-                              <span>€{(finalPrice * 0.5).toFixed(2)}</span>
+                              <span>€{(finalPrice * 0.5 * (1 + vatRate)).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-gray-600">
                               <span>Payment 3 (40%) - Due 1 month before:</span>
-                              <span>€{(finalPrice * 0.4).toFixed(2)}</span>
+                              <span>€{(finalPrice * 0.4 * (1 + vatRate)).toFixed(2)}</span>
                             </div>
                           </>
                         ) : (
                           <div className="flex justify-between text-gray-600">
                             <span>Final payment (50%) - Due 1 month before:</span>
-                            <span>€{(finalPrice * 0.5).toFixed(2)}</span>
+                            <span>€{(finalPrice * 0.5 * (1 + vatRate)).toFixed(2)}</span>
                           </div>
                         )}
                       </div>
