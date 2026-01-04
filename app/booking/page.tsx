@@ -113,6 +113,9 @@ function BookingContent() {
   const [vatIdValid, setVatIdValid] = useState<boolean | null>(null);
   const [vatIdError, setVatIdError] = useState<string | null>(null);
 
+  // Payment type state
+  const [paymentType, setPaymentType] = useState<"scheduled" | "full">("scheduled");
+
   // Promo code state
   const [promoCode, setPromoCode] = useState("");
   const [promoCodeInput, setPromoCodeInput] = useState("");
@@ -341,7 +344,7 @@ function BookingContent() {
           city: formData.city || undefined,
           postalCode: formData.postalCode || undefined,
           country: formData.country,
-          paymentType: "scheduled",
+          paymentType: paymentType,
           acceptTerms: formData.acceptTerms,
           newsletterOptIn: formData.newsletter,
           language: navigator.language?.split("-")[0] || "en",
@@ -856,35 +859,91 @@ function BookingContent() {
                     </p>
                   </div>
 
+                  {/* Payment Type Selection */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <CreditCard className="w-5 h-5 text-[var(--primary-teal)]" />
+                      Choose Payment Option
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentType("scheduled")}
+                        className={`p-4 rounded-lg border-2 text-left transition-all ${
+                          paymentType === "scheduled"
+                            ? "border-[var(--primary-teal)] bg-[var(--sand-light)]"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="font-semibold mb-1">Pay Deposit</div>
+                        <div className="text-sm text-gray-600">
+                          {depositPercentage}% now, rest in installments
+                        </div>
+                        <div className="text-lg font-bold text-[var(--primary-teal)] mt-2">
+                          €{totalWithVat} today
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentType("full")}
+                        className={`p-4 rounded-lg border-2 text-left transition-all ${
+                          paymentType === "full"
+                            ? "border-[var(--primary-teal)] bg-[var(--sand-light)]"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="font-semibold mb-1">Pay in Full</div>
+                        <div className="text-sm text-gray-600">
+                          Complete payment now
+                        </div>
+                        <div className="text-lg font-bold text-[var(--primary-teal)] mt-2">
+                          €{(finalPrice * (1 + vatRate)).toFixed(2)} today
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Payment Schedule */}
                   <div className="bg-[var(--sand-light)] rounded-lg p-6 space-y-3">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
                       <Calendar className="w-5 h-5 text-[var(--primary-teal)]" />
                       Payment Schedule
                     </h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-700">Today ({depositPercentage}% deposit):</span>
-                        <span className="font-semibold">€{totalWithVat}</span>
+                    {paymentType === "full" ? (
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-700">Full payment today:</span>
+                          <span className="font-semibold">€{(finalPrice * (1 + vatRate)).toFixed(2)}</span>
+                        </div>
+                        <div className="text-green-600 text-sm mt-2">
+                          ✓ No future payments required
+                        </div>
                       </div>
-                      {depositPercentage === 10 ? (
-                        <>
+                    ) : (
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-700">Today ({depositPercentage}% deposit):</span>
+                          <span className="font-semibold">€{totalWithVat}</span>
+                        </div>
+                        {depositPercentage === 10 ? (
+                          <>
+                            <div className="flex justify-between text-gray-600">
+                              <span>Payment 2 (50%) - Due 2 months before:</span>
+                              <span>€{(finalPrice * 0.5).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-gray-600">
+                              <span>Payment 3 (40%) - Due 1 month before:</span>
+                              <span>€{(finalPrice * 0.4).toFixed(2)}</span>
+                            </div>
+                          </>
+                        ) : (
                           <div className="flex justify-between text-gray-600">
-                            <span>Payment 2 (50%) - Due 2 months before:</span>
+                            <span>Final payment (50%) - Due 1 month before:</span>
                             <span>€{(finalPrice * 0.5).toFixed(2)}</span>
                           </div>
-                          <div className="flex justify-between text-gray-600">
-                            <span>Payment 3 (40%) - Due 1 month before:</span>
-                            <span>€{(finalPrice * 0.4).toFixed(2)}</span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex justify-between text-gray-600">
-                          <span>Final payment (50%) - Due 1 month before:</span>
-                          <span>€{(finalPrice * 0.5).toFixed(2)}</span>
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Stripe Checkout Info */}
@@ -1023,7 +1082,7 @@ function BookingContent() {
                     ) : (
                       <>
                         <Shield className="w-4 h-4 mr-2" />
-                        Pay €{totalWithVat}
+                        Pay €{paymentType === "full" ? (finalPrice * (1 + vatRate)).toFixed(2) : totalWithVat}
                       </>
                     )}
                   </Button>
@@ -1126,20 +1185,20 @@ function BookingContent() {
                   <span>€{finalPrice}</span>
                 </div>
                 <div className="flex justify-between text-[var(--primary-teal)]">
-                  <span>Deposit today ({depositPercentage}%):</span>
-                  <span>€{depositAmount}</span>
+                  <span>{paymentType === "full" ? "Full payment:" : `Deposit today (${depositPercentage}%):`}</span>
+                  <span>€{paymentType === "full" ? finalPrice : depositAmount}</span>
                 </div>
                 {vatRate > 0 && (
                   <div className="flex justify-between text-gray-600">
                     <span>VAT ({(vatRate * 100).toFixed(0)}%):</span>
-                    <span>€{vatAmount}</span>
+                    <span>€{paymentType === "full" ? (finalPrice * vatRate).toFixed(2) : vatAmount}</span>
                   </div>
                 )}
               </div>
 
               <div className="flex justify-between text-lg mb-6 pt-4 border-t">
                 <span>Total due today:</span>
-                <span className="font-semibold">€{totalWithVat}</span>
+                <span className="font-semibold">€{paymentType === "full" ? (finalPrice * (1 + vatRate)).toFixed(2) : totalWithVat}</span>
               </div>
 
               <div className="bg-[var(--sand-light)] rounded-lg p-4 text-xs space-y-1">
