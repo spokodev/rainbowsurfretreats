@@ -451,7 +451,7 @@ function MyBookingContent() {
                     <p className="text-lg font-bold text-slate-800">
                       {formatCurrency(schedule.amount)}
                     </p>
-                    {(schedule.status === "pending" || schedule.status === "failed") && token && (
+                    {(schedule.status === "pending" || schedule.status === "processing" || schedule.status === "failed") && token && (
                       <a
                         href={`/api/payments/${schedule.id}/checkout?token=${token}`}
                         className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 rounded-lg transition-colors"

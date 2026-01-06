@@ -45,7 +45,7 @@ export interface CalculateScheduleOptions {
  * Calculate the number of months between two dates
  * Accounts for day of month to avoid edge cases like Jan 31 to Feb 28
  */
-function monthsBetween(date1: Date, date2: Date): number {
+export function monthsBetween(date1: Date, date2: Date): number {
   const d1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate())
   const d2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate())
   const months = (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth())

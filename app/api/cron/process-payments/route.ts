@@ -63,7 +63,6 @@ interface PaymentScheduleRow {
     check_out_date: string
     retreat: {
       id: string
-      title: string
       destination: string
       start_date: string
       end_date: string
@@ -129,7 +128,6 @@ export async function GET(request: NextRequest) {
           check_out_date,
           retreat:retreats!inner (
             id,
-            title,
             destination,
             start_date,
             end_date
@@ -269,7 +267,6 @@ export async function GET(request: NextRequest) {
           check_out_date,
           retreat:retreats!inner (
             id,
-            title,
             destination,
             start_date,
             end_date
@@ -369,7 +366,7 @@ export async function GET(request: NextRequest) {
               bookingNumber: booking.booking_number,
               customerName: `${booking.first_name} ${booking.last_name}`,
               customerEmail: booking.email,
-              retreatName: booking.retreat.title,
+              retreatName: booking.retreat.destination,
               amount: payment.amount,
               paymentNumber: payment.payment_number,
               failureReason: 'No payment method on file',
@@ -444,7 +441,7 @@ export async function GET(request: NextRequest) {
               stripe_customer_id: booking.stripe_customer_id,
               amount: payment.amount,
               currency: 'EUR',
-              payment_type: 'scheduled',
+              payment_type: 'balance',
               status: 'succeeded',
               payment_method: 'card',
             })
@@ -461,12 +458,14 @@ export async function GET(request: NextRequest) {
             const allPaid = pendingSchedules.length === 0
 
             // Update booking
-            const totalPaid = paidSchedules.reduce((sum, s) => sum + s.amount, 0)
+            // Parse amounts as numbers (Supabase returns decimals as strings)
+            const totalPaid = paidSchedules.reduce((sum, s) => sum + parseFloat(String(s.amount)), 0)
+            const bookingTotal = parseFloat(String(booking.total_amount))
             await supabase
               .from('bookings')
               .update({
-                payment_status: allPaid ? 'paid' : 'partial',
-                balance_due: allPaid ? 0 : booking.total_amount - totalPaid,
+                payment_status: allPaid ? 'paid' : 'deposit',
+                balance_due: allPaid ? 0 : bookingTotal - totalPaid,
               })
               .eq('id', booking.id)
 
@@ -638,7 +637,7 @@ async function handlePaymentFailure(
         bookingNumber: booking.booking_number,
         customerName: `${booking.first_name} ${booking.last_name}`,
         customerEmail: booking.email,
-        retreatName: booking.retreat.title,
+        retreatName: booking.retreat.destination,
         amount: payment.amount,
         paymentNumber: payment.payment_number,
         failureReason,

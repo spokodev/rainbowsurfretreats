@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getStripe } from '@/lib/stripe'
 import type Stripe from 'stripe'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreats.com'
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreats.com').trim()
 
 // Use service role client to bypass RLS
 function getSupabase() {
@@ -25,9 +25,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ scheduleId: string }> }
 ) {
+  // Store token early for use in error handling
+  const token = request.nextUrl.searchParams.get('token')
+
   try {
     const { scheduleId } = await params
-    const token = request.nextUrl.searchParams.get('token')
 
     if (!token) {
       return NextResponse.redirect(
@@ -71,7 +73,7 @@ export async function GET(
     if (bookingError || !booking) {
       console.error('[EarlyPayment] Invalid token:', bookingError)
       return NextResponse.redirect(
-        new URL('/my-booking?error=invalid_token', SITE_URL)
+        new URL(`/my-booking?token=${token}&error=invalid_token`, SITE_URL)
       )
     }
 
@@ -80,7 +82,7 @@ export async function GET(
       const expiresAt = new Date(booking.access_token_expires_at)
       if (expiresAt < new Date()) {
         return NextResponse.redirect(
-          new URL('/my-booking?error=token_expired', SITE_URL)
+          new URL(`/my-booking?token=${token}&error=token_expired`, SITE_URL)
         )
       }
     }
@@ -127,6 +129,23 @@ export async function GET(
     const retreat = Array.isArray(booking.retreat) ? booking.retreat[0] : booking.retreat
     const room = Array.isArray(booking.room) ? booking.room[0] : booking.room
 
+    // Validate retreat data
+    if (!retreat || !retreat.destination) {
+      console.error('[EarlyPayment] Missing retreat data for booking:', booking.booking_number)
+      return NextResponse.redirect(
+        new URL(`/my-booking?token=${token}&error=invalid_booking_data`, SITE_URL)
+      )
+    }
+
+    // Parse amount (Supabase may return decimal as string)
+    const amount = parseFloat(String(schedule.amount))
+    if (isNaN(amount) || amount <= 0) {
+      console.error('[EarlyPayment] Invalid payment amount:', schedule.amount)
+      return NextResponse.redirect(
+        new URL(`/my-booking?token=${token}&error=invalid_amount`, SITE_URL)
+      )
+    }
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       payment_method_types: ['card'],
@@ -138,7 +157,7 @@ export async function GET(
               name: `${retreat.destination} Retreat - Payment ${schedule.payment_number}`,
               description: room ? `${room.name} | ${booking.booking_number}` : booking.booking_number,
             },
-            unit_amount: Math.round(schedule.amount * 100),
+            unit_amount: Math.round(amount * 100),
           },
           quantity: 1,
         },
@@ -154,11 +173,27 @@ export async function GET(
     }
 
     // Use existing Stripe customer or customer email
+    // If customer ID exists, validate it first to avoid Stripe errors
     if (booking.stripe_customer_id) {
-      sessionParams.customer = booking.stripe_customer_id
+      try {
+        // Verify customer exists in Stripe
+        await stripe.customers.retrieve(booking.stripe_customer_id)
+        sessionParams.customer = booking.stripe_customer_id
+      } catch (customerError) {
+        // Customer doesn't exist in Stripe, fall back to email
+        console.warn(`[EarlyPayment] Stripe customer ${booking.stripe_customer_id} not found, using email instead`)
+        sessionParams.customer_email = booking.email
+      }
     } else {
       sessionParams.customer_email = booking.email
     }
+
+    console.log(`[EarlyPayment] Creating checkout session for ${booking.booking_number}:`, {
+      scheduleId: schedule.id,
+      amount,
+      customer: sessionParams.customer || sessionParams.customer_email,
+      siteUrl: SITE_URL,
+    })
 
     const session = await stripe.checkout.sessions.create(sessionParams)
 
@@ -176,9 +211,20 @@ export async function GET(
     // 9. Redirect to Stripe
     return NextResponse.redirect(session.url!)
   } catch (error) {
-    console.error('[EarlyPayment] Error:', error)
-    return NextResponse.redirect(
-      new URL('/my-booking?error=checkout_failed', SITE_URL)
-    )
+    // Log detailed error for debugging
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
+
+    console.error('[EarlyPayment] Error creating checkout session:', {
+      error: errorMessage,
+      stack: errorStack,
+    })
+
+    // Redirect with token if available for better UX
+    const redirectUrl = token
+      ? `/my-booking?token=${token}&error=checkout_failed`
+      : '/my-booking?error=checkout_failed'
+
+    return NextResponse.redirect(new URL(redirectUrl, SITE_URL))
   }
 }

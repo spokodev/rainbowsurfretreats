@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { countries, vatRates, isEUCountry, COMPANY_COUNTRY } from "@/lib/stripe";
+import { monthsBetween } from "@/lib/payment-schedule";
 
 interface RetreatRoom {
   id: string;
@@ -99,7 +100,7 @@ function BookingContent() {
     billingAddress: "",
     city: "",
     postalCode: "",
-    country: "DE",
+    country: "",
     acceptTerms: false,
     newsletter: false,
     // B2B fields
@@ -174,6 +175,11 @@ function BookingContent() {
   const handleNext = () => {
     // Validate step 2 (Billing) before proceeding
     if (currentStep === 2) {
+      // Require country selection
+      if (!formData.country) {
+        setError("Please select your country");
+        return;
+      }
       // For business customers, require company name and VAT ID
       if (formData.customerType === "business") {
         if (!formData.companyName.trim()) {
@@ -379,9 +385,7 @@ function BookingContent() {
     if (!retreat) return false;
     const now = new Date();
     const retreatStart = new Date(retreat.start_date);
-    const monthsUntil =
-      (retreatStart.getFullYear() - now.getFullYear()) * 12 +
-      (retreatStart.getMonth() - now.getMonth());
+    const monthsUntil = monthsBetween(now, retreatStart);
     return monthsUntil >= 3;
   };
 
@@ -392,9 +396,7 @@ function BookingContent() {
     if (!retreat) return 50;
     const now = new Date();
     const retreatStart = new Date(retreat.start_date);
-    const monthsUntil =
-      (retreatStart.getFullYear() - now.getFullYear()) * 12 +
-      (retreatStart.getMonth() - now.getMonth());
+    const monthsUntil = monthsBetween(now, retreatStart);
     return monthsUntil >= 2 ? 10 : 50;
   };
 
