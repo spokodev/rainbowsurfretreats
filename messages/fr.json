@@ -302,6 +302,7 @@
     "whatsIncluded": "Ce qui est inclus",
     "notIncluded": "Non inclus",
     "roomOptions": "Options de chambre",
+    "pricesExcludeVat": "Prix hors TVA. La taxe sera ajoutée lors du paiement en fonction de votre pays.",
     "location": "Emplacement",
     "bookNow": "Réserver maintenant",
     "book": "Réserver",

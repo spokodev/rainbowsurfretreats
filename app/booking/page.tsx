@@ -1096,7 +1096,8 @@ function BookingContent() {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl p-6 shadow-lg sticky top-24">
-              <h3 className="text-xl mb-4">Order Summary</h3>
+              <h3 className="text-xl mb-2">Order Summary</h3>
+              <p className="text-xs text-gray-500 mb-4">Prices exclude VAT. Tax will be added based on your country.</p>
 
               <div className="space-y-3 mb-6 pb-6 border-b">
                 <div>

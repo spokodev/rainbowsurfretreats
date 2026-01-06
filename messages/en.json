@@ -302,6 +302,7 @@
     "whatsIncluded": "What's Included",
     "notIncluded": "Not Included",
     "roomOptions": "Room Options",
+    "pricesExcludeVat": "Prices exclude VAT. Tax will be added at checkout based on your country.",
     "location": "Location",
     "bookNow": "Book Now",
     "book": "Book",

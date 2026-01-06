@@ -398,6 +398,7 @@ export default function RetreatPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>{t('roomOptions')}</CardTitle>
+                  <p className="text-sm text-muted-foreground">{t('pricesExcludeVat')}</p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {sortedRooms.map((room) => (

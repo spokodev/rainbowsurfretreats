@@ -302,6 +302,7 @@
     "whatsIncluded": "Im Preis enthalten",
     "notIncluded": "Nicht enthalten",
     "roomOptions": "Zimmeroptionen",
+    "pricesExcludeVat": "Preise verstehen sich ohne MwSt. Die Steuer wird beim Checkout entsprechend Ihres Landes hinzugefügt.",
     "location": "Lage",
     "bookNow": "Jetzt buchen",
     "book": "Buchen",
