@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   Download,
   CreditCard,
@@ -307,9 +308,9 @@ export default function AdminPaymentsPage() {
         isProcessing: false,
       });
 
-      alert(data.message || "Refund processed successfully");
+      toast.success(data.message || "Refund processed successfully");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to process refund");
+      toast.error(err instanceof Error ? err.message : "Failed to process refund");
       setRefundDialog((prev) => ({ ...prev, isProcessing: false }));
     }
   }
@@ -347,9 +348,9 @@ export default function AdminPaymentsPage() {
         isProcessing: false,
       });
 
-      alert(data.message || "Payment cancelled successfully");
+      toast.success(data.message || "Payment cancelled successfully");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to cancel payment");
+      toast.error(err instanceof Error ? err.message : "Failed to cancel payment");
       setCancelDialog((prev) => ({ ...prev, isProcessing: false }));
     }
   }
@@ -360,14 +361,14 @@ export default function AdminPaymentsPage() {
         method: "POST",
       });
       const data = await res.json();
-      alert(
+      toast.success(
         `Processing complete: ${data.processed || 0} processed, ${
           data.succeeded || 0
         } succeeded, ${data.failed || 0} failed`
       );
       await fetchData();
     } catch {
-      alert("Failed to trigger payment processing");
+      toast.error("Failed to trigger payment processing");
     }
   }
 

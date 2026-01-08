@@ -62,48 +62,67 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get room if specified
+    // Room is required for booking
+    if (!body.roomId) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Please select a room type' },
+        { status: 400 }
+      )
+    }
+
+    // Get room
     let room: {
       id: string
       name?: string
       price: number
       is_sold_out?: boolean
       available?: number
-      early_bird_price?: number | null
       early_bird_enabled?: boolean
+      early_bird_deadline?: string | null
     } | null = null
-    let basePrice = retreat.price as number
+    let basePrice = 0
 
-    if (body.roomId && retreat.rooms) {
+    if (retreat.rooms) {
       room = retreat.rooms.find((r: { id: string }) => r.id === body.roomId) || null
-      if (room) {
-        // Check if room is sold out
-        if (room.is_sold_out || room.available === 0) {
-          return NextResponse.json<ApiResponse<null>>(
-            { error: 'This room type is no longer available. Please select a different room.' },
-            { status: 400 }
-          )
-        }
-        basePrice = room.price
+      if (!room) {
+        return NextResponse.json<ApiResponse<null>>(
+          { error: 'Selected room not found for this retreat' },
+          { status: 400 }
+        )
       }
+      // Check if room is sold out
+      if (room.is_sold_out || room.available === 0) {
+        return NextResponse.json<ApiResponse<null>>(
+          { error: 'This room type is no longer available. Please select a different room.' },
+          { status: 400 }
+        )
+      }
+      basePrice = room.price
+    } else {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'No rooms available for this retreat' },
+        { status: 400 }
+      )
     }
 
     // Get dates for payment schedule calculation
     const bookingDate = new Date()
     const retreatStartDate = new Date(retreat.start_date)
 
-    // Check if eligible for early bird (3+ months before retreat)
-    const eligibleForTime = isEligibleForEarlyBird(bookingDate, retreatStartDate)
+    // Check if eligible for early bird (before deadline or 3+ months before retreat)
+    const eligibleForTime = isEligibleForEarlyBird(
+      bookingDate,
+      retreatStartDate,
+      room?.early_bird_deadline
+    )
 
     // Check if room has Early Bird enabled
-    const roomHasEarlyBird = room?.early_bird_enabled && room?.early_bird_price
+    const roomHasEarlyBird = room?.early_bird_enabled
 
-    // Calculate early bird discount amount
+    // Calculate early bird discount amount (always 10%)
     let earlyBirdDiscountAmount = 0
     if (eligibleForTime && roomHasEarlyBird) {
-      earlyBirdDiscountAmount = basePrice - (room!.early_bird_price as number)
-    } else if (eligibleForTime && retreat.early_bird_price) {
-      earlyBirdDiscountAmount = basePrice - (retreat.early_bird_price as number)
+      earlyBirdDiscountAmount = Math.round(basePrice * 0.1)
     }
 
     // Validate promo code if provided

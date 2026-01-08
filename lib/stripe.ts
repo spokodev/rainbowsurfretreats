@@ -59,46 +59,39 @@ export function isEUCountry(countryCode: string): boolean {
   return EU_COUNTRIES.includes(countryCode as EUCountryCode)
 }
 
-// VAT rates for EU countries (as of 2024)
-// Standard VAT rates - verify for current year
+// VAT rates - Cyprus company applies 19% VAT to all EU countries
+// Non-EU countries are 0% (export)
 export const vatRates: Record<string, number> = {
-  // Western Europe
-  DE: 0.19, // Germany
-  FR: 0.20, // France
-  NL: 0.21, // Netherlands
-  BE: 0.21, // Belgium
-  LU: 0.17, // Luxembourg
-  AT: 0.20, // Austria
-
-  // Southern Europe
-  ES: 0.21, // Spain
-  IT: 0.22, // Italy
-  PT: 0.23, // Portugal
-  GR: 0.24, // Greece
-  MT: 0.18, // Malta
+  // EU Countries - all 19% (Cyprus rate)
+  AT: 0.19, // Austria
+  BE: 0.19, // Belgium
+  BG: 0.19, // Bulgaria
+  HR: 0.19, // Croatia
   CY: 0.19, // Cyprus
-
-  // Northern Europe
-  IE: 0.23, // Ireland
-  DK: 0.25, // Denmark
-  SE: 0.25, // Sweden
-  FI: 0.255, // Finland (25.5%)
-
-  // Eastern Europe
-  PL: 0.23, // Poland
-  CZ: 0.21, // Czech Republic
-  SK: 0.20, // Slovakia
-  HU: 0.27, // Hungary (highest in EU)
+  CZ: 0.19, // Czech Republic
+  DK: 0.19, // Denmark
+  EE: 0.19, // Estonia
+  FI: 0.19, // Finland
+  FR: 0.19, // France
+  DE: 0.19, // Germany
+  GR: 0.19, // Greece
+  HU: 0.19, // Hungary
+  IE: 0.19, // Ireland
+  IT: 0.19, // Italy
+  LV: 0.19, // Latvia
+  LT: 0.19, // Lithuania
+  LU: 0.19, // Luxembourg
+  MT: 0.19, // Malta
+  NL: 0.19, // Netherlands
+  PL: 0.19, // Poland
+  PT: 0.19, // Portugal
   RO: 0.19, // Romania
-  BG: 0.20, // Bulgaria
-  HR: 0.25, // Croatia
-  SI: 0.22, // Slovenia
-  EE: 0.22, // Estonia
-  LV: 0.21, // Latvia
-  LT: 0.21, // Lithuania
+  SK: 0.19, // Slovakia
+  SI: 0.19, // Slovenia
+  ES: 0.19, // Spain
+  SE: 0.19, // Sweden
 
   // Non-EU countries (0% VAT for exports)
-  // Note: GB is post-Brexit, treated as non-EU
   GB: 0, // United Kingdom
   CH: 0, // Switzerland
   NO: 0, // Norway

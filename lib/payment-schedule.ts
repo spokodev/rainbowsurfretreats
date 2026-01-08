@@ -3,8 +3,8 @@
  *
  * Standard Flow (booking >= 2 months before retreat) - 3 payments:
  * - Payment 1: 10% deposit immediately
- * - Payment 2: 50% 2 months before retreat
- * - Payment 3: 40% 1 month before retreat
+ * - Payment 2: 40% 1 month after booking
+ * - Payment 3: 50% 1 month before retreat
  *
  * Late Booking Flow (booking < 2 months before retreat) - 2 payments:
  * - Payment 1: 50% immediately
@@ -165,10 +165,10 @@ export function calculatePaymentSchedule(
       percentage: 50,
     })
   } else {
-    // Standard booking: 10% now, 50% 2 months before, 40% 1 month before
+    // Standard booking: 10% now, 40% 1 month after booking, 50% 1 month before retreat
     const depositAmount = roundCurrency(adjustedTotal * 0.10) // 10%
-    const secondPayment = roundCurrency(adjustedTotal * 0.50) // 50%
-    const balanceAmount = roundCurrency(adjustedTotal - depositAmount - secondPayment) // 40%
+    const secondPayment = roundCurrency(adjustedTotal * 0.40) // 40%
+    const balanceAmount = roundCurrency(adjustedTotal - depositAmount - secondPayment) // 50%
 
     schedules.push({
       paymentNumber: 1,
@@ -184,19 +184,19 @@ export function calculatePaymentSchedule(
     schedules.push({
       paymentNumber: 2,
       amount: secondPayment,
-      dueDate: subtractMonths(retreatStartDate, 2), // 2 months before retreat
-      description: 'Second payment (50%)',
+      dueDate: addMonths(bookingDate, 1), // 1 month after booking
+      description: 'Second payment (40%)',
       type: 'second',
-      percentage: 50,
+      percentage: 40,
     })
 
     schedules.push({
       paymentNumber: 3,
       amount: balanceAmount,
       dueDate: subtractMonths(retreatStartDate, 1), // 1 month before retreat
-      description: 'Final payment (40%)',
+      description: 'Final payment (50%)',
       type: 'balance',
-      percentage: 40,
+      percentage: 50,
     })
   }
 
@@ -237,13 +237,25 @@ export function getFirstPaymentAmount(
 
 /**
  * Check if booking qualifies for early bird discount
- * Early bird is typically available when booking more than 3 months in advance
+ * If deadline is provided, checks if booking date is before the deadline
+ * Otherwise, early bird is available when booking more than 3 months in advance
  */
 export function isEligibleForEarlyBird(
   bookingDate: Date,
   retreatStartDate: Date,
+  earlyBirdDeadline?: string | null,
   earlyBirdCutoffMonths: number = 3
 ): boolean {
+  // If a specific deadline is set, use it
+  if (earlyBirdDeadline) {
+    const deadline = new Date(earlyBirdDeadline)
+    deadline.setHours(23, 59, 59, 999) // End of deadline day
+    const booking = new Date(bookingDate)
+    booking.setHours(0, 0, 0, 0) // Start of booking day
+    return booking <= deadline
+  }
+
+  // Fall back to default: 3+ months before retreat
   const monthsUntilRetreat = monthsBetween(bookingDate, retreatStartDate)
   return monthsUntilRetreat >= earlyBirdCutoffMonths
 }

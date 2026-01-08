@@ -7,6 +7,10 @@ import {
   sendPaymentConfirmation,
   sendPaymentFailed,
   sendRefundConfirmation,
+  sendAdminPaymentFailedNotification,
+  sendAdminNewBookingNotification,
+  sendAdminPaymentReceivedNotification,
+  isNotificationEnabled,
 } from '@/lib/email'
 import type Stripe from 'stripe'
 
@@ -308,9 +312,83 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
       })
 
       console.log(`Payment confirmation email sent to ${booking.email} in ${bookingLanguage}`)
+
+      // Send admin notification for payment received (after first payment)
+      try {
+        const paidSchedule = paymentSchedules?.find((ps) => ps.payment_number === parseInt(paymentNumber, 10))
+        const totalPayments = paymentSchedules?.length || 3
+        await sendAdminPaymentReceivedNotification({
+          bookingNumber: booking.booking_number,
+          customerName: `${booking.first_name} ${booking.last_name}`,
+          customerEmail: booking.email,
+          retreatName: booking.retreat.destination,
+          amount: paidSchedule?.amount || session.amount_total! / 100,
+          paymentNumber: parseInt(paymentNumber, 10),
+          totalPayments,
+          remainingBalance: booking.balance_due,
+          isFullyPaid: booking.balance_due === 0,
+          bookingId: booking.id,
+        })
+      } catch (adminError) {
+        console.error('Error sending admin payment notification:', adminError)
+      }
     }
   } catch (emailError) {
     console.error('Error sending confirmation email:', emailError)
+  }
+
+  // Send admin notification for new booking (first payment only)
+  if (isFirstPayment) {
+    try {
+      await sendAdminNewBookingNotification({
+        bookingNumber: booking.booking_number,
+        customerName: `${booking.first_name} ${booking.last_name}`,
+        customerEmail: booking.email,
+        phone: booking.phone,
+        retreatName: booking.retreat.destination,
+        retreatDates,
+        roomName: booking.room?.name,
+        totalAmount: booking.total_amount,
+        depositAmount: booking.deposit_amount,
+        guestsCount: booking.guests_count || 1,
+        paymentType: paymentType as 'deposit' | 'full',
+        isEarlyBird: booking.is_early_bird,
+        earlyBirdDiscount: booking.early_bird_discount,
+        bookingId: booking.id,
+      })
+    } catch (adminError) {
+      console.error('Error sending admin booking notification:', adminError)
+    }
+  }
+
+  // Subscribe to newsletter if opted in (only on first payment)
+  if (isFirstPayment && booking.newsletter_opt_in) {
+    try {
+      const { error: newsletterError } = await supabase
+        .from('newsletter_subscribers')
+        .upsert(
+          {
+            email: booking.email,
+            first_name: booking.first_name,
+            language: bookingLanguage,
+            source: 'checkout',
+            status: 'active',
+            confirmed_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'email',
+            ignoreDuplicates: false,
+          }
+        )
+
+      if (newsletterError) {
+        console.error('Error subscribing to newsletter:', newsletterError)
+      } else {
+        console.log(`Newsletter subscription added for ${booking.email}`)
+      }
+    } catch (newsletterErr) {
+      console.error('Newsletter subscription failed:', newsletterErr)
+    }
   }
 
   console.log(`Booking ${bookingId} confirmed with ${paymentType} payment (payment #${paymentNumber || 1})`)
@@ -466,6 +544,26 @@ async function handlePaymentFailed(intent: Stripe.PaymentIntent) {
         })
 
         console.log(`Payment failed email sent to ${booking.email} in ${bookingLanguage}`)
+
+        // Send immediate admin notification
+        if (await isNotificationEnabled('notifyOnPaymentFailed')) {
+          const failureReason = intent.last_payment_error?.message || 'Unknown error'
+          const paymentAmount = paidSchedule?.amount || intent.amount / 100
+
+          await sendAdminPaymentFailedNotification({
+            bookingNumber: booking.booking_number,
+            customerName: `${booking.first_name} ${booking.last_name}`,
+            customerEmail: booking.email,
+            retreatName: booking.retreat.destination,
+            amount: paymentAmount,
+            paymentNumber: parseInt(paymentNumber || '1', 10),
+            failureReason,
+            bookingId: booking.id,
+            paymentId: paidSchedule?.id,
+          })
+
+          console.log(`Admin payment failed notification sent for booking ${booking.booking_number}`)
+        }
       }
     } catch (emailError) {
       console.error('Error sending payment failed email:', emailError)

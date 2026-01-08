@@ -225,6 +225,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Update email_audit_log for transactional emails
+    await updateEmailAuditLog(supabase, event)
+
     return NextResponse.json({ received: true })
   } catch (error) {
     console.error('[Resend Webhook] Error processing event:', error)
@@ -253,4 +256,91 @@ function getTimestampField(eventType: ResendEventType): string | null {
 // GET endpoint for webhook verification (some services require this)
 export async function GET() {
   return NextResponse.json({ status: 'ok', service: 'resend-webhook' })
+}
+
+/**
+ * Update email_audit_log table for transactional email tracking
+ * This handles delivery status updates for emails sent via sendEmail()
+ */
+async function updateEmailAuditLog(supabase: SupabaseClient, event: ResendWebhookEvent) {
+  const emailId = event.data.email_id
+
+  try {
+    switch (event.type) {
+      case 'email.delivered':
+        await supabase
+          .from('email_audit_log')
+          .update({
+            status: 'delivered',
+            delivered_at: new Date().toISOString(),
+          })
+          .eq('resend_email_id', emailId)
+        break
+
+      case 'email.bounced':
+        await supabase
+          .from('email_audit_log')
+          .update({
+            status: 'bounced',
+            bounced_at: new Date().toISOString(),
+            bounce_reason: event.data.bounce?.message || 'Unknown bounce reason',
+          })
+          .eq('resend_email_id', emailId)
+        break
+
+      case 'email.complained':
+        await supabase
+          .from('email_audit_log')
+          .update({
+            complained_at: new Date().toISOString(),
+          })
+          .eq('resend_email_id', emailId)
+        break
+
+      case 'email.opened':
+        // Get current record to update counts properly
+        const { data: openedRecord } = await supabase
+          .from('email_audit_log')
+          .select('open_count, opened_at')
+          .eq('resend_email_id', emailId)
+          .single()
+
+        if (openedRecord) {
+          await supabase
+            .from('email_audit_log')
+            .update({
+              opened_at: openedRecord.opened_at || new Date().toISOString(),
+              open_count: (openedRecord.open_count || 0) + 1,
+            })
+            .eq('resend_email_id', emailId)
+        }
+        break
+
+      case 'email.clicked':
+        // Get current record to update counts properly
+        const { data: clickedRecord } = await supabase
+          .from('email_audit_log')
+          .select('click_count, clicked_at')
+          .eq('resend_email_id', emailId)
+          .single()
+
+        if (clickedRecord) {
+          await supabase
+            .from('email_audit_log')
+            .update({
+              clicked_at: clickedRecord.clicked_at || new Date().toISOString(),
+              click_count: (clickedRecord.click_count || 0) + 1,
+            })
+            .eq('resend_email_id', emailId)
+        }
+        break
+
+      default:
+        // Other events don't need audit log updates
+        break
+    }
+  } catch (error) {
+    // Don't fail the webhook if audit log update fails
+    console.error('[Resend Webhook] Error updating email_audit_log:', error)
+  }
 }
