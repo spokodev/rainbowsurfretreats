@@ -116,7 +116,7 @@ export default function Hero() {
             <Button
               asChild
               size="lg"
-              className="bg-[var(--primary-teal)] px-8 py-6 text-lg font-semibold hover:bg-[var(--primary-teal-hover)]"
+              className="bg-[var(--primary-teal)] px-8 py-6 text-lg font-semibold text-white hover:bg-[var(--primary-teal-hover)]"
             >
               <Link href="/about" className="flex items-center">
                 <Users className="mr-2 h-5 w-5" />

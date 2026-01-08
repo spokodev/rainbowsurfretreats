@@ -134,7 +134,8 @@ export default function NextRetreats() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              <Card className="overflow-hidden h-full flex flex-col group hover:shadow-lg transition-shadow duration-300">
+              <Link href={`/retreats/${retreat.slug}`} className="block h-full">
+              <Card className="overflow-hidden h-full flex flex-col group hover:shadow-lg transition-shadow duration-300 cursor-pointer">
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <Image
                     src={retreat.image_url}
@@ -225,22 +226,21 @@ export default function NextRetreats() {
                     const { isSoldOut } = getLowestAvailablePrice(retreat);
                     if (isSoldOut) {
                       return (
-                        <Button asChild className="w-full border-amber-500 text-amber-600 hover:bg-amber-50" variant="outline">
-                          <Link href={`/retreats/${retreat.slug}`}>
-                            <Bell className="w-4 h-4 mr-2" />
-                            {t('joinWaitlist')}
-                          </Link>
+                        <Button className="w-full bg-[var(--primary-teal)] text-white hover:bg-[var(--primary-teal-hover)]">
+                          <Bell className="w-4 h-4 mr-2" />
+                          {t('joinWaitlist')}
                         </Button>
                       );
                     }
                     return (
-                      <Button asChild className="w-full">
-                        <Link href={`/retreats/${retreat.slug}`}>{t('bookNow')}</Link>
+                      <Button className="w-full bg-[var(--primary-teal)] text-white hover:bg-[var(--primary-teal-hover)]">
+                        {t('bookNow')}
                       </Button>
                     );
                   })()}
                 </CardFooter>
               </Card>
+              </Link>
             </motion.div>
           ))}
         </div>
