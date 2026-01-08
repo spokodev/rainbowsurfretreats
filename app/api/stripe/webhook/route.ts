@@ -519,6 +519,13 @@ async function handlePaymentFailed(intent: Stripe.PaymentIntent) {
           .eq('stripe_payment_intent_id', intent.id)
           .single()
 
+        // Get payment record for proper audit logging
+        const { data: paymentRecord } = await supabase
+          .from('payments')
+          .select('id')
+          .eq('stripe_payment_intent_id', intent.id)
+          .single()
+
         const bookingLanguage = booking.language || intent.metadata?.language || 'en'
         const dateLocale = bookingLanguage === 'de' ? 'de-DE' :
                            bookingLanguage === 'es' ? 'es-ES' :
@@ -559,7 +566,7 @@ async function handlePaymentFailed(intent: Stripe.PaymentIntent) {
             paymentNumber: parseInt(paymentNumber || '1', 10),
             failureReason,
             bookingId: booking.id,
-            paymentId: paidSchedule?.id,
+            paymentId: paymentRecord?.id,
           })
 
           console.log(`Admin payment failed notification sent for booking ${booking.booking_number}`)

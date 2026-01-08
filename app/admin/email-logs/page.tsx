@@ -1,7 +1,8 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
 import {
   Mail,
   RefreshCw,
@@ -11,22 +12,18 @@ import {
   XCircle,
   Eye,
   MousePointer,
-  Search,
   Download,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   AlertTriangle,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -34,141 +31,137 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  AdminPagination,
+  AdminSearchInput,
+  AdminStatusFilter,
+  AdminFilterBar,
+  AdminDateRangeFilter,
+  type StatusOption,
+} from '@/components/admin/table'
 
 interface EmailLog {
-  id: string;
-  email_type: string;
-  recipient_email: string;
-  recipient_type: "customer" | "admin";
-  subject: string;
-  booking_id: string | null;
-  payment_id: string | null;
-  resend_email_id: string | null;
-  status: "sent" | "delivered" | "failed" | "bounced";
-  error_message: string | null;
-  delivered_at: string | null;
-  opened_at: string | null;
-  clicked_at: string | null;
-  bounced_at: string | null;
-  bounce_reason: string | null;
-  complained_at: string | null;
-  open_count: number;
-  click_count: number;
-  metadata: Record<string, unknown>;
-  created_at: string;
+  id: string
+  email_type: string
+  recipient_email: string
+  recipient_type: 'customer' | 'admin'
+  subject: string
+  booking_id: string | null
+  payment_id: string | null
+  resend_email_id: string | null
+  status: 'sent' | 'delivered' | 'failed' | 'bounced'
+  error_message: string | null
+  delivered_at: string | null
+  opened_at: string | null
+  clicked_at: string | null
+  bounced_at: string | null
+  bounce_reason: string | null
+  complained_at: string | null
+  open_count: number
+  click_count: number
+  metadata: Record<string, unknown>
+  created_at: string
   booking?: {
-    id: string;
-    booking_number: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-  };
+    id: string
+    booking_number: string
+    first_name: string
+    last_name: string
+    email: string
+  }
 }
 
 interface Pagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
+  page: number
+  limit: number
+  total: number
+  totalPages: number
 }
 
-const EMAIL_TYPES = [
-  { value: "", label: "All Types" },
-  { value: "payment_failed", label: "Payment Failed" },
-  { value: "deadline_reminder", label: "Deadline Reminder" },
-  { value: "booking_confirmation", label: "Booking Confirmation" },
-  { value: "booking_cancelled", label: "Booking Cancelled" },
-  { value: "admin_payment_failed", label: "Admin: Payment Failed" },
-  { value: "admin_waitlist_join", label: "Admin: Waitlist Join" },
-  { value: "admin_new_booking", label: "Admin: New Booking" },
-];
+const EMAIL_TYPE_OPTIONS: StatusOption[] = [
+  { value: 'payment_failed', label: 'Payment Failed' },
+  { value: 'deadline_reminder', label: 'Deadline Reminder' },
+  { value: 'booking_confirmation', label: 'Booking Confirmation' },
+  { value: 'booking_cancelled', label: 'Booking Cancelled' },
+  { value: 'admin_payment_failed', label: 'Admin: Payment Failed' },
+  { value: 'admin_waitlist_join', label: 'Admin: Waitlist Join' },
+  { value: 'admin_new_booking', label: 'Admin: New Booking' },
+]
 
-const STATUS_OPTIONS = [
-  { value: "", label: "All Statuses" },
-  { value: "sent", label: "Sent" },
-  { value: "delivered", label: "Delivered" },
-  { value: "failed", label: "Failed" },
-  { value: "bounced", label: "Bounced" },
-];
+const STATUS_OPTIONS: StatusOption[] = [
+  { value: 'sent', label: 'Sent' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'bounced', label: 'Bounced' },
+  { value: 'complained', label: 'Spam Complaint' },
+]
 
-const RECIPIENT_TYPES = [
-  { value: "", label: "All Recipients" },
-  { value: "customer", label: "Customer" },
-  { value: "admin", label: "Admin" },
-];
+const RECIPIENT_TYPE_OPTIONS: StatusOption[] = [
+  { value: 'customer', label: 'Customer' },
+  { value: 'admin', label: 'Admin' },
+]
 
 const getStatusBadgeVariant = (status: string) => {
   switch (status) {
-    case "delivered":
-      return "default";
-    case "sent":
-      return "secondary";
-    case "failed":
-    case "bounced":
-      return "destructive";
+    case 'delivered':
+      return 'default'
+    case 'sent':
+      return 'secondary'
+    case 'failed':
+    case 'bounced':
+    case 'complained':
+      return 'destructive'
     default:
-      return "outline";
+      return 'outline'
   }
-};
+}
 
 const getStatusIcon = (status: string) => {
   switch (status) {
-    case "delivered":
-      return <CheckCircle className="h-3 w-3" />;
-    case "sent":
-      return <Clock className="h-3 w-3" />;
-    case "failed":
-    case "bounced":
-      return <XCircle className="h-3 w-3" />;
+    case 'delivered':
+      return <CheckCircle className="h-3 w-3" />
+    case 'sent':
+      return <Clock className="h-3 w-3" />
+    case 'failed':
+    case 'bounced':
+      return <XCircle className="h-3 w-3" />
+    case 'complained':
+      return <AlertTriangle className="h-3 w-3" />
     default:
-      return null;
+      return null
   }
-};
+}
 
 const getTypeLabel = (type: string) => {
-  const found = EMAIL_TYPES.find((t) => t.value === type);
-  return found?.label || type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-};
+  const found = EMAIL_TYPE_OPTIONS.find((t) => t.value === type)
+  return found?.label || type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const formatDateForInput = (date: Date) => {
-  return date.toISOString().split("T")[0];
-};
+  return new Date(dateString).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 const exportToCSV = (logs: EmailLog[]) => {
   const headers = [
-    "Date",
-    "Type",
-    "Recipient",
-    "Recipient Type",
-    "Subject",
-    "Status",
-    "Delivered",
-    "Opened",
-    "Clicked",
-    "Booking",
-    "Error",
-  ];
+    'Date',
+    'Type',
+    'Recipient',
+    'Recipient Type',
+    'Subject',
+    'Status',
+    'Delivered',
+    'Opened',
+    'Clicked',
+    'Booking',
+    'Error',
+  ]
 
   const rows = logs.map((log) => [
     new Date(log.created_at).toISOString(),
@@ -177,120 +170,156 @@ const exportToCSV = (logs: EmailLog[]) => {
     log.recipient_type,
     log.subject,
     log.status,
-    log.delivered_at ? "Yes" : "No",
-    log.opened_at ? `Yes (${log.open_count}x)` : "No",
-    log.clicked_at ? `Yes (${log.click_count}x)` : "No",
-    log.booking?.booking_number || "",
-    log.error_message || log.bounce_reason || "",
-  ]);
+    log.delivered_at ? 'Yes' : 'No',
+    log.opened_at ? `Yes (${log.open_count}x)` : 'No',
+    log.clicked_at ? `Yes (${log.click_count}x)` : 'No',
+    log.booking?.booking_number || '',
+    log.error_message || log.bounce_reason || '',
+  ])
 
   const csvContent = [
-    headers.join(","),
+    headers.join(','),
     ...rows.map((row) =>
-      row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')
     ),
-  ].join("\n");
+  ].join('\n')
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  link.setAttribute("href", url);
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+  link.setAttribute('href', url)
   link.setAttribute(
-    "download",
-    `email-logs-${new Date().toISOString().split("T")[0]}.csv`
-  );
-  link.style.visibility = "hidden";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+    'download',
+    `email-logs-${new Date().toISOString().split('T')[0]}.csv`
+  )
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
 
-export default function AdminEmailLogsPage() {
-  const [logs, setLogs] = useState<EmailLog[]>([]);
+function EmailLogsPageContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  // Parse state from URL
+  const page = Number(searchParams.get('page')) || 1
+  const pageSize = Number(searchParams.get('pageSize')) || 50
+  const search = searchParams.get('search') || ''
+  const type = searchParams.get('type') || ''
+  const status = searchParams.get('status') || ''
+  const recipientType = searchParams.get('recipientType') || ''
+  const dateFrom = searchParams.get('dateFrom') || ''
+  const dateTo = searchParams.get('dateTo') || ''
+
+  const [logs, setLogs] = useState<EmailLog[]>([])
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 50,
     total: 0,
     totalPages: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  })
+  const [stats, setStats] = useState<{
+    sent: number
+    delivered: number
+    failed: number
+    opened: number
+    total: number
+  }>({ sent: 0, delivered: 0, failed: 0, opened: 0, total: 0 })
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Filters
-  const [filters, setFilters] = useState({
-    type: "",
-    status: "",
-    recipientType: "",
-    search: "",
-    dateFrom: "",
-    dateTo: "",
-  });
-  const [showFilters, setShowFilters] = useState(false);
+  // Update URL params
+  const updateParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString())
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === '' || value === 'all') {
+          params.delete(key)
+        } else {
+          params.set(key, value)
+        }
+      })
+      router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    },
+    [searchParams, router, pathname]
+  )
 
-  useEffect(() => {
-    fetchLogs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, filters]);
+  const hasActiveFilters =
+    !!type || !!status || !!recipientType || !!dateFrom || !!dateTo || !!search
 
-  async function fetchLogs() {
-    setIsLoading(true);
-    setError(null);
+  const resetFilters = useCallback(() => {
+    updateParams({
+      search: null,
+      type: null,
+      status: null,
+      recipientType: null,
+      dateFrom: null,
+      dateTo: null,
+      page: null,
+    })
+  }, [updateParams])
+
+  const fetchLogs = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
 
     try {
       const params = new URLSearchParams({
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
-      });
+        page: page.toString(),
+        limit: pageSize.toString(),
+      })
 
-      if (filters.type) params.append("type", filters.type);
-      if (filters.status) params.append("status", filters.status);
-      if (filters.recipientType)
-        params.append("recipientType", filters.recipientType);
-      if (filters.search) params.append("search", filters.search);
-      if (filters.dateFrom) params.append("dateFrom", filters.dateFrom);
-      if (filters.dateTo) params.append("dateTo", filters.dateTo);
+      if (type) params.append('type', type)
+      if (status) params.append('status', status)
+      if (recipientType) params.append('recipientType', recipientType)
+      if (search) params.append('search', search)
+      if (dateFrom) params.append('dateFrom', dateFrom)
+      if (dateTo) params.append('dateTo', dateTo)
 
-      const res = await fetch(`/api/admin/email-logs?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch email logs");
-      const data = await res.json();
+      const res = await fetch(`/api/admin/email-logs?${params}`)
+      if (!res.ok) throw new Error('Failed to fetch email logs')
+      const data = await res.json()
 
-      setLogs(data.data || []);
+      setLogs(data.data || [])
       setPagination((prev) => ({
         ...prev,
         ...data.pagination,
-      }));
+      }))
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }
+  }, [page, pageSize, type, status, recipientType, search, dateFrom, dateTo])
 
-  function handleFilterChange(key: string, value: string) {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  }
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/email-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'stats' }),
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      const byStatus = data.data?.byStatus || {}
+      setStats({
+        sent: byStatus.sent || 0,
+        delivered: byStatus.delivered || 0,
+        failed: (byStatus.failed || 0) + (byStatus.bounced || 0),
+        opened: data.data?.opened || 0,
+        total: data.data?.total || 0,
+      })
+    } catch {
+      // Stats fetch failed - not critical, use zeros
+    }
+  }, [])
 
-  function clearFilters() {
-    setFilters({
-      type: "",
-      status: "",
-      recipientType: "",
-      search: "",
-      dateFrom: "",
-      dateTo: "",
-    });
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  }
-
-  // Calculate stats from current view
-  const stats = {
-    sent: logs.filter((l) => l.status === "sent").length,
-    delivered: logs.filter((l) => l.status === "delivered").length,
-    failed: logs.filter((l) => l.status === "failed" || l.status === "bounced")
-      .length,
-    opened: logs.filter((l) => l.opened_at).length,
-  };
+  useEffect(() => {
+    fetchLogs()
+    fetchStats()
+  }, [fetchLogs, fetchStats])
 
   if (error) {
     return (
@@ -302,7 +331,7 @@ export default function AdminEmailLogsPage() {
           Try Again
         </Button>
       </div>
-    );
+    )
   }
 
   return (
@@ -315,16 +344,9 @@ export default function AdminEmailLogsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="mr-2 h-4 w-4" />
-            Filters
-          </Button>
           <Button variant="outline" onClick={fetchLogs} disabled={isLoading}>
             <RefreshCw
-              className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+              className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
             />
             Refresh
           </Button>
@@ -344,13 +366,13 @@ export default function AdminEmailLogsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Sent
+              Total Sent
             </CardTitle>
             <Mail className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pagination.total}</div>
-            <p className="text-xs text-muted-foreground">Total emails</p>
+            <div className="text-2xl font-bold">{stats.total}</div>
+            <p className="text-xs text-muted-foreground">All emails</p>
           </CardContent>
         </Card>
         <Card>
@@ -364,7 +386,9 @@ export default function AdminEmailLogsPage() {
             <div className="text-2xl font-bold text-green-600">
               {stats.delivered}
             </div>
-            <p className="text-xs text-muted-foreground">In current view</p>
+            <p className="text-xs text-muted-foreground">
+              {stats.total > 0 ? `${((stats.delivered / stats.total) * 100).toFixed(0)}% delivery rate` : 'No emails yet'}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -378,7 +402,9 @@ export default function AdminEmailLogsPage() {
             <div className="text-2xl font-bold text-destructive">
               {stats.failed}
             </div>
-            <p className="text-xs text-muted-foreground">In current view</p>
+            <p className="text-xs text-muted-foreground">
+              {stats.total > 0 ? `${((stats.failed / stats.total) * 100).toFixed(1)}% failure rate` : 'No emails yet'}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -392,117 +418,12 @@ export default function AdminEmailLogsPage() {
             <div className="text-2xl font-bold text-blue-600">
               {stats.opened}
             </div>
-            <p className="text-xs text-muted-foreground">In current view</p>
+            <p className="text-xs text-muted-foreground">
+              {stats.delivered > 0 ? `${((stats.opened / stats.delivered) * 100).toFixed(0)}% open rate` : 'No delivered emails'}
+            </p>
           </CardContent>
         </Card>
       </div>
-
-      {/* Filters */}
-      {showFilters && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Filters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-              <div className="space-y-2">
-                <Label>Email Type</Label>
-                <Select
-                  value={filters.type}
-                  onValueChange={(v) => handleFilterChange("type", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EMAIL_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value || "all"}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select
-                  value={filters.status}
-                  onValueChange={(v) => handleFilterChange("status", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((status) => (
-                      <SelectItem
-                        key={status.value}
-                        value={status.value || "all"}
-                      >
-                        {status.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Recipient Type</Label>
-                <Select
-                  value={filters.recipientType}
-                  onValueChange={(v) => handleFilterChange("recipientType", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Recipients" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {RECIPIENT_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value || "all"}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Date From</Label>
-                <Input
-                  type="date"
-                  value={filters.dateFrom}
-                  onChange={(e) =>
-                    handleFilterChange("dateFrom", e.target.value)
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Date To</Label>
-                <Input
-                  type="date"
-                  value={filters.dateTo}
-                  onChange={(e) => handleFilterChange("dateTo", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Search Email</Label>
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Email address..."
-                    className="pl-8"
-                    value={filters.search}
-                    onChange={(e) =>
-                      handleFilterChange("search", e.target.value)
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <Button variant="ghost" onClick={clearFilters}>
-                Clear Filters
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Email Logs Table */}
       <Card>
@@ -512,14 +433,65 @@ export default function AdminEmailLogsPage() {
             Showing {logs.length} of {pagination.total} emails
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Search and Filters */}
+          <div className="space-y-4">
+            <AdminSearchInput
+              value={search}
+              onChange={(value) => updateParams({ search: value || null, page: null })}
+              placeholder="Search by email address..."
+              className="max-w-sm"
+            />
+
+            <AdminFilterBar hasActiveFilters={hasActiveFilters} onReset={resetFilters}>
+              <AdminStatusFilter
+                value={type || 'all'}
+                onChange={(value) => updateParams({ type: value, page: null })}
+                options={EMAIL_TYPE_OPTIONS}
+                placeholder="Email Type"
+                className="w-[180px]"
+              />
+              <AdminStatusFilter
+                value={status || 'all'}
+                onChange={(value) => updateParams({ status: value, page: null })}
+                options={STATUS_OPTIONS}
+                placeholder="Status"
+                className="w-[140px]"
+              />
+              <AdminStatusFilter
+                value={recipientType || 'all'}
+                onChange={(value) => updateParams({ recipientType: value, page: null })}
+                options={RECIPIENT_TYPE_OPTIONS}
+                placeholder="Recipient"
+                className="w-[140px]"
+              />
+              <AdminDateRangeFilter
+                fromValue={dateFrom || null}
+                toValue={dateTo || null}
+                onFromChange={(value) => updateParams({ dateFrom: value, page: null })}
+                onToChange={(value) => updateParams({ dateTo: value, page: null })}
+                fromPlaceholder="From date"
+                toPlaceholder="To date"
+              />
+            </AdminFilterBar>
+          </div>
+
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : logs.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No email logs found
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-4">
+                {hasActiveFilters
+                  ? 'No email logs match your filters'
+                  : 'No email logs found'}
+              </p>
+              {hasActiveFilters && (
+                <Button variant="outline" onClick={resetFilters}>
+                  Clear filters
+                </Button>
+              )}
             </div>
           ) : (
             <>
@@ -544,9 +516,9 @@ export default function AdminEmailLogsPage() {
                       <TableCell>
                         <Badge
                           variant={
-                            log.recipient_type === "admin"
-                              ? "outline"
-                              : "secondary"
+                            log.recipient_type === 'admin'
+                              ? 'outline'
+                              : 'secondary'
                           }
                         >
                           {getTypeLabel(log.email_type)}
@@ -640,7 +612,7 @@ export default function AdminEmailLogsPage() {
                           {!log.delivered_at &&
                             !log.opened_at &&
                             !log.clicked_at &&
-                            log.status === "sent" && (
+                            log.status === 'sent' && (
                               <span className="text-muted-foreground text-xs">
                                 Pending
                               </span>
@@ -665,45 +637,34 @@ export default function AdminEmailLogsPage() {
               </Table>
 
               {/* Pagination */}
-              <div className="flex items-center justify-between mt-4">
-                <p className="text-sm text-muted-foreground">
-                  Page {pagination.page} of {pagination.totalPages}
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={pagination.page <= 1}
-                    onClick={() =>
-                      setPagination((prev) => ({
-                        ...prev,
-                        page: prev.page - 1,
-                      }))
-                    }
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={pagination.page >= pagination.totalPages}
-                    onClick={() =>
-                      setPagination((prev) => ({
-                        ...prev,
-                        page: prev.page + 1,
-                      }))
-                    }
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <AdminPagination
+                page={pagination.page}
+                pageSize={pagination.limit}
+                total={pagination.total}
+                totalPages={pagination.totalPages}
+                onPageChange={(newPage) => updateParams({ page: newPage.toString() })}
+                onPageSizeChange={(size) =>
+                  updateParams({ pageSize: size.toString(), page: null })
+                }
+              />
             </>
           )}
         </CardContent>
       </Card>
     </div>
-  );
+  )
+}
+
+export default function AdminEmailLogsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <EmailLogsPageContent />
+    </Suspense>
+  )
 }

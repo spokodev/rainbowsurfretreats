@@ -100,7 +100,8 @@ function verifyWebhookSignature(
   }
 }
 
-// Map Resend event type to our status
+// Map Resend event type to our status for campaign_recipients table
+// Note: email.complained is mapped to 'complained' - the caller should handle this appropriately
 function mapEventToStatus(eventType: ResendEventType): string {
   switch (eventType) {
     case 'email.sent':
@@ -114,7 +115,7 @@ function mapEventToStatus(eventType: ResendEventType): string {
     case 'email.bounced':
       return 'bounced'
     case 'email.complained':
-      return 'bounced' // Treat complaints as bounces
+      return 'complained' // Spam complaint - tracked separately from bounces
     default:
       return 'sent'
   }
@@ -189,12 +190,12 @@ export async function POST(request: NextRequest) {
 
     if (recipient) {
       // Only update if the new status is "more advanced" than the current one
-      const statusOrder = ['pending', 'sent', 'delivered', 'opened', 'clicked', 'bounced', 'failed']
+      const statusOrder = ['pending', 'sent', 'delivered', 'opened', 'clicked', 'complained', 'bounced', 'failed']
       const currentIndex = statusOrder.indexOf(recipient.status)
       const newIndex = statusOrder.indexOf(status)
 
-      // Allow update if new status is more advanced, or if it's a bounce/fail
-      if (newIndex > currentIndex || status === 'bounced' || status === 'failed') {
+      // Allow update if new status is more advanced, or if it's a bounce/fail/complaint
+      if (newIndex > currentIndex || status === 'bounced' || status === 'failed' || status === 'complained') {
         await supabase
           .from('campaign_recipients')
           .update(updateData)

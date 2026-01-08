@@ -395,11 +395,37 @@ export async function sendBookingConfirmation(data: BookingData) {
     subject = `Booking Confirmed: ${data.retreatDestination} Surf Retreat - ${data.bookingNumber}`
     htmlContent = bookingConfirmationEmail(data)
     // Extract just the content without the layout since we'll wrap it
-    return sendEmail({ to: data.email, subject, html: htmlContent })
+    return sendEmail({
+      to: data.email,
+      subject,
+      html: htmlContent,
+      logContext: {
+        emailType: 'booking_confirmation',
+        recipientType: 'customer',
+        metadata: {
+          bookingNumber: data.bookingNumber,
+          retreatDestination: data.retreatDestination,
+          totalAmount: data.totalAmount,
+        },
+      },
+    })
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'booking_confirmation',
+      recipientType: 'customer',
+      metadata: {
+        bookingNumber: data.bookingNumber,
+        retreatDestination: data.retreatDestination,
+        totalAmount: data.totalAmount,
+      },
+    },
+  })
 }
 
 // Send payment confirmation email
@@ -425,11 +451,37 @@ export async function sendPaymentConfirmation(data: PaymentData) {
   } else {
     const { paymentConfirmationEmail } = await import('./templates')
     subject = `Payment Received - ${data.bookingNumber}`
-    return sendEmail({ to: data.email, subject, html: paymentConfirmationEmail(data) })
+    return sendEmail({
+      to: data.email,
+      subject,
+      html: paymentConfirmationEmail(data),
+      logContext: {
+        emailType: 'payment_confirmation',
+        recipientType: 'customer',
+        metadata: {
+          bookingNumber: data.bookingNumber,
+          amount: data.amount,
+          paymentNumber: data.paymentNumber,
+        },
+      },
+    })
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'payment_confirmation',
+      recipientType: 'customer',
+      metadata: {
+        bookingNumber: data.bookingNumber,
+        amount: data.amount,
+        paymentNumber: data.paymentNumber,
+      },
+    },
+  })
 }
 
 // Urgency message translations for payment reminders
@@ -507,11 +559,39 @@ export async function sendPaymentReminder(
     subject = urgency === 'overdue'
       ? `URGENT: Payment Overdue - ${data.bookingNumber}`
       : `Payment Reminder - ${data.bookingNumber}`
-    return sendEmail({ to: data.email, subject, html: paymentReminderEmail(data, urgency) })
+    return sendEmail({
+      to: data.email,
+      subject,
+      html: paymentReminderEmail(data, urgency),
+      logContext: {
+        emailType: 'payment_reminder',
+        recipientType: 'customer',
+        metadata: {
+          bookingNumber: data.bookingNumber,
+          amount: data.amount,
+          paymentNumber: data.paymentNumber,
+          urgency,
+        },
+      },
+    })
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'payment_reminder',
+      recipientType: 'customer',
+      metadata: {
+        bookingNumber: data.bookingNumber,
+        amount: data.amount,
+        paymentNumber: data.paymentNumber,
+        urgency,
+      },
+    },
+  })
 }
 
 // Send payment failed email
@@ -533,11 +613,39 @@ export async function sendPaymentFailed(data: ReminderData & { failureReason?: s
   } else {
     const { paymentFailedEmail } = await import('./templates')
     subject = `Action Required: Payment Failed - ${data.bookingNumber}`
-    return sendEmail({ to: data.email, subject, html: paymentFailedEmail(data) })
+    return sendEmail({
+      to: data.email,
+      subject,
+      html: paymentFailedEmail(data),
+      logContext: {
+        emailType: 'payment_failed_simple',
+        recipientType: 'customer',
+        metadata: {
+          bookingNumber: data.bookingNumber,
+          amount: data.amount,
+          paymentNumber: data.paymentNumber,
+          failureReason: data.failureReason,
+        },
+      },
+    })
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'payment_failed_simple',
+      recipientType: 'customer',
+      metadata: {
+        bookingNumber: data.bookingNumber,
+        amount: data.amount,
+        paymentNumber: data.paymentNumber,
+        failureReason: data.failureReason,
+      },
+    },
+  })
 }
 
 // Send pre-retreat reminder email
@@ -565,11 +673,37 @@ export async function sendPreRetreatReminder(data: {
   } else {
     const { preRetreatReminderEmail } = await import('./templates')
     subject = `${data.daysUntilRetreat} Days Until Your ${data.retreatDestination} Surf Retreat!`
-    return sendEmail({ to: data.email, subject, html: preRetreatReminderEmail(data) })
+    return sendEmail({
+      to: data.email,
+      subject,
+      html: preRetreatReminderEmail(data),
+      logContext: {
+        emailType: 'pre_retreat_reminder',
+        recipientType: 'customer',
+        metadata: {
+          bookingNumber: data.bookingNumber,
+          retreatDestination: data.retreatDestination,
+          daysUntilRetreat: data.daysUntilRetreat,
+        },
+      },
+    })
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'pre_retreat_reminder',
+      recipientType: 'customer',
+      metadata: {
+        bookingNumber: data.bookingNumber,
+        retreatDestination: data.retreatDestination,
+        daysUntilRetreat: data.daysUntilRetreat,
+      },
+    },
+  })
 }
 
 // Cancellation message translations
@@ -701,7 +835,21 @@ export async function sendBookingCancellation(data: {
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: booking.email, subject, html: fullHtml })
+  return sendEmail({
+    to: booking.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'booking_cancellation',
+      recipientType: 'customer',
+      bookingId: booking.id,
+      metadata: {
+        bookingNumber: booking.booking_number,
+        retreatDestination: booking.retreat.destination,
+        reason,
+      },
+    },
+  })
 }
 
 // Send refund confirmation email
@@ -731,11 +879,37 @@ export async function sendRefundConfirmation(data: {
   } else {
     const { refundConfirmationEmail } = await import('./templates')
     subject = `Refund Processed - ${data.bookingNumber}`
-    return sendEmail({ to: data.email, subject, html: refundConfirmationEmail(data) })
+    return sendEmail({
+      to: data.email,
+      subject,
+      html: refundConfirmationEmail(data),
+      logContext: {
+        emailType: 'refund_confirmation',
+        recipientType: 'customer',
+        metadata: {
+          bookingNumber: data.bookingNumber,
+          refundAmount: data.refundAmount,
+          reason: data.reason,
+        },
+      },
+    })
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'refund_confirmation',
+      recipientType: 'customer',
+      metadata: {
+        bookingNumber: data.bookingNumber,
+        refundAmount: data.refundAmount,
+        reason: data.reason,
+      },
+    },
+  })
 }
 
 // ==========================================
@@ -980,7 +1154,20 @@ export async function sendBookingCancelledDueToNonPayment(data: {
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'booking_cancelled_non_payment',
+      recipientType: 'customer',
+      metadata: {
+        bookingNumber: data.bookingNumber,
+        retreatDestination: data.retreatDestination,
+        unpaidAmount: data.unpaidAmount,
+      },
+    },
+  })
 }
 
 export interface PaymentSuccessData {
@@ -1103,7 +1290,22 @@ export async function sendPaymentSuccessWithNextInfo(data: PaymentSuccessData) {
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: hasNextPayment ? 'payment_success' : 'payment_success_final',
+      recipientType: 'customer',
+      metadata: {
+        bookingNumber: data.bookingNumber,
+        paidAmount: data.paidAmount,
+        paymentNumber: data.paymentNumber,
+        totalPaid: data.totalPaid,
+        balanceDue: data.balanceDue,
+      },
+    },
+  })
 }
 
 /**
@@ -1251,7 +1453,20 @@ export async function sendBookingRestored(data: {
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'booking_restored',
+      recipientType: 'customer',
+      metadata: {
+        bookingNumber: data.bookingNumber,
+        retreatDestination: data.retreatDestination,
+        amountDue: data.amountDue,
+      },
+    },
+  })
 }
 
 // ==========================================
@@ -1320,7 +1535,19 @@ export async function sendWaitlistConfirmation(data: WaitlistConfirmationData) {
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'waitlist_confirmation',
+      recipientType: 'customer',
+      metadata: {
+        retreatDestination: data.retreatDestination,
+        position: data.position,
+      },
+    },
+  })
 }
 
 export interface WaitlistSpotAvailableData {
@@ -1414,7 +1641,21 @@ export async function sendWaitlistSpotAvailable(data: WaitlistSpotAvailableData)
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'waitlist_spot_available',
+      recipientType: 'customer',
+      metadata: {
+        retreatDestination: data.retreatDestination,
+        roomPrice: data.roomPrice,
+        depositAmount: data.depositAmount,
+        expiresAt: data.expiresAt,
+      },
+    },
+  })
 }
 
 export interface WaitlistAcceptedData {
@@ -1477,7 +1718,19 @@ export async function sendWaitlistAccepted(data: WaitlistAcceptedData) {
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'waitlist_accepted',
+      recipientType: 'customer',
+      metadata: {
+        retreatDestination: data.retreatDestination,
+        retreatDates: data.retreatDates,
+      },
+    },
+  })
 }
 
 export interface WaitlistDeclinedData {
@@ -1529,7 +1782,18 @@ export async function sendWaitlistDeclined(data: WaitlistDeclinedData) {
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'waitlist_declined',
+      recipientType: 'customer',
+      metadata: {
+        retreatDestination: data.retreatDestination,
+      },
+    },
+  })
 }
 
 export interface WaitlistExpiredData {
@@ -1591,7 +1855,19 @@ export async function sendWaitlistExpired(data: WaitlistExpiredData) {
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'waitlist_expired',
+      recipientType: 'customer',
+      metadata: {
+        retreatDestination: data.retreatDestination,
+        retreatDates: data.retreatDates,
+      },
+    },
+  })
 }
 
 // ==========================================

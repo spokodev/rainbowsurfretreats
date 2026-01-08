@@ -118,8 +118,8 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * GET /api/admin/email-logs/stats
- * Get statistics about email logs
+ * POST /api/admin/email-logs
+ * Get statistics about email logs using efficient SQL aggregation
  */
 export async function POST(request: NextRequest) {
   const { user, isAdmin, error: authError } = await checkAdminAuth()
@@ -142,35 +142,71 @@ export async function POST(request: NextRequest) {
   const supabase = getSupabase()
 
   try {
-    // Get counts by status
-    const { data: statusCounts, error: statusError } = await supabase
+    // Use efficient count queries with head: true to avoid fetching data
+    const statuses = ['sent', 'delivered', 'failed', 'bounced']
+    const statusPromises = statuses.map(async (status) => {
+      const { count } = await supabase
+        .from('email_audit_log')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', status)
+      return { status, count: count || 0 }
+    })
+
+    // Get counts for common email types
+    const emailTypes = [
+      'booking_confirmation',
+      'payment_confirmation',
+      'payment_reminder',
+      'payment_failed',
+      'payment_failed_simple',
+      'payment_success',
+      'booking_cancellation',
+      'admin_payment_failed',
+      'admin_new_booking',
+      'waitlist_confirmation',
+      'waitlist_spot_available',
+    ]
+    const typePromises = emailTypes.map(async (type) => {
+      const { count } = await supabase
+        .from('email_audit_log')
+        .select('*', { count: 'exact', head: true })
+        .eq('email_type', type)
+      return { type, count: count || 0 }
+    })
+
+    // Get total count
+    const { count: total } = await supabase
       .from('email_audit_log')
-      .select('status')
+      .select('*', { count: 'exact', head: true })
 
-    if (statusError) {
-      throw statusError
-    }
-
-    // Get counts by type
-    const { data: typeCounts, error: typeError } = await supabase
+    // Get opened count
+    const { count: opened } = await supabase
       .from('email_audit_log')
-      .select('email_type')
+      .select('*', { count: 'exact', head: true })
+      .not('opened_at', 'is', null)
 
-    if (typeError) {
-      throw typeError
-    }
+    // Execute all counts in parallel
+    const [statusResults, typeResults] = await Promise.all([
+      Promise.all(statusPromises),
+      Promise.all(typePromises),
+    ])
 
-    // Calculate stats
+    // Build response
+    const byStatus: Record<string, number> = {}
+    statusResults.forEach(({ status, count }) => {
+      if (count > 0) byStatus[status] = count
+    })
+
+    const byType: Record<string, number> = {}
+    typeResults.forEach(({ type, count }) => {
+      if (count > 0) byType[type] = count
+    })
+
     const stats = {
-      byStatus: statusCounts?.reduce((acc: Record<string, number>, row) => {
-        acc[row.status] = (acc[row.status] || 0) + 1
-        return acc
-      }, {}) || {},
-      byType: typeCounts?.reduce((acc: Record<string, number>, row) => {
-        acc[row.email_type] = (acc[row.email_type] || 0) + 1
-        return acc
-      }, {}) || {},
-      total: statusCounts?.length || 0,
+      byStatus,
+      byType,
+      total: total || 0,
+      opened: opened || 0,
     }
 
     return NextResponse.json({ data: stats })
