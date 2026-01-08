@@ -132,7 +132,7 @@ export default function NewsletterPopup() {
 
             {/* Header image/gradient */}
             <div className="bg-gradient-ocean h-32 flex items-center justify-center">
-              <div className="text-center text-white">
+              <div className="text-center text-[var(--earth-brown)]">
                 <Sparkles className="w-10 h-10 mx-auto mb-2" />
                 <p className="text-sm font-medium">{t('title')}</p>
               </div>
@@ -194,7 +194,7 @@ export default function NewsletterPopup() {
                     <Button
                       type="submit"
                       disabled={status === 'loading'}
-                      className="w-full h-12 bg-gradient-ocean text-white"
+                      className="w-full h-12 bg-gradient-ocean text-[var(--earth-brown)]"
                     >
                       {status === 'loading' ? (
                         <>

@@ -194,7 +194,7 @@ export default function BookingSuccessPage() {
 
           {/* Actions */}
           <div className="mt-8 space-y-3">
-            <Button asChild className="w-full bg-gradient-ocean">
+            <Button asChild className="w-full bg-gradient-ocean text-[var(--earth-brown)]">
               <Link href="/retreats">
                 Explore More Retreats
                 <ArrowRight className="ml-2 w-4 h-4" />

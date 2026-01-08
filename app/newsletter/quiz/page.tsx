@@ -116,7 +116,7 @@ function QuizContent() {
 
           <Button
             onClick={() => router.push('/')}
-            className="w-full bg-gradient-ocean"
+            className="w-full bg-gradient-ocean text-[var(--earth-brown)]"
           >
             Explore Retreats
           </Button>
@@ -176,7 +176,7 @@ function QuizContent() {
           <Button
             onClick={handleNext}
             disabled={!hasAnswer || isSubmitting}
-            className="bg-gradient-ocean"
+            className="bg-gradient-ocean text-[var(--earth-brown)]"
           >
             {isSubmitting ? (
               <>

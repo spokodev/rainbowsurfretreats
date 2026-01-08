@@ -200,7 +200,7 @@ function FeedbackContent() {
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-ocean p-8 text-center text-white">
+          <div className="bg-gradient-ocean p-8 text-center text-[var(--earth-brown)]">
             <h1 className="text-2xl font-bold mb-2">Share Your Experience</h1>
             <p className="opacity-90">
               Help us improve and inspire others to join our community
@@ -243,7 +243,7 @@ function FeedbackContent() {
                   <Button
                     onClick={() => setStep(2)}
                     disabled={ratings.some((r) => r.value === 0)}
-                    className="bg-gradient-ocean"
+                    className="bg-gradient-ocean text-[var(--earth-brown)]"
                   >
                     Continue
                   </Button>
@@ -301,7 +301,7 @@ function FeedbackContent() {
                   <Button
                     onClick={() => setStep(3)}
                     disabled={npsScore === null}
-                    className="bg-gradient-ocean"
+                    className="bg-gradient-ocean text-[var(--earth-brown)]"
                   >
                     Continue
                   </Button>
@@ -351,7 +351,7 @@ function FeedbackContent() {
                   <Button
                     onClick={handleSubmit}
                     disabled={isSubmitting}
-                    className="bg-gradient-ocean"
+                    className="bg-gradient-ocean text-[var(--earth-brown)]"
                   >
                     {isSubmitting ? (
                       <>

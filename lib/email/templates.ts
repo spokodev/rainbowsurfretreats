@@ -4,8 +4,9 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreat
 const LOGO_URL = `${SITE_URL}/images/logo.png`
 
 // Company brand colors
-const PRIMARY_COLOR = '#E97451' // Burnt Sienna
-const PRIMARY_DARK = '#D4634A' // Darker shade for hover states
+const PRIMARY_COLOR = '#FFD6D1' // Light Pink
+const PRIMARY_DARK = '#E8BAB4' // Darker shade for hover states
+const TEXT_ON_PRIMARY = '#8B7355' // Earth brown text for contrast on light pink
 
 // Base email layout
 function emailLayout(content: string, preheader: string = ''): string {
@@ -28,7 +29,7 @@ function emailLayout(content: string, preheader: string = ''): string {
     .payment-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0; }
     .payment-item:last-child { border-bottom: none; }
     .amount { font-size: 24px; font-weight: 700; color: ${PRIMARY_COLOR}; }
-    .button { display: inline-block; background: ${PRIMARY_COLOR}; color: #ffffff !important; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 10px 0; }
+    .button { display: inline-block; background: ${PRIMARY_COLOR}; color: ${TEXT_ON_PRIMARY} !important; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 10px 0; }
     .button:hover { background: ${PRIMARY_DARK}; }
     .button-secondary { background: #64748b; }
     .footer { background: #1e293b; color: #94a3b8; padding: 30px; text-align: center; font-size: 14px; }

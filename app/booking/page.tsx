@@ -612,7 +612,7 @@ function BookingContent() {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${
                       currentStep >= stepItem.step
-                        ? "bg-gradient-ocean text-white shadow-md"
+                        ? "bg-gradient-ocean text-[var(--earth-brown)] shadow-md"
                         : "bg-gray-200 text-gray-500"
                     }`}
                   >
@@ -1155,7 +1155,7 @@ function BookingContent() {
                 {currentStep < 3 ? (
                   <Button
                     onClick={handleNext}
-                    className="bg-gradient-ocean hover:opacity-90 text-white transition-all shadow-md"
+                    className="bg-gradient-ocean hover:opacity-90 text-[var(--earth-brown)] transition-all shadow-md"
                   >
                     Continue
                   </Button>
@@ -1163,7 +1163,7 @@ function BookingContent() {
                   <Button
                     onClick={handleCheckout}
                     disabled={!formData.acceptTerms || isSubmitting}
-                    className="bg-gradient-ocean hover:opacity-90 text-white transition-all shadow-md disabled:opacity-50"
+                    className="bg-gradient-ocean hover:opacity-90 text-[var(--earth-brown)] transition-all shadow-md disabled:opacity-50"
                   >
                     {isSubmitting ? (
                       <>

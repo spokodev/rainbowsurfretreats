@@ -306,7 +306,7 @@ export default function Contact() {
                   type="submit"
                   size="lg"
                   disabled={isSubmitting}
-                  className="w-full bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]"
+                  className="w-full bg-[var(--primary-teal)] text-[var(--earth-brown)] hover:bg-[var(--primary-teal-hover)]"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">

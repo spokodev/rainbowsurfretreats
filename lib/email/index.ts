@@ -1513,7 +1513,7 @@ export async function sendWaitlistConfirmation(data: WaitlistConfirmationData) {
         <p><strong>Retreat:</strong> ${data.retreatDestination}</p>
         <p><strong>Dates:</strong> ${data.retreatDates}</p>
         ${data.roomName ? `<p><strong>Room:</strong> ${data.roomName}</p>` : ''}
-        <p style="font-size: 24px; font-weight: bold; color: #E97451; margin-top: 15px;">
+        <p style="font-size: 24px; font-weight: bold; color: #D4A59A; margin-top: 15px;">
           Your Position: #${data.position}
         </p>
       </div>
