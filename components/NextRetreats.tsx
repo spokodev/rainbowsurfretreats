@@ -226,7 +226,7 @@ export default function NextRetreats() {
                     const { isSoldOut } = getLowestAvailablePrice(retreat);
                     if (isSoldOut) {
                       return (
-                        <Button className="w-full bg-[var(--primary-teal)] text-white hover:bg-[var(--primary-teal-hover)]">
+                        <Button variant="outline" className="w-full border-[var(--primary-teal)] text-[var(--primary-teal)] hover:bg-[var(--primary-teal-light)]">
                           <Bell className="w-4 h-4 mr-2" />
                           {t('joinWaitlist')}
                         </Button>

@@ -386,7 +386,7 @@ export default function RetreatPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-amber-500 text-amber-600 hover:bg-amber-50"
+                            className="border-[var(--primary-teal)] text-[var(--primary-teal)] hover:bg-[var(--primary-teal-light)]"
                             onClick={() => setWaitlistRoom(room)}
                           >
                             <Bell className="w-4 h-4 mr-1" />

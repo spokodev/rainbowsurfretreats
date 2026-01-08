@@ -321,8 +321,8 @@ export default function RetreatsPage() {
                         if (isSoldOut) {
                           return (
                             <Button
-                              className="w-full border-amber-500 text-amber-600 hover:bg-amber-50"
                               variant="outline"
+                              className="w-full border-[var(--primary-teal)] text-[var(--primary-teal)] hover:bg-[var(--primary-teal-light)]"
                             >
                               <Bell className="w-4 h-4 mr-2" />
                               {t('joinWaitlist')}
@@ -330,7 +330,7 @@ export default function RetreatsPage() {
                           );
                         }
                         return (
-                          <Button className="w-full bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]">
+                          <Button className="w-full bg-[var(--primary-teal)] text-white hover:bg-[var(--primary-teal-hover)]">
                             {t('bookNow')}
                           </Button>
                         );
