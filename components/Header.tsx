@@ -154,7 +154,7 @@ export default function Header() {
 
             {/* Book Now Button */}
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button asChild variant="outline" className="border-[var(--primary-teal)] text-[var(--primary-teal)] hover:bg-[var(--primary-teal)] hover:text-white">
+              <Button asChild className="bg-[var(--primary-teal)] text-[var(--earth-brown)] hover:bg-[var(--primary-teal-hover)]">
                 <Link href="/retreats">See Retreats</Link>
               </Button>
             </motion.div>
