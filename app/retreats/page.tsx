@@ -321,7 +321,8 @@ export default function RetreatsPage() {
                         if (isSoldOut) {
                           return (
                             <Button
-                              className="w-full bg-[var(--primary-teal)] text-[var(--earth-brown)] hover:bg-[var(--primary-teal-hover)]"
+                              variant="outline"
+                              className="w-full border-[var(--primary-teal-dark)] text-[var(--earth-brown)] hover:bg-[var(--primary-teal-light)]"
                             >
                               <Bell className="w-4 h-4 mr-2" />
                               {t('joinWaitlist')}
