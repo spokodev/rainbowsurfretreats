@@ -113,6 +113,7 @@ export default function AdminPromoCodesPage() {
   const [rooms, setRooms] = useState<RetreatRoom[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [isDuplicating, setIsDuplicating] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -284,6 +285,54 @@ export default function AdminPromoCodesPage() {
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code)
     toast.success(`Copied: ${code}`)
+  }
+
+  const handleDuplicate = async (promo: PromoCodeWithStats) => {
+    setIsDuplicating(promo.id)
+    try {
+      // Generate new code with -COPY suffix
+      let newCode = `${promo.code}-COPY`
+      let counter = 1
+      while (promoCodes.some(p => p.code === newCode)) {
+        newCode = `${promo.code}-COPY${counter}`
+        counter++
+      }
+
+      const payload = {
+        code: newCode,
+        description: promo.description ? `(Copy) ${promo.description}` : '(Copy)',
+        discount_type: promo.discount_type,
+        discount_value: promo.discount_value,
+        scope: promo.scope,
+        retreat_id: promo.retreat_id || null,
+        room_id: promo.room_id || null,
+        valid_from: new Date().toISOString().split('T')[0], // Reset to today
+        valid_until: promo.valid_until || null,
+        max_uses: promo.max_uses || null,
+        min_order_amount: promo.min_order_amount || null,
+        is_active: false, // Draft status
+      }
+
+      const response = await fetch('/api/admin/promo-codes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to duplicate promo code')
+      }
+
+      toast.success(`Duplicated as "${newCode}" (inactive draft)`)
+      fetchPromoCodes()
+    } catch (error) {
+      console.error('Duplicate error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to duplicate promo code')
+    } finally {
+      setIsDuplicating(null)
+    }
   }
 
   const formatDate = (dateString: string | null) => {
@@ -696,6 +745,19 @@ export default function AdminPromoCodesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDuplicate(promo)}
+                          disabled={isDuplicating === promo.id}
+                          title="Duplicate as draft"
+                        >
+                          {isDuplicating === promo.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
