@@ -16,6 +16,7 @@ import {
   Filter,
   SlidersHorizontal,
   Loader2,
+  Bell,
 } from 'lucide-react'
 import ImageWithFallback from '@/components/ImageWithFallback'
 import { RETREAT_IMAGES } from '@/lib/images'
@@ -311,7 +312,8 @@ export default function RetreatsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
-                  <Card className="overflow-hidden h-full flex flex-col group hover:shadow-xl transition-shadow duration-300 bg-white border-0">
+                  <Link href={`/retreats/${retreat.slug}`} className="block h-full">
+                  <Card className="overflow-hidden h-full flex flex-col group hover:shadow-xl transition-shadow duration-300 bg-white border-0 cursor-pointer">
                     <div className="relative aspect-[4/3] overflow-hidden">
                       {retreat.image_url ? (
                         <Image
@@ -413,20 +415,26 @@ export default function RetreatsPage() {
                     <CardFooter className="pt-0">
                       {(() => {
                         const { isSoldOut } = getLowestAvailablePrice(retreat);
+                        if (isSoldOut) {
+                          return (
+                            <Button
+                              className="w-full border-amber-500 text-amber-600 hover:bg-amber-50"
+                              variant="outline"
+                            >
+                              <Bell className="w-4 h-4 mr-2" />
+                              {t('joinWaitlist')}
+                            </Button>
+                          );
+                        }
                         return (
-                          <Button
-                            asChild
-                            className="w-full bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]"
-                            disabled={isSoldOut}
-                          >
-                            <Link href={`/retreats/${retreat.slug}`}>
-                              {isSoldOut ? t('soldOut') : t('bookNow')}
-                            </Link>
+                          <Button className="w-full bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]">
+                            {t('bookNow')}
                           </Button>
                         );
                       })()}
                     </CardFooter>
                   </Card>
+                  </Link>
                 </motion.div>
               ))}
             </div>

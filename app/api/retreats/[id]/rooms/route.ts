@@ -81,14 +81,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         { status: 400 }
       )
     }
-    if (body.early_bird_price !== undefined && body.early_bird_price !== null) {
-      if (typeof body.early_bird_price !== 'number' || body.early_bird_price <= 0) {
-        return NextResponse.json<ApiResponse<null>>(
-          { error: 'Early bird price must be a positive number' },
-          { status: 400 }
-        )
-      }
-    }
 
     const { data, error } = await supabase
       .from('retreat_rooms')

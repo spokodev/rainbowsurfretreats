@@ -178,7 +178,6 @@ export default function AdminRetreatsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Destination</TableHead>
-                  <TableHead>Location</TableHead>
                   <TableHead>Dates</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Level</TableHead>
@@ -196,7 +195,6 @@ export default function AdminRetreatsPage() {
                         <span className="font-medium">{retreat.destination}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{retreat.location}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />

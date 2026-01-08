@@ -103,9 +103,9 @@ export async function POST(request: NextRequest) {
     const { rooms, ...retreatData } = body as RetreatInsert & { rooms?: unknown }
 
     // Validate required fields
-    if (!retreatData.destination || !retreatData.location || !retreatData.start_date || !retreatData.end_date) {
+    if (!retreatData.destination || !retreatData.start_date || !retreatData.end_date) {
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'Missing required fields: destination, location, start_date, end_date' },
+        { error: 'Missing required fields: destination, start_date, end_date' },
         { status: 400 }
       )
     }

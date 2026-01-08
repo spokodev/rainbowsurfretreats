@@ -82,6 +82,10 @@ export const retreatRoomSchema = z.object({
     .optional()
     .nullable(),
   early_bird_enabled: z.boolean().optional().default(false),
+  early_bird_deadline: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
+    .optional()
+    .nullable(),
   capacity: z.number()
     .int('Capacity must be an integer')
     .positive('Capacity must be positive')

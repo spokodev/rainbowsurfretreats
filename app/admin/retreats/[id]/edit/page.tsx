@@ -80,7 +80,7 @@ export default function EditRetreatPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Edit Retreat</h1>
           <p className="text-muted-foreground">
-            {retreat.destination} - {retreat.location}
+            {retreat.destination}
           </p>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Trash2, Save, Loader2, GripVertical, MapPin, Bed, Info, Image as ImageIcon, FileText, Calendar, AlertCircle } from 'lucide-react'
+import { Plus, Trash2, Save, Loader2, GripVertical, MapPin, Bed, Info, Image as ImageIcon, FileText, Calendar, AlertCircle, Languages } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -30,7 +30,8 @@ import {
 } from '@/components/ui/accordion'
 import { toast } from 'sonner'
 import ImageUpload from './image-upload'
-import type { Retreat, RetreatRoom, RetreatLevel, RetreatType } from '@/lib/types/database'
+import { TranslateButton, TranslateMultipleButton } from './translate-button'
+import type { Retreat, RetreatRoom, RetreatLevel } from '@/lib/types/database'
 
 // Validation schema
 const roomSchema = z.object({
@@ -42,17 +43,8 @@ const roomSchema = z.object({
   capacity: z.coerce.number().min(1, 'Capacity must be at least 1'),
   available: z.coerce.number().min(0, 'Available must be 0 or more'),
   is_sold_out: z.boolean().default(false),
-  early_bird_price: z.coerce.number().nullable().optional(),
-  early_bird_enabled: z.boolean().default(false),
-}).refine((data) => {
-  // Validate early bird price is less than regular price
-  if (data.early_bird_enabled && data.early_bird_price != null && data.early_bird_price >= data.price) {
-    return false
-  }
-  return true
-}, {
-  message: 'Early bird price must be less than regular price',
-  path: ['early_bird_price'],
+  early_bird_enabled: z.boolean().default(false), // 10% discount when enabled
+  early_bird_deadline: z.string().nullable().optional(), // Date until which early bird is valid
 })
 
 const aboutSectionSchema = z.object({
@@ -62,33 +54,22 @@ const aboutSectionSchema = z.object({
 
 const retreatSchema = z.object({
   destination: z.string().min(1, 'Destination is required'),
-  location: z.string().min(1, 'Location is required'),
   image_url: z.string().nullable().optional(),
   level: z.enum(['Beginners', 'Intermediate', 'Advanced', 'All Levels']),
   duration: z.string().optional(), // Auto-calculated from dates
   participants: z.string().min(1, 'Participants info is required'),
   food: z.string().min(1, 'Food info is required'),
-  type: z.enum(['Budget', 'Standard', 'Premium']),
   gear: z.string().min(1, 'Gear info is required'),
   start_date: z.string().min(1, 'Start date is required'),
   end_date: z.string().min(1, 'End date is required'),
   description: z.string().nullable().optional(),
   intro_text: z.string().nullable().optional(),
   exact_address: z.string().nullable().optional(),
-  address_note: z.string().nullable().optional(),
   pricing_note: z.string().nullable().optional(),
-  latitude: z.coerce.number().nullable().optional(),
-  longitude: z.coerce.number().nullable().optional(),
   highlights: z.array(z.string()),
   included: z.array(z.string()),
   not_included: z.array(z.string()),
   about_sections: z.array(aboutSectionSchema),
-  important_info: z.object({
-    paymentTerms: z.string().optional(),
-    cancellationPolicy: z.string().optional(),
-    travelInsurance: z.string().optional(),
-    whatToBring: z.string().optional(),
-  }),
   is_published: z.boolean().default(false),
   rooms: z.array(roomSchema),
 }).refine((data) => {
@@ -112,42 +93,29 @@ interface RetreatFormProps {
 }
 
 const levelOptions: RetreatLevel[] = ['Beginners', 'Intermediate', 'Advanced', 'All Levels']
-const typeOptions: RetreatType[] = ['Budget', 'Standard', 'Premium']
 
 export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isGeocodingAddress, setIsGeocodingAddress] = useState(false)
 
   const defaultValues: RetreatFormData = {
     destination: retreat?.destination || '',
-    location: retreat?.location || '',
     image_url: retreat?.image_url || null,
     level: retreat?.level || 'All Levels',
     duration: retreat?.duration || '', // Auto-calculated
     participants: retreat?.participants || '10-16',
     food: retreat?.food || 'Breakfast & Dinner',
-    type: retreat?.type || 'Standard',
     gear: retreat?.gear || 'Included',
     start_date: retreat?.start_date || '',
     end_date: retreat?.end_date || '',
     description: retreat?.description || null,
     intro_text: retreat?.intro_text || null,
     exact_address: retreat?.exact_address || null,
-    address_note: retreat?.address_note || null,
     pricing_note: retreat?.pricing_note || null,
-    latitude: retreat?.latitude || null,
-    longitude: retreat?.longitude || null,
     highlights: retreat?.highlights?.length ? retreat.highlights : [''],
     included: retreat?.included?.length ? retreat.included : [''],
     not_included: retreat?.not_included?.length ? retreat.not_included : [''],
     about_sections: retreat?.about_sections?.length ? retreat.about_sections : [{ title: '', paragraphs: [''] }],
-    important_info: retreat?.important_info || {
-      paymentTerms: '',
-      cancellationPolicy: '',
-      travelInsurance: '',
-      whatToBring: '',
-    },
     is_published: retreat?.is_published || false,
     rooms: retreat?.rooms?.map(room => ({
       id: room.id,
@@ -158,8 +126,8 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
       capacity: room.capacity,
       available: room.available,
       is_sold_out: room.is_sold_out,
-      early_bird_price: room.early_bird_price || null,
       early_bird_enabled: room.early_bird_enabled || false,
+      early_bird_deadline: room.early_bird_deadline || null,
     })) || [],
   }
 
@@ -219,41 +187,7 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
   })
 
   const watchedImageUrl = watch('image_url')
-  const watchedLatitude = watch('latitude') as number | null
-  const watchedLongitude = watch('longitude') as number | null
-
-  // Geocode address to coordinates
-  const handleGeocodeAddress = useCallback(async () => {
-    const address = getValues('exact_address')
-    if (!address) {
-      toast.error('Please enter an address first')
-      return
-    }
-
-    setIsGeocodingAddress(true)
-    try {
-      // Use OpenStreetMap Nominatim API (free, no API key needed)
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
-        { headers: { 'User-Agent': 'RainbowSurfRetreats/1.0' } }
-      )
-      const data = await response.json()
-
-      if (data && data.length > 0) {
-        const { lat, lon } = data[0]
-        setValue('latitude', parseFloat(lat))
-        setValue('longitude', parseFloat(lon))
-        toast.success('Coordinates found!')
-      } else {
-        toast.error('Could not find coordinates for this address')
-      }
-    } catch (error) {
-      console.error('Geocoding error:', error)
-      toast.error('Failed to geocode address')
-    } finally {
-      setIsGeocodingAddress(false)
-    }
-  }, [getValues, setValue])
+  const watchedAddress = watch('exact_address')
 
   const onSubmit = useCallback(async (data: RetreatFormData) => {
     setIsSubmitting(true)
@@ -401,33 +335,19 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
             </div>
           </AccordionTrigger>
           <AccordionContent className="pt-4 pb-6 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="destination">Destination *</Label>
-                <Input
-                  id="destination"
-                  {...register('destination')}
-                  placeholder="e.g., Bali, Indonesia"
-                />
-                {errors.destination && (
-                  <p className="text-sm text-red-500">{errors.destination.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="location">Location *</Label>
-                <Input
-                  id="location"
-                  {...register('location')}
-                  placeholder="e.g., Canggu"
-                />
-                {errors.location && (
-                  <p className="text-sm text-red-500">{errors.location.message}</p>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="destination">Destination *</Label>
+              <Input
+                id="destination"
+                {...register('destination')}
+                placeholder="e.g., Bali, Indonesia"
+              />
+              {errors.destination && (
+                <p className="text-sm text-red-500">{errors.destination.message}</p>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="start_date">Start Date *</Label>
                 <Input
@@ -465,26 +385,6 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
                       <SelectContent>
                         {levelOptions.map(level => (
                           <SelectItem key={level} value={level}>{level}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Type *</Label>
-                <Controller
-                  name="type"
-                  control={control}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {typeOptions.map(type => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -545,8 +445,8 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
                     capacity: 2,
                     available: 5,
                     is_sold_out: false,
-                    early_bird_price: null,
                     early_bird_enabled: false,
+                    early_bird_deadline: null,
                   })}
                 >
                   <Plus className="w-4 h-4 mr-1" /> Add Room
@@ -570,8 +470,8 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
                       capacity: 6,
                       available: 10,
                       is_sold_out: false,
-                      early_bird_price: null,
                       early_bird_enabled: false,
+                      early_bird_deadline: null,
                     })}
                   >
                     <Plus className="w-4 h-4 mr-1" /> Add First Room
@@ -668,7 +568,7 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
                       </div>
 
                       {/* Early Bird Section for Room */}
-                      <div className="bg-green-50 rounded-lg p-3 mt-3 space-y-2">
+                      <div className="bg-green-50 rounded-lg p-3 mt-3">
                         <div className="flex items-center gap-3">
                           <Controller
                             name={`rooms.${index}.early_bird_enabled`}
@@ -677,30 +577,58 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
                               <Switch
                                 id={`room-early-bird-${index}`}
                                 checked={field.value}
-                                onCheckedChange={field.onChange}
+                                onCheckedChange={(checked) => {
+                                  field.onChange(checked)
+                                  // Set default deadline to 3 months before retreat start when enabling
+                                  if (checked && startDate) {
+                                    const retreatStart = new Date(startDate)
+                                    const defaultDeadline = new Date(retreatStart)
+                                    defaultDeadline.setMonth(defaultDeadline.getMonth() - 3)
+                                    const deadlineStr = defaultDeadline.toISOString().split('T')[0]
+                                    setValue(`rooms.${index}.early_bird_deadline`, deadlineStr)
+                                  }
+                                }}
                               />
                             )}
                           />
-                          <Label htmlFor={`room-early-bird-${index}`} className="text-sm font-medium text-green-800">
-                            Enable Early Bird for this room
-                          </Label>
-                        </div>
-
-                        {watch(`rooms.${index}.early_bird_enabled`) && (
-                          <div className="ml-8 space-y-1">
-                            <Label className="text-sm text-green-700">Early Bird Price (EUR)</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              {...register(`rooms.${index}.early_bird_price`)}
-                              className="max-w-[200px] bg-white"
-                              placeholder="e.g., 950"
-                            />
+                          <div className="flex-1">
+                            <Label htmlFor={`room-early-bird-${index}`} className="text-sm font-medium text-green-800">
+                              Enable Early Bird (10% discount)
+                            </Label>
                             <p className="text-xs text-green-600">
-                              This price will be shown when booking 3+ months in advance
+                              Guests booking before the deadline get 10% off this room
                             </p>
                           </div>
-                        )}
+                        </div>
+
+                        {/* Early Bird Deadline Date Picker */}
+                        <Controller
+                          name={`rooms.${index}.early_bird_enabled`}
+                          control={control}
+                          render={({ field: enabledField }) => enabledField.value ? (
+                            <div className="mt-3 pt-3 border-t border-green-200">
+                              <div className="flex items-center gap-3">
+                                <Calendar className="w-4 h-4 text-green-600" />
+                                <div className="flex-1">
+                                  <Label htmlFor={`room-early-bird-deadline-${index}`} className="text-sm font-medium text-green-700">
+                                    Early Bird Deadline
+                                  </Label>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Input
+                                      id={`room-early-bird-deadline-${index}`}
+                                      type="date"
+                                      {...register(`rooms.${index}.early_bird_deadline`)}
+                                      className="w-48 bg-white"
+                                    />
+                                    <p className="text-xs text-green-600">
+                                      (Default: 3 months before retreat)
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : <></>}
+                        />
                       </div>
                     </div>
                   ))}
@@ -729,7 +657,13 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="intro_text">Intro Text</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="intro_text">Intro Text</Label>
+                <TranslateButton
+                  text={watch('intro_text') || ''}
+                  onTranslated={(text) => setValue('intro_text', text)}
+                />
+              </div>
               <Textarea
                 id="intro_text"
                 {...register('intro_text')}
@@ -739,7 +673,13 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Full Description</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="description">Full Description</Label>
+                <TranslateButton
+                  text={watch('description') || ''}
+                  onTranslated={(text) => setValue('description', text)}
+                />
+              </div>
               <Textarea
                 id="description"
                 {...register('description')}
@@ -905,61 +845,24 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
           </AccordionTrigger>
           <AccordionContent className="pt-4 pb-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="exact_address">Exact Address</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="exact_address"
-                  {...register('exact_address')}
-                  placeholder="Full address of the retreat venue"
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleGeocodeAddress}
-                  disabled={isGeocodingAddress}
-                >
-                  {isGeocodingAddress ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <MapPin className="w-4 h-4" />
-                  )}
-                  <span className="ml-1 hidden sm:inline">Find on Map</span>
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="latitude">Latitude</Label>
-                <Input
-                  id="latitude"
-                  type="number"
-                  step="any"
-                  {...register('latitude')}
-                  placeholder="e.g., 30.3475"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="longitude">Longitude</Label>
-                <Input
-                  id="longitude"
-                  type="number"
-                  step="any"
-                  {...register('longitude')}
-                  placeholder="e.g., -9.7233"
-                />
-              </div>
+              <Label htmlFor="exact_address">Address</Label>
+              <Input
+                id="exact_address"
+                {...register('exact_address')}
+                placeholder="Full address of the retreat venue"
+              />
+              <p className="text-xs text-muted-foreground">
+                Google Maps will show the location based on this address
+              </p>
             </div>
 
             {/* Map Preview */}
-            {watchedLatitude && watchedLongitude && (
+            {watchedAddress && (
               <div className="space-y-2">
                 <Label>Map Preview</Label>
                 <div className="border rounded-lg overflow-hidden">
                   <iframe
-                    src={`https://www.google.com/maps?q=${watchedLatitude},${watchedLongitude}&output=embed&z=14`}
+                    src={`https://www.google.com/maps?q=${encodeURIComponent(watchedAddress)}&output=embed&z=14`}
                     width="100%"
                     height="250"
                     style={{ border: 0 }}
@@ -969,17 +872,6 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
                 </div>
               </div>
             )}
-
-            <div className="space-y-2">
-              <Label htmlFor="address_note">Address Note</Label>
-              <Textarea
-                id="address_note"
-                {...register('address_note')}
-                placeholder="Additional directions or notes about the location..."
-                rows={2}
-              />
-            </div>
-
           </AccordionContent>
         </AccordionItem>
 
@@ -1082,52 +974,6 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
               ))}
             </div>
 
-            <Separator />
-
-            {/* Important Information */}
-            <div className="space-y-4">
-              <Label className="text-base font-medium">Important Information</Label>
-
-              <div className="space-y-2">
-                <Label htmlFor="paymentTerms" className="text-sm">Payment Terms</Label>
-                <Textarea
-                  id="paymentTerms"
-                  {...register('important_info.paymentTerms')}
-                  placeholder="Payment terms and conditions..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="cancellationPolicy" className="text-sm">Cancellation Policy</Label>
-                <Textarea
-                  id="cancellationPolicy"
-                  {...register('important_info.cancellationPolicy')}
-                  placeholder="Cancellation policy details..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="travelInsurance" className="text-sm">Travel Insurance</Label>
-                <Textarea
-                  id="travelInsurance"
-                  {...register('important_info.travelInsurance')}
-                  placeholder="Travel insurance information..."
-                  rows={2}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="whatToBring" className="text-sm">What to Bring</Label>
-                <Textarea
-                  id="whatToBring"
-                  {...register('important_info.whatToBring')}
-                  placeholder="List of items guests should bring..."
-                  rows={3}
-                />
-              </div>
-            </div>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

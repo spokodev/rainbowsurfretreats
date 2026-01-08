@@ -8,9 +8,15 @@ import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { RetreatMap } from '@/components/retreat-map'
-import { MapPin, Calendar, Users, Clock, Utensils, Waves, Check, X, Loader2, CreditCard, FileText, Shield, Backpack } from 'lucide-react'
+import { WaitlistForm } from '@/components/waitlist-form'
+import { Calendar, Users, Clock, Utensils, Waves, Check, X, Loader2, Bell } from 'lucide-react'
 
 interface RetreatRoom {
   id: string
@@ -22,8 +28,8 @@ interface RetreatRoom {
   available: number
   is_sold_out: boolean
   sort_order: number
-  early_bird_price: number | null
   early_bird_enabled: boolean
+  early_bird_deadline: string | null
 }
 
 interface AboutSection {
@@ -31,27 +37,17 @@ interface AboutSection {
   paragraphs: string[]
 }
 
-interface ImportantInfo {
-  paymentTerms?: string
-  cancellationPolicy?: string
-  travelInsurance?: string
-  whatToBring?: string
-}
-
 interface Retreat {
   id: string
   slug: string
   destination: string
-  location: string
   image_url: string | null
   level: string
   duration: string
   participants: string
   food: string
-  type: string
   gear: string
   price: number
-  early_bird_price: number | null
   start_date: string
   end_date: string
   description: string
@@ -60,13 +56,9 @@ interface Retreat {
   included: string[]
   not_included: string[]
   exact_address: string
-  address_note: string | null
   pricing_note: string | null
-  latitude: number | null
-  longitude: number | null
   availability_status: 'available' | 'sold_out' | 'few_spots'
   about_sections: AboutSection[]
-  important_info: ImportantInfo
   rooms: RetreatRoom[]
 }
 
@@ -79,6 +71,7 @@ export default function RetreatPage() {
   const [retreat, setRetreat] = useState<Retreat | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [waitlistRoom, setWaitlistRoom] = useState<RetreatRoom | null>(null)
 
   useEffect(() => {
     async function fetchRetreat() {
@@ -176,20 +169,13 @@ export default function RetreatPage() {
               <Badge variant="secondary" className="bg-white/90 text-foreground">
                 {retreat.level}
               </Badge>
-              <Badge className="bg-primary/90">
-                {retreat.type}
-              </Badge>
               {retreat.availability_status === 'sold_out' && (
                 <Badge variant="destructive">Sold Out</Badge>
               )}
             </div>
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">
+            <h1 className="text-3xl md:text-5xl font-bold text-white">
               {retreat.destination}
             </h1>
-            <div className="flex items-center text-white/90 text-lg">
-              <MapPin className="size-5 mr-2" />
-              {retreat.location}
-            </div>
           </div>
         </div>
       </section>
@@ -317,71 +303,6 @@ export default function RetreatPage() {
               </section>
             )}
 
-            {/* Important Information */}
-            {retreat.important_info && (
-              retreat.important_info.paymentTerms ||
-              retreat.important_info.cancellationPolicy ||
-              retreat.important_info.travelInsurance ||
-              retreat.important_info.whatToBring
-            ) && (
-              <section>
-                <h2 className="text-2xl font-bold mb-4">{t('importantInfo')}</h2>
-                <Accordion type="multiple" className="w-full">
-                  {retreat.important_info.paymentTerms && (
-                    <AccordionItem value="payment-terms">
-                      <AccordionTrigger>
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="size-4" />
-                          <span>{t('paymentTerms')}</span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <p className="text-muted-foreground whitespace-pre-wrap">{retreat.important_info.paymentTerms}</p>
-                      </AccordionContent>
-                    </AccordionItem>
-                  )}
-                  {retreat.important_info.cancellationPolicy && (
-                    <AccordionItem value="cancellation-policy">
-                      <AccordionTrigger>
-                        <div className="flex items-center gap-2">
-                          <FileText className="size-4" />
-                          <span>{t('cancellationPolicy')}</span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <p className="text-muted-foreground whitespace-pre-wrap">{retreat.important_info.cancellationPolicy}</p>
-                      </AccordionContent>
-                    </AccordionItem>
-                  )}
-                  {retreat.important_info.travelInsurance && (
-                    <AccordionItem value="travel-insurance">
-                      <AccordionTrigger>
-                        <div className="flex items-center gap-2">
-                          <Shield className="size-4" />
-                          <span>{t('travelInsurance')}</span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <p className="text-muted-foreground whitespace-pre-wrap">{retreat.important_info.travelInsurance}</p>
-                      </AccordionContent>
-                    </AccordionItem>
-                  )}
-                  {retreat.important_info.whatToBring && (
-                    <AccordionItem value="what-to-bring">
-                      <AccordionTrigger>
-                        <div className="flex items-center gap-2">
-                          <Backpack className="size-4" />
-                          <span>{t('whatToBring')}</span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <p className="text-muted-foreground whitespace-pre-wrap">{retreat.important_info.whatToBring}</p>
-                      </AccordionContent>
-                    </AccordionItem>
-                  )}
-                </Accordion>
-              </section>
-            )}
           </div>
 
           {/* Right Column - Sidebar */}
@@ -424,17 +345,17 @@ export default function RetreatPage() {
                       </div>
                       <div className="flex justify-between items-center mt-3">
                         <div>
-                          {eligible && room.early_bird_enabled && room.early_bird_price ? (
+                          {eligible && room.early_bird_enabled ? (
                             <div className="flex flex-col">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm line-through text-muted-foreground">
                                   {formatPrice(room.price)}
                                 </span>
                                 <span className="text-lg font-bold text-green-600">
-                                  {formatPrice(room.early_bird_price)}
+                                  {formatPrice(Math.round(room.price * 0.9))}
                                 </span>
                               </div>
-                              <span className="text-xs text-green-600">{t('earlyBird')}</span>
+                              <span className="text-xs text-green-600">{t('earlyBird')} (-10%)</span>
                             </div>
                           ) : (
                             <>
@@ -460,7 +381,17 @@ export default function RetreatPage() {
                               {t('book')}
                             </Link>
                           </Button>
-                        ) : null}
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-amber-500 text-amber-600 hover:bg-amber-50"
+                            onClick={() => setWaitlistRoom(room)}
+                          >
+                            <Bell className="w-4 h-4 mr-1" />
+                            {t('joinWaitlist')}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -469,25 +400,36 @@ export default function RetreatPage() {
             )}
 
             {/* Location Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('location')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Map */}
-                <RetreatMap
-                  latitude={retreat.latitude}
-                  longitude={retreat.longitude}
-                  address={retreat.exact_address}
-                />
-                {retreat.address_note && (
-                  <p className="text-sm text-muted-foreground">{retreat.address_note}</p>
-                )}
-              </CardContent>
-            </Card>
+            {retreat.exact_address && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('location')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RetreatMap address={retreat.exact_address} />
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Waitlist Dialog */}
+      <Dialog open={!!waitlistRoom} onOpenChange={(open) => !open && setWaitlistRoom(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Join Waitlist</DialogTitle>
+          </DialogHeader>
+          {waitlistRoom && (
+            <WaitlistForm
+              retreatId={retreat.id}
+              roomId={waitlistRoom.id}
+              retreatName={retreat.destination}
+              roomName={waitlistRoom.name}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }

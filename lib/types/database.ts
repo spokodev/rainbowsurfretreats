@@ -2,7 +2,6 @@
 // These types match the Supabase schema
 
 export type RetreatLevel = 'Beginners' | 'Intermediate' | 'Advanced' | 'All Levels'
-export type RetreatType = 'Budget' | 'Standard' | 'Premium'
 export type AvailabilityStatus = 'available' | 'few_spots' | 'sold_out'
 export type BlogStatus = 'draft' | 'published' | 'scheduled' | 'archived'
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed'
@@ -16,27 +15,18 @@ export interface AboutSection {
   paragraphs: string[]
 }
 
-export interface ImportantInfo {
-  paymentTerms?: string
-  cancellationPolicy?: string
-  travelInsurance?: string
-  whatToBring?: string
-}
-
 // =====================
 // RETREAT TYPES
 // =====================
 export interface Retreat {
   id: string
   destination: string
-  location: string
   slug: string | null
   image_url: string | null
   level: RetreatLevel
   duration: string
   participants: string
   food: string
-  type: RetreatType
   gear: string
   price: number | null
   early_bird_price: number | null
@@ -45,19 +35,13 @@ export interface Retreat {
   description: string | null
   intro_text: string | null
   exact_address: string | null
-  address_note: string | null
   pricing_note: string | null
-  // Geolocation for maps
-  latitude: number | null
-  longitude: number | null
-  map_zoom: number | null
   country_code: string | null
   availability_status: AvailabilityStatus
   highlights: string[]
   included: string[]
   not_included: string[]
   about_sections: AboutSection[]
-  important_info: ImportantInfo
   is_published: boolean
   created_at: string
   updated_at: string
@@ -79,8 +63,8 @@ export interface RetreatRoom {
   available: number
   is_sold_out: boolean
   sort_order: number
-  early_bird_price: number | null
   early_bird_enabled: boolean
+  early_bird_deadline: string | null
   created_at: string
   updated_at: string
 }
@@ -88,14 +72,12 @@ export interface RetreatRoom {
 // For creating/updating retreats
 export interface RetreatInsert {
   destination: string
-  location: string
   slug?: string | null
   image_url?: string | null
   level: RetreatLevel
   duration: string
   participants: string
   food: string
-  type: RetreatType
   gear: string
   price?: number | null
   early_bird_price?: number | null
@@ -104,19 +86,13 @@ export interface RetreatInsert {
   description?: string | null
   intro_text?: string | null
   exact_address?: string | null
-  address_note?: string | null
   pricing_note?: string | null
-  // Geolocation for maps
-  latitude?: number | null
-  longitude?: number | null
-  map_zoom?: number | null
   country_code?: string | null
   availability_status?: AvailabilityStatus
   highlights?: string[]
   included?: string[]
   not_included?: string[]
   about_sections?: AboutSection[]
-  important_info?: ImportantInfo
   is_published?: boolean
 }
 
@@ -130,8 +106,8 @@ export interface RetreatRoomInsert {
   available: number
   is_sold_out?: boolean
   sort_order?: number
-  early_bird_price?: number | null
   early_bird_enabled?: boolean
+  early_bird_deadline?: string | null
 }
 
 // =====================
@@ -413,8 +389,8 @@ export interface RetreatRoomFormData {
   capacity: number
   available: number
   is_sold_out: boolean
-  early_bird_price: string
   early_bird_enabled: boolean
+  early_bird_deadline: string | null
 }
 
 export interface BlogPostFormData extends Omit<BlogPostInsert, 'tags'> {
@@ -505,4 +481,109 @@ export interface PromoCodeValidationResult {
   promoCode?: PromoCode
   discountAmount?: number
   error?: string
+}
+
+// =====================
+// WAITLIST TYPES
+// =====================
+export type WaitlistStatus = 'waiting' | 'notified' | 'accepted' | 'declined' | 'expired' | 'booked'
+
+export interface WaitlistEntry {
+  id: string
+  retreat_id: string
+  room_id: string | null
+  email: string
+  first_name: string
+  last_name: string
+  phone: string | null
+  guests_count: number
+  notes: string | null
+  status: WaitlistStatus
+  notified_at: string | null
+  notification_expires_at: string | null
+  responded_at: string | null
+  response_token: string | null
+  position: number
+  created_at: string
+  updated_at: string
+  // Joined data
+  retreat?: Retreat
+  room?: RetreatRoom
+}
+
+export interface WaitlistEntryInsert {
+  retreat_id: string
+  room_id?: string | null
+  email: string
+  first_name: string
+  last_name: string
+  phone?: string | null
+  guests_count?: number
+  notes?: string | null
+}
+
+export interface WaitlistStats {
+  waiting: number
+  notified: number
+  accepted: number
+  declined: number
+  expired: number
+  booked: number
+  total: number
+}
+
+// =====================
+// EMAIL AUDIT LOG TYPES
+// =====================
+export type EmailType =
+  | 'booking_confirmation'
+  | 'payment_failed'
+  | 'deadline_reminder'
+  | 'booking_cancelled'
+  | 'admin_payment_failed'
+  | 'admin_waitlist_join'
+  | 'admin_new_booking'
+  | 'waitlist_spot_available'
+
+export type EmailRecipientType = 'customer' | 'admin'
+
+export type EmailStatus = 'sent' | 'delivered' | 'failed' | 'bounced'
+
+export interface EmailAuditLog {
+  id: string
+  email_type: string
+  recipient_email: string
+  recipient_type: EmailRecipientType
+  subject: string
+  booking_id: string | null
+  payment_id: string | null
+  resend_email_id: string | null
+  status: EmailStatus
+  error_message: string | null
+  delivered_at: string | null
+  opened_at: string | null
+  clicked_at: string | null
+  bounced_at: string | null
+  bounce_reason: string | null
+  complained_at: string | null
+  open_count: number
+  click_count: number
+  metadata: Record<string, unknown>
+  created_at: string
+  // Joined data
+  booking?: Booking
+  payment?: Payment
+}
+
+export interface EmailAuditLogInsert {
+  email_type: string
+  recipient_email: string
+  recipient_type?: EmailRecipientType
+  subject: string
+  booking_id?: string | null
+  payment_id?: string | null
+  resend_email_id?: string | null
+  status?: EmailStatus
+  error_message?: string | null
+  metadata?: Record<string, unknown>
 }
