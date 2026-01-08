@@ -386,25 +386,25 @@ function WaitlistPageContent() {
             </div>
           ) : (
             <>
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>#</TableHead>
+                      <TableHead className="hidden sm:table-cell">#</TableHead>
                       <TableHead>Guest</TableHead>
-                      <TableHead>Retreat</TableHead>
-                      <TableHead>Room</TableHead>
-                      <TableHead>Notes</TableHead>
+                      <TableHead className="hidden md:table-cell">Retreat</TableHead>
+                      <TableHead className="hidden lg:table-cell">Room</TableHead>
+                      <TableHead className="hidden xl:table-cell">Notes</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Expires</TableHead>
-                      <TableHead>Joined</TableHead>
+                      <TableHead className="hidden md:table-cell">Expires</TableHead>
+                      <TableHead className="hidden lg:table-cell">Joined</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {data.entries.map((entry) => (
                       <TableRow key={entry.id}>
-                        <TableCell className="font-mono text-sm">
+                        <TableCell className="hidden sm:table-cell font-mono text-sm">
                           {entry.position}
                         </TableCell>
                         <TableCell>
@@ -421,9 +421,16 @@ function WaitlistPageContent() {
                                 {entry.guests_count} guests
                               </div>
                             )}
+                            {/* Mobile-only: show position and retreat */}
+                            <div className="text-xs text-muted-foreground sm:hidden mt-1">
+                              #{entry.position}
+                            </div>
+                            <div className="text-xs text-muted-foreground md:hidden">
+                              {entry.retreat?.destination || 'Unknown retreat'}
+                            </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           {entry.retreat ? (
                             <Link
                               href={`/admin/retreats/${entry.retreat_id}`}
@@ -435,12 +442,12 @@ function WaitlistPageContent() {
                             <span className="text-muted-foreground">Unknown</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           {entry.room?.name || (
                             <span className="text-muted-foreground text-sm">Any room</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden xl:table-cell">
                           {entry.notes ? (
                             <div className="max-w-[200px]">
                               <div className="flex items-start gap-1">
@@ -455,7 +462,7 @@ function WaitlistPageContent() {
                           )}
                         </TableCell>
                         <TableCell>{getStatusBadge(entry.status)}</TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           {entry.status === 'notified' && entry.notification_expires_at ? (
                             <div className="text-sm">
                               <div className="font-medium text-amber-600">
@@ -469,7 +476,7 @@ function WaitlistPageContent() {
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Calendar className="w-3 h-3" />
                             {formatDate(entry.created_at)}

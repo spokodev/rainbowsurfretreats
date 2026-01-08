@@ -125,9 +125,9 @@ export default function NewsletterPopup() {
             <button
               onClick={handleClose}
               aria-label="Close newsletter popup"
-              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+              className="absolute top-4 right-4 p-3 hover:bg-gray-100 rounded-full transition-colors z-10"
             >
-              <X className="w-5 h-5 text-gray-500" aria-hidden="true" />
+              <X className="w-6 h-6 text-gray-500" aria-hidden="true" />
             </button>
 
             {/* Header image/gradient */}

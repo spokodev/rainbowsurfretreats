@@ -142,7 +142,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-16 grid grid-cols-3 gap-8 sm:gap-16"
+          className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-16"
         >
           {stats.map((stat) => (
             <div key={stat.labelKey} className="text-center">

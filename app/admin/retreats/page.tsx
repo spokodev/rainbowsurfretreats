@@ -232,7 +232,7 @@ function RetreatsPageContent() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Retreats</h1>
           <p className="text-muted-foreground">
@@ -242,12 +242,13 @@ function RetreatsPageContent() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={fetchRetreats} disabled={isLoading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
           <Button asChild>
             <Link href="/admin/retreats/new">
               <Plus className="mr-2 h-4 w-4" />
-              Add New Retreat
+              <span className="hidden sm:inline">Add New Retreat</span>
+              <span className="sm:hidden">New</span>
             </Link>
           </Button>
         </div>
@@ -343,85 +344,94 @@ function RetreatsPageContent() {
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <AdminSortHeader
-                      column="destination"
-                      label="Destination"
-                      currentSort={sortBy}
-                      currentOrder={sortOrder}
-                      onSort={handleSort}
-                    />
-                    <AdminSortHeader
-                      column="start_date"
-                      label="Dates"
-                      currentSort={sortBy}
-                      currentOrder={sortOrder}
-                      onSort={handleSort}
-                    />
-                    <TableHead>Duration</TableHead>
-                    <AdminSortHeader
-                      column="level"
-                      label="Level"
-                      currentSort={sortBy}
-                      currentOrder={sortOrder}
-                      onSort={handleSort}
-                    />
-                    <TableHead>Price</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {retreats.map((retreat) => (
-                    <TableRow key={retreat.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{retreat.destination}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>{formatDate(retreat.start_date)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{retreat.duration}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            retreat.level === 'Beginners' ? 'secondary' : 'default'
-                          }
-                        >
-                          {retreat.level}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold">
-                            {retreat.rooms && retreat.rooms.length > 0
-                              ? `from €${Math.min(...retreat.rooms.map(r => r.price))}`
-                              : 'No rooms'}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={retreat.is_published ? 'default' : 'outline'}>
-                          {retreat.is_published ? (
-                            <>
-                              <Eye className="mr-1 h-3 w-3" />
-                              Published
-                            </>
-                          ) : (
-                            <>
-                              <EyeOff className="mr-1 h-3 w-3" />
-                              Draft
-                            </>
-                          )}
-                        </Badge>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <AdminSortHeader
+                        column="destination"
+                        label="Destination"
+                        currentSort={sortBy}
+                        currentOrder={sortOrder}
+                        onSort={handleSort}
+                      />
+                      <AdminSortHeader
+                        column="start_date"
+                        label="Dates"
+                        currentSort={sortBy}
+                        currentOrder={sortOrder}
+                        onSort={handleSort}
+                        className="hidden sm:table-cell"
+                      />
+                      <TableHead className="hidden md:table-cell">Duration</TableHead>
+                      <AdminSortHeader
+                        column="level"
+                        label="Level"
+                        currentSort={sortBy}
+                        currentOrder={sortOrder}
+                        onSort={handleSort}
+                        className="hidden lg:table-cell"
+                      />
+                      <TableHead>Price</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {retreats.map((retreat) => (
+                      <TableRow key={retreat.id}>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{retreat.destination}</span>
+                            </div>
+                            {/* Mobile-only: show dates */}
+                            <span className="text-xs text-muted-foreground sm:hidden mt-1">
+                              {formatDate(retreat.start_date)}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span>{formatDate(retreat.start_date)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">{retreat.duration}</TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <Badge
+                            variant={
+                              retreat.level === 'Beginners' ? 'secondary' : 'default'
+                            }
+                          >
+                            {retreat.level}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold">
+                              {retreat.rooms && retreat.rooms.length > 0
+                                ? `from €${Math.min(...retreat.rooms.map(r => r.price))}`
+                                : 'No rooms'}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={retreat.is_published ? 'default' : 'outline'}>
+                            {retreat.is_published ? (
+                              <>
+                                <Eye className="mr-1 h-3 w-3" />
+                                <span className="hidden sm:inline">Published</span>
+                              </>
+                            ) : (
+                              <>
+                                <EyeOff className="mr-1 h-3 w-3" />
+                                <span className="hidden sm:inline">Draft</span>
+                              </>
+                            )}
+                          </Badge>
+                        </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button variant="ghost" size="icon" asChild>
@@ -482,6 +492,7 @@ function RetreatsPageContent() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
 
               {/* Pagination */}
               <AdminPagination
