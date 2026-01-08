@@ -57,6 +57,20 @@ interface SiteSettings {
   };
 }
 
+interface AdminNotificationsSettings {
+  generalEmail: string;
+  bookingsEmail: string;
+  paymentsEmail: string;
+  waitlistEmail: string;
+  supportEmail: string;
+  notifyOnNewBooking: boolean;
+  notifyOnPaymentReceived: boolean;
+  notifyOnPaymentFailed: boolean;
+  notifyOnWaitlistJoin: boolean;
+  notifyOnWaitlistResponse: boolean;
+  notifyOnSupportRequest: boolean;
+}
+
 const defaultSettings: SiteSettings = {
   general: {
     siteName: "Rainbow Surf Retreats",
@@ -87,8 +101,23 @@ const defaultSettings: SiteSettings = {
   },
 };
 
+const defaultAdminNotifications: AdminNotificationsSettings = {
+  generalEmail: "",
+  bookingsEmail: "",
+  paymentsEmail: "",
+  waitlistEmail: "",
+  supportEmail: "",
+  notifyOnNewBooking: true,
+  notifyOnPaymentReceived: true,
+  notifyOnPaymentFailed: true,
+  notifyOnWaitlistJoin: true,
+  notifyOnWaitlistResponse: true,
+  notifyOnSupportRequest: true,
+};
+
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
+  const [adminNotifications, setAdminNotifications] = useState<AdminNotificationsSettings>(defaultAdminNotifications);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -110,6 +139,14 @@ export default function AdminSettingsPage() {
         payment: { ...defaultSettings.payment, ...result.data?.payment },
         booking: { ...defaultSettings.booking, ...result.data?.booking },
       });
+
+      // Merge admin notifications with defaults
+      if (result.adminNotifications) {
+        setAdminNotifications({
+          ...defaultAdminNotifications,
+          ...result.adminNotifications,
+        });
+      }
     } catch (error) {
       console.error("Fetch settings error:", error);
       toast.error("Failed to load settings");
@@ -130,7 +167,7 @@ export default function AdminSettingsPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ settings }),
+        body: JSON.stringify({ settings, adminNotifications }),
       });
 
       const result = await response.json();
@@ -181,6 +218,20 @@ export default function AdminSettingsPage() {
     setSettings(prev => ({
       ...prev,
       booking: { ...prev.booking, [field]: value },
+    }));
+  };
+
+  const updateAdminNotificationsEmail = (field: keyof Pick<AdminNotificationsSettings, 'generalEmail' | 'bookingsEmail' | 'paymentsEmail' | 'waitlistEmail' | 'supportEmail'>, value: string) => {
+    setAdminNotifications(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const updateAdminNotificationsToggle = (field: keyof Pick<AdminNotificationsSettings, 'notifyOnNewBooking' | 'notifyOnPaymentReceived' | 'notifyOnPaymentFailed' | 'notifyOnWaitlistJoin' | 'notifyOnWaitlistResponse' | 'notifyOnSupportRequest'>, value: boolean) => {
+    setAdminNotifications(prev => ({
+      ...prev,
+      [field]: value,
     }));
   };
 
@@ -377,6 +428,158 @@ export default function AdminSettingsPage() {
                 checked={settings.notifications.weeklyReports}
                 onCheckedChange={(checked) => updateNotifications("weeklyReports", checked)}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Admin Notifications Settings */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-muted-foreground" />
+              <CardTitle>Admin Email Alerts</CardTitle>
+            </div>
+            <CardDescription>
+              Configure email addresses and toggle notifications for admin alerts
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Email addresses */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium">Notification Email Addresses</h4>
+              <p className="text-sm text-muted-foreground">
+                Leave blank to use the general email for that category. Falls back to ADMIN_EMAIL environment variable if none set.
+              </p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="adminGeneralEmail">General Email</Label>
+                  <Input
+                    id="adminGeneralEmail"
+                    type="email"
+                    placeholder="admin@example.com"
+                    value={adminNotifications.generalEmail}
+                    onChange={(e) => updateAdminNotificationsEmail("generalEmail", e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">Default email for all notifications</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="adminBookingsEmail">Bookings Email</Label>
+                  <Input
+                    id="adminBookingsEmail"
+                    type="email"
+                    placeholder="bookings@example.com"
+                    value={adminNotifications.bookingsEmail}
+                    onChange={(e) => updateAdminNotificationsEmail("bookingsEmail", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="adminPaymentsEmail">Payments Email</Label>
+                  <Input
+                    id="adminPaymentsEmail"
+                    type="email"
+                    placeholder="payments@example.com"
+                    value={adminNotifications.paymentsEmail}
+                    onChange={(e) => updateAdminNotificationsEmail("paymentsEmail", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="adminWaitlistEmail">Waitlist Email</Label>
+                  <Input
+                    id="adminWaitlistEmail"
+                    type="email"
+                    placeholder="waitlist@example.com"
+                    value={adminNotifications.waitlistEmail}
+                    onChange={(e) => updateAdminNotificationsEmail("waitlistEmail", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="adminSupportEmail">Support Email</Label>
+                  <Input
+                    id="adminSupportEmail"
+                    type="email"
+                    placeholder="support@example.com"
+                    value={adminNotifications.supportEmail}
+                    onChange={(e) => updateAdminNotificationsEmail("supportEmail", e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Toggle switches */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="text-sm font-medium">Notification Types</h4>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>New Booking</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive email when a new booking is created
+                  </p>
+                </div>
+                <Switch
+                  checked={adminNotifications.notifyOnNewBooking}
+                  onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnNewBooking", checked)}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Payment Received</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive email when a payment is successfully processed
+                  </p>
+                </div>
+                <Switch
+                  checked={adminNotifications.notifyOnPaymentReceived}
+                  onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnPaymentReceived", checked)}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Payment Failed</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive email when a payment fails
+                  </p>
+                </div>
+                <Switch
+                  checked={adminNotifications.notifyOnPaymentFailed}
+                  onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnPaymentFailed", checked)}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Waitlist Join</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive email when someone joins the waitlist
+                  </p>
+                </div>
+                <Switch
+                  checked={adminNotifications.notifyOnWaitlistJoin}
+                  onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnWaitlistJoin", checked)}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Waitlist Response</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive email when someone accepts or declines a waitlist offer
+                  </p>
+                </div>
+                <Switch
+                  checked={adminNotifications.notifyOnWaitlistResponse}
+                  onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnWaitlistResponse", checked)}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Support Request</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive email when a support request is submitted
+                  </p>
+                </div>
+                <Switch
+                  checked={adminNotifications.notifyOnSupportRequest}
+                  onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnSupportRequest", checked)}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

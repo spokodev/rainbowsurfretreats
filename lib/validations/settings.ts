@@ -40,6 +40,24 @@ export const notificationsSettingsSchema = z.object({
   weeklyReports: z.boolean(),
 })
 
+// Admin notifications settings schema - for configurable admin email alerts
+export const adminNotificationsSettingsSchema = z.object({
+  // Email addresses for different notification types
+  generalEmail: z.string().email().optional().or(z.literal('')),
+  bookingsEmail: z.string().email().optional().or(z.literal('')),
+  paymentsEmail: z.string().email().optional().or(z.literal('')),
+  waitlistEmail: z.string().email().optional().or(z.literal('')),
+  supportEmail: z.string().email().optional().or(z.literal('')),
+
+  // Toggle flags for each notification type
+  notifyOnNewBooking: z.boolean().default(true),
+  notifyOnPaymentReceived: z.boolean().default(true),
+  notifyOnPaymentFailed: z.boolean().default(true),
+  notifyOnWaitlistJoin: z.boolean().default(true),
+  notifyOnWaitlistResponse: z.boolean().default(true),
+  notifyOnSupportRequest: z.boolean().default(true),
+})
+
 // Combined site settings schema
 export const siteSettingsSchema = z.object({
   general: generalSettingsSchema,
@@ -55,6 +73,7 @@ export type EmailSettings = z.infer<typeof emailSettingsSchema>
 export type PaymentSettings = z.infer<typeof paymentSettingsSchema>
 export type BookingSettings = z.infer<typeof bookingSettingsSchema>
 export type NotificationsSettings = z.infer<typeof notificationsSettingsSchema>
+export type AdminNotificationsSettings = z.infer<typeof adminNotificationsSettingsSchema>
 export type SiteSettings = z.infer<typeof siteSettingsSchema>
 
 // Partial schema for updates (all fields optional)

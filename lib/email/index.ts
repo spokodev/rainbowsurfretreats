@@ -21,6 +21,52 @@ function getSupabase() {
   )
 }
 
+// ==========================================
+// EMAIL AUDIT LOGGING
+// ==========================================
+
+export interface EmailLogData {
+  emailType: string
+  recipientEmail: string
+  recipientType: 'customer' | 'admin'
+  subject: string
+  bookingId?: string | null
+  paymentId?: string | null
+  resendEmailId?: string | null
+  status: 'sent' | 'failed'
+  errorMessage?: string | null
+  metadata?: Record<string, unknown>
+}
+
+/**
+ * Log an email to the audit log table
+ * Called after each email send attempt (success or failure)
+ */
+export async function logEmailSent(data: EmailLogData): Promise<void> {
+  try {
+    const supabase = getSupabase()
+    const { error } = await supabase.from('email_audit_log').insert({
+      email_type: data.emailType,
+      recipient_email: data.recipientEmail,
+      recipient_type: data.recipientType,
+      subject: data.subject,
+      booking_id: data.bookingId || null,
+      payment_id: data.paymentId || null,
+      resend_email_id: data.resendEmailId || null,
+      status: data.status,
+      error_message: data.errorMessage || null,
+      metadata: data.metadata || {},
+    })
+
+    if (error) {
+      console.error('Failed to log email to audit table:', error)
+    }
+  } catch (error) {
+    // Don't throw - logging should not break email sending
+    console.error('Error logging email:', error)
+  }
+}
+
 export const FROM_EMAIL = process.env.FROM_EMAIL || 'Rainbow Surf Retreats <noreply@rainbowsurfretreats.com>'
 export const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || 'info@rainbowsurfretreats.com'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreats.com'
@@ -42,10 +88,24 @@ export interface SendEmailOptions {
   html: string
   text?: string
   replyTo?: string
+  // Logging context (optional - if provided, email will be logged to audit table)
+  logContext?: {
+    emailType: string
+    recipientType: 'customer' | 'admin'
+    bookingId?: string | null
+    paymentId?: string | null
+    metadata?: Record<string, unknown>
+  }
 }
 
-export async function sendEmail(options: SendEmailOptions) {
+export interface SendEmailResult {
+  id: string | null
+  success: boolean
+}
+
+export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
   const resend = getResend()
+  const recipientEmail = Array.isArray(options.to) ? options.to[0] : options.to
 
   try {
     const { data, error } = await resend.emails.send({
@@ -59,11 +119,43 @@ export async function sendEmail(options: SendEmailOptions) {
 
     if (error) {
       console.error('Email send error:', error)
+
+      // Log failure if context provided
+      if (options.logContext) {
+        await logEmailSent({
+          emailType: options.logContext.emailType,
+          recipientEmail,
+          recipientType: options.logContext.recipientType,
+          subject: options.subject,
+          bookingId: options.logContext.bookingId,
+          paymentId: options.logContext.paymentId,
+          status: 'failed',
+          errorMessage: error.message,
+          metadata: options.logContext.metadata,
+        })
+      }
+
       throw new Error(error.message)
     }
 
     console.log('Email sent successfully:', data?.id)
-    return data
+
+    // Log success if context provided
+    if (options.logContext) {
+      await logEmailSent({
+        emailType: options.logContext.emailType,
+        recipientEmail,
+        recipientType: options.logContext.recipientType,
+        subject: options.subject,
+        bookingId: options.logContext.bookingId,
+        paymentId: options.logContext.paymentId,
+        resendEmailId: data?.id || null,
+        status: 'sent',
+        metadata: options.logContext.metadata,
+      })
+    }
+
+    return { id: data?.id || null, success: true }
   } catch (error) {
     console.error('Failed to send email:', error)
     throw error
@@ -75,7 +167,9 @@ export async function sendEmail(options: SendEmailOptions) {
 const SAFE_VARIABLES = new Set([
   'content', 'htmlContent', 'unsubscribeLink', 'viewInBrowser',
   'myBookingUrl', 'updatePaymentUrl', 'paymentLinkUrl', 'adminDashboardUrl',
-  'payNowUrl', 'paymentScheduleHtml', 'siteUrl'
+  'payNowUrl', 'paymentScheduleHtml', 'siteUrl',
+  // Waitlist URLs
+  'acceptUrl', 'declineUrl', 'bookingUrl', 'waitlistUrl'
 ])
 
 function renderTemplate(template: string, data: Record<string, unknown>): string {
@@ -104,7 +198,7 @@ function renderTemplate(template: string, data: Record<string, unknown>): string
 }
 
 // Email layout wrapper
-function wrapInLayout(content: string): string {
+export function wrapInLayout(content: string): string {
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -664,6 +758,9 @@ export interface FailedPaymentData {
   updatePaymentUrl: string // Stripe Customer Portal URL
   myBookingUrl: string
   language?: string
+  // For audit logging
+  bookingId?: string
+  paymentId?: string
 }
 
 /**
@@ -727,7 +824,23 @@ export async function sendPaymentFailedWithDeadline(data: FailedPaymentData) {
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'payment_failed',
+      recipientType: 'customer',
+      bookingId: data.bookingId,
+      paymentId: data.paymentId,
+      metadata: {
+        amount: data.amount,
+        paymentNumber: data.paymentNumber,
+        failureReason: data.failureReason,
+        daysRemaining: data.daysRemaining,
+      },
+    },
+  })
 }
 
 /**
@@ -793,7 +906,23 @@ export async function sendDeadlineReminder(
   }
 
   const fullHtml = wrapInLayout(htmlContent)
-  return sendEmail({ to: data.email, subject, html: fullHtml })
+  return sendEmail({
+    to: data.email,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'deadline_reminder',
+      recipientType: 'customer',
+      bookingId: data.bookingId,
+      paymentId: data.paymentId,
+      metadata: {
+        reminderType,
+        amount: data.amount,
+        paymentNumber: data.paymentNumber,
+        daysRemaining: data.daysRemaining,
+      },
+    },
+  })
 }
 
 /**
@@ -988,9 +1117,25 @@ export async function sendAdminPaymentFailedNotification(data: {
   amount: number
   paymentNumber: number
   failureReason: string
-  adminDashboardUrl: string
+  adminDashboardUrl?: string
+  // For audit logging
+  bookingId?: string
+  paymentId?: string
 }) {
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@rainbowsurfretreats.com'
+  // Check if this notification is enabled
+  if (!await isNotificationEnabled('notifyOnPaymentFailed')) {
+    console.log('Admin payment failed notification is disabled')
+    return
+  }
+
+  // Get admin email from settings with fallback
+  const adminEmail = await getAdminNotificationEmail('payments')
+  if (!adminEmail) {
+    console.log('No admin email configured for payment notifications')
+    return
+  }
+
+  const dashboardUrl = data.adminDashboardUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreats.com'}/admin/payments`
 
   const subject = `Payment Failed: ${data.bookingNumber}`
   const htmlContent = `
@@ -1012,18 +1157,29 @@ export async function sendAdminPaymentFailedNotification(data: {
     <p>The customer has been notified and given 14 days to update their payment method.</p>
 
     <p style="text-align: center; margin: 30px 0;">
-      <a href="${data.adminDashboardUrl}" class="button">View in Admin Dashboard</a>
+      <a href="${dashboardUrl}" class="button">View in Admin Dashboard</a>
     </p>
   `
 
   const fullHtml = wrapInLayout(htmlContent)
 
-  // Send to all admin emails if multiple are configured
-  const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || [adminEmail]
-
-  for (const email of adminEmails) {
-    await sendEmail({ to: email, subject, html: fullHtml })
-  }
+  await sendEmail({
+    to: adminEmail,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'admin_payment_failed',
+      recipientType: 'admin',
+      bookingId: data.bookingId,
+      paymentId: data.paymentId,
+      metadata: {
+        customerEmail: data.customerEmail,
+        amount: data.amount,
+        paymentNumber: data.paymentNumber,
+        failureReason: data.failureReason,
+      },
+    },
+  })
 }
 
 /**
@@ -1096,4 +1252,859 @@ export async function sendBookingRestored(data: {
 
   const fullHtml = wrapInLayout(htmlContent)
   return sendEmail({ to: data.email, subject, html: fullHtml })
+}
+
+// ==========================================
+// WAITLIST EMAIL FUNCTIONS
+// ==========================================
+
+export interface WaitlistConfirmationData {
+  firstName: string
+  lastName: string
+  email: string
+  retreatDestination: string
+  retreatDates: string
+  roomName?: string
+  position: number
+  language?: string
+}
+
+/**
+ * Send waitlist confirmation email when user joins waitlist
+ */
+export async function sendWaitlistConfirmation(data: WaitlistConfirmationData) {
+  const template = await getTemplate('waitlist_confirmation', data.language || 'en')
+
+  const templateData: Record<string, unknown> = {
+    ...data,
+    siteUrl: SITE_URL,
+  }
+
+  let subject: string
+  let htmlContent: string
+
+  if (template) {
+    subject = renderTemplate(template.subject, templateData)
+    htmlContent = renderTemplate(template.html_content, templateData)
+  } else {
+    subject = `You're on the Waitlist - ${data.retreatDestination} Retreat`
+    htmlContent = `
+      <h2>You're on the Waitlist!</h2>
+      <p>Hi ${data.firstName},</p>
+
+      <p>Thank you for joining the waitlist for our ${data.retreatDestination} Surf Retreat.</p>
+
+      <div class="highlight-box">
+        <p><strong>Retreat:</strong> ${data.retreatDestination}</p>
+        <p><strong>Dates:</strong> ${data.retreatDates}</p>
+        ${data.roomName ? `<p><strong>Room:</strong> ${data.roomName}</p>` : ''}
+        <p style="font-size: 24px; font-weight: bold; color: #E97451; margin-top: 15px;">
+          Your Position: #${data.position}
+        </p>
+      </div>
+
+      <h3>What Happens Next?</h3>
+      <p>If a spot opens up, we'll send you an email notification immediately. You'll have <strong>72 hours</strong> to confirm and complete your booking.</p>
+
+      <p>We'll keep you informed every step of the way. In the meantime, feel free to browse our other available retreats.</p>
+
+      <p style="text-align: center; margin: 30px 0;">
+        <a href="${SITE_URL}/retreats" class="button">Browse Retreats</a>
+      </p>
+
+      <p style="margin-top: 30px;">
+        Surf's up!<br>
+        <strong>Rainbow Surf Retreats Team</strong>
+      </p>
+    `
+  }
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({ to: data.email, subject, html: fullHtml })
+}
+
+export interface WaitlistSpotAvailableData {
+  firstName: string
+  lastName: string
+  email: string
+  retreatDestination: string
+  retreatDates: string
+  roomName?: string
+  roomPrice: number
+  depositPercentage: number
+  depositAmount: number
+  expiresAt: string
+  acceptUrl: string
+  declineUrl: string
+  language?: string
+}
+
+/**
+ * Send notification when a spot becomes available for a waitlist member
+ */
+export async function sendWaitlistSpotAvailable(data: WaitlistSpotAvailableData) {
+  const template = await getTemplate('waitlist_spot_available', data.language || 'en')
+
+  const expiryDate = new Date(data.expiresAt)
+  const formattedExpiry = expiryDate.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  })
+
+  const templateData: Record<string, unknown> = {
+    ...data,
+    roomPrice: data.roomPrice.toFixed(2),
+    depositAmount: data.depositAmount.toFixed(2),
+    expiresAt: formattedExpiry,
+    siteUrl: SITE_URL,
+  }
+
+  let subject: string
+  let htmlContent: string
+
+  if (template) {
+    subject = renderTemplate(template.subject, templateData)
+    htmlContent = renderTemplate(template.html_content, templateData)
+  } else {
+    subject = `A Spot is Available! - ${data.retreatDestination} Retreat`
+    htmlContent = `
+      <h2>Great News - A Spot Just Opened Up!</h2>
+      <p>Hi ${data.firstName},</p>
+
+      <p>A spot has become available for your waitlisted retreat!</p>
+
+      <div class="success-box">
+        <p><strong>This is your chance to secure your spot!</strong></p>
+      </div>
+
+      <div class="highlight-box">
+        <p><strong>Retreat:</strong> ${data.retreatDestination}</p>
+        <p><strong>Dates:</strong> ${data.retreatDates}</p>
+        ${data.roomName ? `<p><strong>Room:</strong> ${data.roomName}</p>` : ''}
+        <p><strong>Price:</strong> €${data.roomPrice.toFixed(2)}</p>
+        <p><strong>Deposit (${data.depositPercentage}%):</strong> €${data.depositAmount.toFixed(2)}</p>
+      </div>
+
+      <div class="warning-box">
+        <p><strong>⏰ This offer expires in 72 hours</strong></p>
+        <p>Deadline: ${formattedExpiry}</p>
+        <p style="font-size: 14px;">If you don't respond by this time, the spot will be offered to the next person on the waitlist.</p>
+      </div>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${data.acceptUrl}" class="button" style="margin: 10px;">Accept & Book Now</a>
+        <br><br>
+        <a href="${data.declineUrl}" class="button button-secondary" style="background: #64748b; margin: 10px;">Decline Offer</a>
+      </div>
+
+      <p style="font-size: 14px; color: #64748b; text-align: center;">
+        By accepting, you'll be redirected to complete your booking and pay the ${data.depositPercentage}% deposit.
+      </p>
+
+      <p style="margin-top: 30px;">
+        See you at the beach!<br>
+        <strong>Rainbow Surf Retreats Team</strong>
+      </p>
+    `
+  }
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({ to: data.email, subject, html: fullHtml })
+}
+
+export interface WaitlistAcceptedData {
+  firstName: string
+  lastName: string
+  email: string
+  retreatDestination: string
+  retreatDates: string
+  bookingUrl: string
+  language?: string
+}
+
+/**
+ * Send confirmation after user accepts waitlist offer
+ */
+export async function sendWaitlistAccepted(data: WaitlistAcceptedData) {
+  const template = await getTemplate('waitlist_accepted', data.language || 'en')
+
+  const templateData: Record<string, unknown> = {
+    ...data,
+    siteUrl: SITE_URL,
+  }
+
+  let subject: string
+  let htmlContent: string
+
+  if (template) {
+    subject = renderTemplate(template.subject, templateData)
+    htmlContent = renderTemplate(template.html_content, templateData)
+  } else {
+    subject = `Complete Your Booking - ${data.retreatDestination} Retreat`
+    htmlContent = `
+      <h2>You're Almost There!</h2>
+      <p>Hi ${data.firstName},</p>
+
+      <div class="success-box">
+        <p><strong>Congratulations!</strong> You've successfully accepted the waitlist offer.</p>
+      </div>
+
+      <p>Please complete your booking by paying the deposit to secure your spot.</p>
+
+      <div class="highlight-box">
+        <p><strong>Retreat:</strong> ${data.retreatDestination}</p>
+        <p><strong>Dates:</strong> ${data.retreatDates}</p>
+      </div>
+
+      <p style="text-align: center; margin: 30px 0;">
+        <a href="${data.bookingUrl}" class="button">Complete Booking Now</a>
+      </p>
+
+      <p style="font-size: 14px; color: #64748b;">
+        If you have any questions, please don't hesitate to contact us.
+      </p>
+
+      <p style="margin-top: 30px;">
+        Best regards,<br>
+        <strong>Rainbow Surf Retreats Team</strong>
+      </p>
+    `
+  }
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({ to: data.email, subject, html: fullHtml })
+}
+
+export interface WaitlistDeclinedData {
+  firstName: string
+  lastName: string
+  email: string
+  retreatDestination: string
+  language?: string
+}
+
+/**
+ * Send confirmation after user declines waitlist offer
+ */
+export async function sendWaitlistDeclined(data: WaitlistDeclinedData) {
+  const template = await getTemplate('waitlist_declined', data.language || 'en')
+
+  const templateData: Record<string, unknown> = {
+    ...data,
+    siteUrl: SITE_URL,
+  }
+
+  let subject: string
+  let htmlContent: string
+
+  if (template) {
+    subject = renderTemplate(template.subject, templateData)
+    htmlContent = renderTemplate(template.html_content, templateData)
+  } else {
+    subject = `We'll Miss You - ${data.retreatDestination} Retreat`
+    htmlContent = `
+      <h2>We're Sorry to See You Go</h2>
+      <p>Hi ${data.firstName},</p>
+
+      <p>We understand that the timing wasn't right for the ${data.retreatDestination} retreat.</p>
+
+      <p>We'd love to host you on a future adventure! Browse our upcoming retreats to find one that works better for your schedule.</p>
+
+      <p style="text-align: center; margin: 30px 0;">
+        <a href="${SITE_URL}/retreats" class="button">Browse Other Retreats</a>
+      </p>
+
+      <p>You can always join the waitlist again if your plans change.</p>
+
+      <p style="margin-top: 30px;">
+        Wishing you great waves,<br>
+        <strong>Rainbow Surf Retreats Team</strong>
+      </p>
+    `
+  }
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({ to: data.email, subject, html: fullHtml })
+}
+
+export interface WaitlistExpiredData {
+  firstName: string
+  lastName: string
+  email: string
+  retreatDestination: string
+  retreatDates: string
+  waitlistUrl: string
+  language?: string
+}
+
+/**
+ * Send notification when waitlist offer expires without response
+ */
+export async function sendWaitlistExpired(data: WaitlistExpiredData) {
+  const template = await getTemplate('waitlist_expired', data.language || 'en')
+
+  const templateData: Record<string, unknown> = {
+    ...data,
+    siteUrl: SITE_URL,
+  }
+
+  let subject: string
+  let htmlContent: string
+
+  if (template) {
+    subject = renderTemplate(template.subject, templateData)
+    htmlContent = renderTemplate(template.html_content, templateData)
+  } else {
+    subject = `Waitlist Offer Expired - ${data.retreatDestination} Retreat`
+    htmlContent = `
+      <h2>Your Waitlist Offer Has Expired</h2>
+      <p>Hi ${data.firstName},</p>
+
+      <p>Unfortunately, the 72-hour deadline to respond to your waitlist offer for the ${data.retreatDestination} retreat has passed.</p>
+
+      <p>The spot has been offered to the next person on the waitlist.</p>
+
+      <div class="highlight-box">
+        <p><strong>Still Interested?</strong></p>
+        <p>You can rejoin the waitlist for this retreat if you'd still like a chance to attend.</p>
+      </div>
+
+      <p style="text-align: center; margin: 30px 0;">
+        <a href="${data.waitlistUrl}" class="button">Rejoin Waitlist</a>
+      </p>
+
+      <p>Or browse our other available retreats:</p>
+      <p style="text-align: center;">
+        <a href="${SITE_URL}/retreats" class="button button-secondary" style="background: #64748b;">Browse Retreats</a>
+      </p>
+
+      <p style="margin-top: 30px;">
+        Hope to see you soon,<br>
+        <strong>Rainbow Surf Retreats Team</strong>
+      </p>
+    `
+  }
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({ to: data.email, subject, html: fullHtml })
+}
+
+// ==========================================
+// ADMIN NOTIFICATION FUNCTIONS
+// ==========================================
+
+interface AdminNotificationSettings {
+  generalEmail?: string
+  bookingsEmail?: string
+  paymentsEmail?: string
+  waitlistEmail?: string
+  supportEmail?: string
+  notifyOnNewBooking?: boolean
+  notifyOnPaymentReceived?: boolean
+  notifyOnPaymentFailed?: boolean
+  notifyOnWaitlistJoin?: boolean
+  notifyOnWaitlistResponse?: boolean
+  notifyOnSupportRequest?: boolean
+}
+
+/**
+ * Get admin notification settings from database
+ */
+async function getAdminNotificationSettings(): Promise<AdminNotificationSettings | null> {
+  try {
+    const supabase = getSupabase()
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'admin_notifications')
+      .single()
+
+    if (error || !data) {
+      return null
+    }
+
+    return data.value as AdminNotificationSettings
+  } catch (error) {
+    console.error('Error fetching admin notification settings:', error)
+    return null
+  }
+}
+
+/**
+ * Get admin email for a specific notification type
+ * Falls back to generalEmail, then ADMIN_EMAIL env variable
+ */
+export async function getAdminNotificationEmail(
+  type: 'bookings' | 'payments' | 'waitlist' | 'support' | 'general'
+): Promise<string | null> {
+  const settings = await getAdminNotificationSettings()
+
+  if (settings) {
+    const typeEmail = settings[`${type}Email` as keyof AdminNotificationSettings] as string | undefined
+    if (typeEmail) return typeEmail
+    if (settings.generalEmail) return settings.generalEmail
+  }
+
+  return process.env.ADMIN_EMAIL || null
+}
+
+/**
+ * Check if a specific notification type is enabled
+ */
+export async function isNotificationEnabled(
+  type: 'notifyOnNewBooking' | 'notifyOnPaymentReceived' | 'notifyOnPaymentFailed' | 'notifyOnWaitlistJoin' | 'notifyOnWaitlistResponse' | 'notifyOnSupportRequest'
+): Promise<boolean> {
+  const settings = await getAdminNotificationSettings()
+  if (!settings) return true // Default to enabled if no settings
+  return settings[type] !== false // Default to true unless explicitly disabled
+}
+
+export interface AdminWaitlistJoinData {
+  firstName: string
+  lastName: string
+  email: string
+  phone?: string
+  retreatDestination: string
+  retreatDates: string
+  roomName?: string
+  guestsCount: number
+  notes?: string
+  position: number
+}
+
+/**
+ * Send notification to admin when someone joins the waitlist
+ */
+export async function sendAdminWaitlistJoinNotification(data: AdminWaitlistJoinData) {
+  // Check if this notification is enabled
+  if (!await isNotificationEnabled('notifyOnWaitlistJoin')) {
+    console.log('Admin waitlist join notification is disabled')
+    return
+  }
+
+  const adminEmail = await getAdminNotificationEmail('waitlist')
+  if (!adminEmail) {
+    console.log('No admin email configured for waitlist notifications')
+    return
+  }
+
+  const subject = `New Waitlist Entry - ${data.retreatDestination}`
+  const htmlContent = `
+    <h2>New Waitlist Entry</h2>
+
+    <div class="highlight-box">
+      <p><strong>Someone just joined the waitlist for your retreat!</strong></p>
+    </div>
+
+    <h3>Guest Information</h3>
+    <div class="highlight-box">
+      <p><strong>Name:</strong> ${escapeHtml(data.firstName)} ${escapeHtml(data.lastName)}</p>
+      <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+      ${data.phone ? `<p><strong>Phone:</strong> ${escapeHtml(data.phone)}</p>` : ''}
+      <p><strong>Number of Guests:</strong> ${data.guestsCount}</p>
+      <p><strong>Position:</strong> #${data.position}</p>
+    </div>
+
+    <h3>Retreat Details</h3>
+    <div class="highlight-box">
+      <p><strong>Retreat:</strong> ${escapeHtml(data.retreatDestination)}</p>
+      <p><strong>Dates:</strong> ${escapeHtml(data.retreatDates)}</p>
+      ${data.roomName ? `<p><strong>Preferred Room:</strong> ${escapeHtml(data.roomName)}</p>` : '<p><strong>Preferred Room:</strong> Any available</p>'}
+    </div>
+
+    ${data.notes ? `
+    <h3>Special Requests / Notes</h3>
+    <div class="warning-box">
+      <p>${escapeHtml(data.notes)}</p>
+    </div>
+    ` : ''}
+
+    <p style="text-align: center; margin: 30px 0;">
+      <a href="${SITE_URL}/admin/waitlist" class="button">View Waitlist</a>
+    </p>
+  `
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({
+    to: adminEmail,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'admin_waitlist_join',
+      recipientType: 'admin',
+      metadata: {
+        guestEmail: data.email,
+        guestName: `${data.firstName} ${data.lastName}`,
+        retreatDestination: data.retreatDestination,
+        position: data.position,
+        guestsCount: data.guestsCount,
+      },
+    },
+  })
+}
+
+// ==========================================
+// NEW ADMIN NOTIFICATION FUNCTIONS
+// ==========================================
+
+export interface AdminNewBookingData {
+  bookingNumber: string
+  customerName: string
+  customerEmail: string
+  phone?: string
+  retreatName: string
+  retreatDates: string
+  roomName?: string
+  totalAmount: number
+  depositAmount: number
+  guestsCount: number
+  paymentType: 'deposit' | 'full'
+  isEarlyBird?: boolean
+  earlyBirdDiscount?: number
+  bookingId?: string
+}
+
+/**
+ * Send notification to admin when a new booking is created
+ */
+export async function sendAdminNewBookingNotification(data: AdminNewBookingData) {
+  // Check if this notification is enabled
+  if (!await isNotificationEnabled('notifyOnNewBooking')) {
+    console.log('Admin new booking notification is disabled')
+    return
+  }
+
+  const adminEmail = await getAdminNotificationEmail('bookings')
+  if (!adminEmail) {
+    console.log('No admin email configured for booking notifications')
+    return
+  }
+
+  const subject = `New Booking: ${data.bookingNumber} - ${data.retreatName}`
+  const htmlContent = `
+    <h2>New Booking Received</h2>
+
+    <div class="success-box">
+      <p><strong>A new booking has been made!</strong></p>
+    </div>
+
+    <h3>Guest Information</h3>
+    <div class="highlight-box">
+      <p><strong>Name:</strong> ${escapeHtml(data.customerName)}</p>
+      <p><strong>Email:</strong> ${escapeHtml(data.customerEmail)}</p>
+      ${data.phone ? `<p><strong>Phone:</strong> ${escapeHtml(data.phone)}</p>` : ''}
+      <p><strong>Guests:</strong> ${data.guestsCount}</p>
+    </div>
+
+    <h3>Booking Details</h3>
+    <div class="highlight-box">
+      <p><strong>Booking Number:</strong> ${escapeHtml(data.bookingNumber)}</p>
+      <p><strong>Retreat:</strong> ${escapeHtml(data.retreatName)}</p>
+      <p><strong>Dates:</strong> ${escapeHtml(data.retreatDates)}</p>
+      ${data.roomName ? `<p><strong>Room:</strong> ${escapeHtml(data.roomName)}</p>` : ''}
+    </div>
+
+    <h3>Payment</h3>
+    <div class="highlight-box">
+      <p><strong>Total Amount:</strong> €${data.totalAmount.toFixed(2)}</p>
+      <p><strong>Deposit Paid:</strong> €${data.depositAmount.toFixed(2)}</p>
+      <p><strong>Payment Type:</strong> ${data.paymentType === 'full' ? 'Full Payment' : 'Deposit'}</p>
+      ${data.isEarlyBird ? `<p><strong>Early Bird Discount:</strong> €${data.earlyBirdDiscount?.toFixed(2)}</p>` : ''}
+    </div>
+
+    <p style="text-align: center; margin: 30px 0;">
+      <a href="${SITE_URL}/admin/bookings" class="button">View in Admin Dashboard</a>
+    </p>
+  `
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({
+    to: adminEmail,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'admin_new_booking',
+      recipientType: 'admin',
+      bookingId: data.bookingId,
+      metadata: {
+        customerEmail: data.customerEmail,
+        bookingNumber: data.bookingNumber,
+        totalAmount: data.totalAmount,
+        depositAmount: data.depositAmount,
+      },
+    },
+  })
+}
+
+export interface AdminPaymentReceivedData {
+  bookingNumber: string
+  customerName: string
+  customerEmail: string
+  retreatName: string
+  amount: number
+  paymentNumber: number
+  totalPayments: number
+  remainingBalance: number
+  isFullyPaid: boolean
+  bookingId?: string
+  paymentId?: string
+}
+
+/**
+ * Send notification to admin when a payment is received
+ */
+export async function sendAdminPaymentReceivedNotification(data: AdminPaymentReceivedData) {
+  // Check if this notification is enabled
+  if (!await isNotificationEnabled('notifyOnPaymentReceived')) {
+    console.log('Admin payment received notification is disabled')
+    return
+  }
+
+  const adminEmail = await getAdminNotificationEmail('payments')
+  if (!adminEmail) {
+    console.log('No admin email configured for payment notifications')
+    return
+  }
+
+  const subject = data.isFullyPaid
+    ? `Payment Complete: ${data.bookingNumber}`
+    : `Payment Received: ${data.bookingNumber} (${data.paymentNumber}/${data.totalPayments})`
+
+  const htmlContent = `
+    <h2>Payment Received</h2>
+
+    <div class="success-box">
+      <p class="amount">€${data.amount.toFixed(2)}</p>
+      <p>Payment ${data.paymentNumber} of ${data.totalPayments}</p>
+    </div>
+
+    <div class="highlight-box">
+      <p><strong>Booking:</strong> ${escapeHtml(data.bookingNumber)}</p>
+      <p><strong>Customer:</strong> ${escapeHtml(data.customerName)} (${escapeHtml(data.customerEmail)})</p>
+      <p><strong>Retreat:</strong> ${escapeHtml(data.retreatName)}</p>
+      <p><strong>Remaining Balance:</strong> €${data.remainingBalance.toFixed(2)}</p>
+    </div>
+
+    ${data.isFullyPaid ? `
+      <div class="success-box">
+        <p><strong>This booking is now fully paid!</strong></p>
+      </div>
+    ` : ''}
+
+    <p style="text-align: center; margin: 30px 0;">
+      <a href="${SITE_URL}/admin/payments" class="button">View Payments</a>
+    </p>
+  `
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({
+    to: adminEmail,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'admin_payment_received',
+      recipientType: 'admin',
+      bookingId: data.bookingId,
+      paymentId: data.paymentId,
+      metadata: {
+        customerEmail: data.customerEmail,
+        amount: data.amount,
+        paymentNumber: data.paymentNumber,
+        isFullyPaid: data.isFullyPaid,
+      },
+    },
+  })
+}
+
+export interface AdminWaitlistResponseData {
+  firstName: string
+  lastName: string
+  email: string
+  retreatDestination: string
+  retreatDates: string
+  roomName?: string
+  action: 'accepted' | 'declined'
+}
+
+/**
+ * Send notification to admin when someone responds to a waitlist offer
+ */
+export async function sendAdminWaitlistResponseNotification(data: AdminWaitlistResponseData) {
+  // Check if this notification is enabled
+  if (!await isNotificationEnabled('notifyOnWaitlistResponse')) {
+    console.log('Admin waitlist response notification is disabled')
+    return
+  }
+
+  const adminEmail = await getAdminNotificationEmail('waitlist')
+  if (!adminEmail) {
+    console.log('No admin email configured for waitlist notifications')
+    return
+  }
+
+  const actionText = data.action === 'accepted' ? 'Accepted' : 'Declined'
+  const actionColor = data.action === 'accepted' ? '#10b981' : '#ef4444'
+
+  const subject = `Waitlist ${actionText}: ${data.retreatDestination}`
+  const htmlContent = `
+    <h2>Waitlist Response Received</h2>
+
+    <div style="background: ${actionColor}20; border-left: 4px solid ${actionColor}; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+      <p style="color: ${actionColor}; font-weight: bold; margin: 0;">
+        ${escapeHtml(data.firstName)} ${escapeHtml(data.lastName)} has ${actionText.toLowerCase()} the waitlist offer
+      </p>
+    </div>
+
+    <div class="highlight-box">
+      <p><strong>Name:</strong> ${escapeHtml(data.firstName)} ${escapeHtml(data.lastName)}</p>
+      <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+      <p><strong>Retreat:</strong> ${escapeHtml(data.retreatDestination)}</p>
+      <p><strong>Dates:</strong> ${escapeHtml(data.retreatDates)}</p>
+      ${data.roomName ? `<p><strong>Room:</strong> ${escapeHtml(data.roomName)}</p>` : ''}
+    </div>
+
+    ${data.action === 'declined' ? `
+      <p>The spot will be offered to the next person on the waitlist.</p>
+    ` : `
+      <p>The guest should now complete their booking.</p>
+    `}
+
+    <p style="text-align: center; margin: 30px 0;">
+      <a href="${SITE_URL}/admin/waitlist" class="button">View Waitlist</a>
+    </p>
+  `
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({
+    to: adminEmail,
+    subject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'admin_waitlist_response',
+      recipientType: 'admin',
+      metadata: {
+        guestEmail: data.email,
+        guestName: `${data.firstName} ${data.lastName}`,
+        action: data.action,
+        retreatDestination: data.retreatDestination,
+      },
+    },
+  })
+}
+
+export interface AdminSupportRequestData {
+  name: string
+  email: string
+  subject: string
+  message: string
+}
+
+/**
+ * Send notification to admin when a support/contact request is submitted
+ */
+export async function sendAdminSupportRequestNotification(data: AdminSupportRequestData) {
+  // Check if this notification is enabled
+  if (!await isNotificationEnabled('notifyOnSupportRequest')) {
+    console.log('Admin support request notification is disabled')
+    return
+  }
+
+  const adminEmail = await getAdminNotificationEmail('support')
+  if (!adminEmail) {
+    console.log('No admin email configured for support notifications')
+    return
+  }
+
+  const emailSubject = `Support Request: ${data.subject}`
+  const htmlContent = `
+    <h2>New Support Request</h2>
+
+    <div class="highlight-box">
+      <p><strong>From:</strong> ${escapeHtml(data.name)}</p>
+      <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+      <p><strong>Subject:</strong> ${escapeHtml(data.subject)}</p>
+    </div>
+
+    <h3>Message</h3>
+    <div class="highlight-box">
+      <p style="white-space: pre-wrap;">${escapeHtml(data.message)}</p>
+    </div>
+
+    <p style="text-align: center; margin: 30px 0;">
+      <a href="mailto:${escapeHtml(data.email)}?subject=Re: ${encodeURIComponent(data.subject)}" class="button">Reply to Customer</a>
+    </p>
+  `
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({
+    to: adminEmail,
+    subject: emailSubject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'admin_support_request',
+      recipientType: 'admin',
+      metadata: {
+        customerEmail: data.email,
+        customerName: data.name,
+        subject: data.subject,
+      },
+    },
+  })
+}
+
+/**
+ * Send confirmation email to customer when they submit a contact form
+ */
+export async function sendContactFormConfirmation(data: {
+  name: string
+  email: string
+  subject: string
+}) {
+  const emailSubject = `We received your message: ${data.subject}`
+  const htmlContent = `
+    <h2>Thank You for Contacting Us!</h2>
+
+    <p>Hi ${escapeHtml(data.name)},</p>
+
+    <p>We have received your message and will get back to you as soon as possible, usually within 24-48 hours.</p>
+
+    <div class="highlight-box">
+      <p><strong>Subject:</strong> ${escapeHtml(data.subject)}</p>
+    </div>
+
+    <p>In the meantime, feel free to:</p>
+    <ul>
+      <li>Browse our <a href="${SITE_URL}/retreats">upcoming retreats</a></li>
+      <li>Read our <a href="${SITE_URL}/blog">blog</a> for surf tips and stories</li>
+      <li>Follow us on social media for the latest updates</li>
+    </ul>
+
+    <p>We look forward to helping you catch your perfect wave!</p>
+
+    <p style="margin-top: 30px;">
+      Warm regards,<br>
+      <strong>Rainbow Surf Retreats Team</strong>
+    </p>
+  `
+
+  const fullHtml = wrapInLayout(htmlContent)
+  return sendEmail({
+    to: data.email,
+    subject: emailSubject,
+    html: fullHtml,
+    logContext: {
+      emailType: 'contact_form_confirmation',
+      recipientType: 'customer',
+      metadata: {
+        customerEmail: data.email,
+        customerName: data.name,
+        subject: data.subject,
+      },
+    },
+  })
 }

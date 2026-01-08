@@ -4,7 +4,9 @@ import { checkAdminAuth } from '@/lib/settings'
 import {
   partialSiteSettingsSchema,
   defaultSettings,
+  adminNotificationsSettingsSchema,
   type SiteSettings,
+  type AdminNotificationsSettings,
 } from '@/lib/validations/settings'
 
 function getSupabase() {
@@ -41,15 +43,20 @@ export async function GET() {
 
     // Transform array of {key, value} into object, merging with defaults
     const settings: SiteSettings = { ...defaultSettings }
+    let adminNotifications: AdminNotificationsSettings | null = null
 
     for (const item of data || []) {
-      const key = item.key as keyof SiteSettings
-      if (key in settings) {
-        settings[key] = { ...settings[key], ...item.value }
+      if (item.key === 'admin_notifications') {
+        adminNotifications = item.value as AdminNotificationsSettings
+      } else {
+        const key = item.key as keyof SiteSettings
+        if (key in settings) {
+          settings[key] = { ...settings[key], ...item.value }
+        }
       }
     }
 
-    return NextResponse.json({ data: settings })
+    return NextResponse.json({ data: settings, adminNotifications })
   } catch (error) {
     console.error('Settings API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -73,47 +80,89 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { settings } = body as { settings: unknown }
+    const { settings, adminNotifications } = body as { settings: unknown; adminNotifications?: unknown }
 
-    if (!settings) {
-      return NextResponse.json({ error: 'Settings object is required' }, { status: 400 })
+    if (!settings && !adminNotifications) {
+      return NextResponse.json({ error: 'Settings or adminNotifications object is required' }, { status: 400 })
     }
 
-    // Validate settings with Zod
-    const validationResult = partialSiteSettingsSchema.safeParse(settings)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const upsertPromises: PromiseLike<{ error: unknown }>[] = []
 
-    if (!validationResult.success) {
-      const errors = validationResult.error.issues.map((issue) => ({
-        path: issue.path.join('.'),
-        message: issue.message,
-      }))
+    // Validate and save main settings
+    if (settings) {
+      const validationResult = partialSiteSettingsSchema.safeParse(settings)
 
-      return NextResponse.json(
-        {
-          error: 'Validation failed',
-          details: errors,
-        },
-        { status: 400 }
+      if (!validationResult.success) {
+        const errors = validationResult.error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          message: issue.message,
+        }))
+
+        return NextResponse.json(
+          {
+            error: 'Validation failed',
+            details: errors,
+          },
+          { status: 400 }
+        )
+      }
+
+      const validatedSettings = validationResult.data
+
+      // Upsert each setting category
+      for (const [key, value] of Object.entries(validatedSettings)) {
+        if (value === undefined) continue
+
+        upsertPromises.push(
+          supabase
+            .from('site_settings')
+            .upsert(
+              {
+                key,
+                value,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'key' }
+            )
+            .select()
+        )
+      }
+    }
+
+    // Validate and save admin notifications
+    if (adminNotifications) {
+      const adminValidationResult = adminNotificationsSettingsSchema.safeParse(adminNotifications)
+
+      if (!adminValidationResult.success) {
+        const errors = adminValidationResult.error.issues.map((issue) => ({
+          path: `adminNotifications.${issue.path.join('.')}`,
+          message: issue.message,
+        }))
+
+        return NextResponse.json(
+          {
+            error: 'Admin notifications validation failed',
+            details: errors,
+          },
+          { status: 400 }
+        )
+      }
+
+      upsertPromises.push(
+        supabase
+          .from('site_settings')
+          .upsert(
+            {
+              key: 'admin_notifications',
+              value: adminValidationResult.data,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+          .select()
       )
     }
-
-    const validatedSettings = validationResult.data
-
-    // Upsert each setting category
-    const upsertPromises = Object.entries(validatedSettings).map(([key, value]) => {
-      if (value === undefined) return Promise.resolve({ error: null })
-
-      return supabase
-        .from('site_settings')
-        .upsert(
-          {
-            key,
-            value,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'key' }
-        )
-    })
 
     const results = await Promise.all(upsertPromises)
 
