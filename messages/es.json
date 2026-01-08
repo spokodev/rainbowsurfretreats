@@ -72,6 +72,7 @@
     "showing": "Mostrando {count} retiros",
     "noResults": "No se encontraron retiros que coincidan con tus criterios",
     "earlyBird": "Reserva anticipada",
+    "joinWaitlist": "Unirse a lista de espera",
     "filters": {
       "allLevels": "Todos los niveles",
       "beginners": "Principiantes",
@@ -307,6 +308,7 @@
     "bookNow": "Reservar ahora",
     "book": "Reservar",
     "earlyBird": "Reserva anticipada",
+    "joinWaitlist": "Unirse a lista de espera",
     "importantInfo": "Información Importante",
     "paymentTerms": "Condiciones de Pago",
     "cancellationPolicy": "Política de Cancelación",

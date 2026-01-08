@@ -72,6 +72,7 @@
     "showing": "Zeige {count} Retreats",
     "noResults": "Keine Retreats gefunden, die deinen Kriterien entsprechen",
     "earlyBird": "Frühbucher",
+    "joinWaitlist": "Warteliste beitreten",
     "filters": {
       "allLevels": "Alle Levels",
       "beginners": "Anfänger",
@@ -307,6 +308,7 @@
     "bookNow": "Jetzt buchen",
     "book": "Buchen",
     "earlyBird": "Frühbucher",
+    "joinWaitlist": "Warteliste beitreten",
     "importantInfo": "Wichtige Informationen",
     "paymentTerms": "Zahlungsbedingungen",
     "cancellationPolicy": "Stornierungsbedingungen",

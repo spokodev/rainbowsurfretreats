@@ -72,6 +72,7 @@
     "showing": "Affichage de {count} retraites",
     "noResults": "Aucune retraite trouvée correspondant à vos critères",
     "earlyBird": "Early Bird",
+    "joinWaitlist": "Rejoindre la liste d'attente",
     "filters": {
       "allLevels": "Tous niveaux",
       "beginners": "Débutants",
@@ -307,6 +308,7 @@
     "bookNow": "Réserver maintenant",
     "book": "Réserver",
     "earlyBird": "Réservation anticipée",
+    "joinWaitlist": "Rejoindre la liste d'attente",
     "importantInfo": "Informations Importantes",
     "paymentTerms": "Conditions de Paiement",
     "cancellationPolicy": "Politique d'Annulation",
