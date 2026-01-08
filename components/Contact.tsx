@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Mail, Phone, MapPin, Instagram, Facebook, Youtube, ChevronDown, Send } from 'lucide-react'
+import { Mail, Phone, MapPin, Instagram, Facebook, Youtube, ChevronDown, Send, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -109,11 +109,24 @@ export default function Contact() {
     setSubmitStatus('idle')
 
     try {
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send message')
+      }
+
       setSubmitStatus('success')
       setFormData({ name: '', email: '', subject: '', message: '' })
-    } catch {
+    } catch (error) {
+      console.error('Contact form error:', error)
       setSubmitStatus('error')
     } finally {
       setIsSubmitting(false)
@@ -297,11 +310,7 @@ export default function Contact() {
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">
-                      <motion.span
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                        className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full"
-                      />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       Sending...
                     </span>
                   ) : (

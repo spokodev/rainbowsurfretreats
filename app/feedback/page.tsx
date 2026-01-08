@@ -377,7 +377,7 @@ export default function FeedbackPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-gradient-ochre flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--primary-teal)]" />
         </div>
       }
     >

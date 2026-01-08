@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { countries, vatRates, isEUCountry, COMPANY_COUNTRY } from "@/lib/stripe";
 import { monthsBetween } from "@/lib/payment-schedule";
+import { WaitlistForm } from "@/components/waitlist-form";
 
 interface RetreatRoom {
   id: string;
@@ -45,24 +46,21 @@ interface RetreatRoom {
   available: number;
   is_sold_out: boolean;
   sort_order: number;
-  early_bird_price: number | null;
   early_bird_enabled: boolean;
+  early_bird_deadline: string | null;
 }
 
 interface Retreat {
   id: string;
   slug: string;
   destination: string;
-  location: string;
   image_url: string;
   level: string;
   duration: string;
   participants: string;
   food: string;
-  type: string;
   gear: string;
   price: number;
-  early_bird_price: number | null;
   start_date: string;
   end_date: string;
   rooms: RetreatRoom[];
@@ -173,11 +171,50 @@ function BookingContent() {
   const isRoomSoldOut = selectedRoom?.is_sold_out || selectedRoom?.available === 0;
 
   const handleNext = () => {
+    // Validate step 1 (Personal Info) before proceeding
+    if (currentStep === 1) {
+      if (!formData.firstName.trim()) {
+        setError("First name is required");
+        return;
+      }
+      if (!formData.lastName.trim()) {
+        setError("Last name is required");
+        return;
+      }
+      if (!formData.email.trim()) {
+        setError("Email address is required");
+        return;
+      }
+      // Basic email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        setError("Please enter a valid email address");
+        return;
+      }
+      if (!formData.phone.trim()) {
+        setError("Phone number is required");
+        return;
+      }
+      setError(null);
+    }
+
     // Validate step 2 (Billing) before proceeding
     if (currentStep === 2) {
       // Require country selection
       if (!formData.country) {
         setError("Please select your country");
+        return;
+      }
+      if (!formData.billingAddress.trim()) {
+        setError("Street address is required");
+        return;
+      }
+      if (!formData.city.trim()) {
+        setError("City is required");
+        return;
+      }
+      if (!formData.postalCode.trim()) {
+        setError("Postal code is required");
         return;
       }
       // For business customers, require company name and VAT ID
@@ -380,10 +417,20 @@ function BookingContent() {
     }
   };
 
-  // Check if user is eligible for Early Bird (3+ months before retreat)
-  const isEligibleForEarlyBird = () => {
+  // Check if user is eligible for Early Bird based on deadline or default (3+ months before retreat)
+  const isEligibleForEarlyBird = (room?: RetreatRoom | null) => {
     if (!retreat) return false;
     const now = new Date();
+    now.setHours(0, 0, 0, 0); // Compare dates only, not time
+
+    // If room has a specific deadline, use that
+    if (room?.early_bird_deadline) {
+      const deadline = new Date(room.early_bird_deadline);
+      deadline.setHours(23, 59, 59, 999); // End of deadline day
+      return now <= deadline;
+    }
+
+    // Fall back to default: 3+ months before retreat
     const retreatStart = new Date(retreat.start_date);
     const monthsUntil = monthsBetween(now, retreatStart);
     return monthsUntil >= 3;
@@ -402,18 +449,15 @@ function BookingContent() {
 
   const depositPercentage = getDepositPercentage();
 
-  const eligible = isEligibleForEarlyBird();
+  const eligible = isEligibleForEarlyBird(selectedRoom);
   const regularPrice = selectedRoom?.price || retreat?.price || 599;
 
-  // Use room's Early Bird price if enabled and eligible
-  const hasRoomEarlyBird =
-    eligible &&
-    selectedRoom?.early_bird_enabled &&
-    selectedRoom?.early_bird_price;
+  // Early Bird: 10% discount if enabled and eligible (before deadline)
+  const hasRoomEarlyBird = eligible && selectedRoom?.early_bird_enabled;
 
-  // Calculate early bird discount (without promo)
+  // Calculate early bird discount (always 10%)
   const earlyBirdDiscountAmount = hasRoomEarlyBird
-    ? regularPrice - selectedRoom.early_bird_price!
+    ? Math.round(regularPrice * 0.1)
     : 0;
 
   // Best Discount Wins logic
@@ -477,28 +521,61 @@ function BookingContent() {
     );
   }
 
-  // Show error if selected room is sold out
+  // Show waitlist form if selected room is sold out
   if (isRoomSoldOut) {
     return (
-      <div className="min-h-screen bg-gradient-ochre flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <AlertCircle className="w-8 h-8 text-red-600" />
-          </div>
-          <h1 className="text-3xl font-bold mb-4">Room No Longer Available</h1>
-          <p className="text-gray-600 mb-6">
-            Sorry, the selected room type is no longer available. Please go back and choose a different room option.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button asChild variant="outline">
+      <div className="min-h-screen bg-gradient-ochre py-12 px-6">
+        <div className="max-w-lg mx-auto">
+          {/* Back navigation */}
+          <div className="mb-6">
+            <Button
+              variant="ghost"
+              asChild
+              className="gap-2"
+            >
               <Link href={`/retreats/${retreat.slug}`}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Retreat
+                <ArrowLeft className="w-4 h-4" />
+                Back to retreat
               </Link>
             </Button>
-            <Button asChild>
-              <Link href="/retreats">Browse All Retreats</Link>
-            </Button>
+          </div>
+
+          {/* Retreat info header */}
+          <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
+            <h1 className="text-2xl font-bold mb-2">{retreat.destination}</h1>
+            <p className="text-gray-600">
+              {formatDate(retreat.start_date, retreat.end_date)}
+            </p>
+            {selectedRoom && (
+              <p className="text-gray-500 mt-1">
+                Room: {selectedRoom.name}
+              </p>
+            )}
+          </div>
+
+          {/* Waitlist form */}
+          <WaitlistForm
+            retreatId={retreat.id}
+            roomId={selectedRoom?.id}
+            retreatName={retreat.destination}
+            roomName={selectedRoom?.name}
+          />
+
+          {/* Alternative options */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600 mb-3">
+              Or check other available options:
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button asChild variant="outline">
+                <Link href={`/retreats/${retreat.slug}`}>
+                  View Other Rooms
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/retreats">Browse All Retreats</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -512,11 +589,13 @@ function BookingContent() {
         <div className="mb-8">
           <Button
             variant="ghost"
-            onClick={() => router.back()}
+            asChild
             className="gap-2 mb-4"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back to retreat
+            <Link href={`/retreats/${retreat.slug}`}>
+              <ArrowLeft className="w-4 h-4" />
+              Back to retreat
+            </Link>
           </Button>
           <h1 className="text-3xl md:text-4xl mb-2">Complete Your Booking</h1>
           <p className="text-gray-600">
@@ -648,6 +727,13 @@ function BookingContent() {
                       />
                     </div>
                   </div>
+
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-red-600">{error}</p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -930,17 +1016,17 @@ function BookingContent() {
                         {depositPercentage === 10 ? (
                           <>
                             <div className="flex justify-between text-gray-600">
-                              <span>Payment 2 (50%) - Due 2 months before:</span>
+                              <span>Payment 2 (50%) - Due 2 months before retreat:</span>
                               <span>€{(finalPrice * 0.5 * (1 + vatRate)).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-gray-600">
-                              <span>Payment 3 (40%) - Due 1 month before:</span>
+                              <span>Payment 3 (40%) - Due 1 month before retreat:</span>
                               <span>€{(finalPrice * 0.4 * (1 + vatRate)).toFixed(2)}</span>
                             </div>
                           </>
                         ) : (
                           <div className="flex justify-between text-gray-600">
-                            <span>Final payment (50%) - Due 1 month before:</span>
+                            <span>Final payment (50%) - Due 1 month before retreat:</span>
                             <span>€{(finalPrice * 0.5 * (1 + vatRate)).toFixed(2)}</span>
                           </div>
                         )}
@@ -999,7 +1085,8 @@ function BookingContent() {
                       <label htmlFor="terms" className="text-sm cursor-pointer">
                         I accept the{" "}
                         <Link
-                          href="/policies"
+                          href="/terms"
+                          target="_blank"
                           className="text-[var(--primary-teal)] underline hover:text-[var(--primary-teal-light)] transition-colors"
                         >
                           Terms & Conditions
@@ -1007,13 +1094,15 @@ function BookingContent() {
                         ,{" "}
                         <Link
                           href="/privacy-policy"
+                          target="_blank"
                           className="text-[var(--primary-teal)] underline hover:text-[var(--primary-teal-light)] transition-colors"
                         >
                           Privacy Policy
                         </Link>
                         , and{" "}
                         <Link
-                          href="/policies"
+                          href="/cancellation-policy"
+                          target="_blank"
                           className="text-[var(--primary-teal)] underline hover:text-[var(--primary-teal-light)] transition-colors"
                         >
                           Cancellation Policy
@@ -1120,9 +1209,9 @@ function BookingContent() {
                   <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
                     <div className="flex items-center gap-2">
                       <Tag className="w-4 h-4 text-green-600" />
-                      <span className="font-mono font-semibold text-green-700">{promoCode}</span>
+                      <span className="font-mono text-sm text-green-700">{promoCode}</span>
                       {bestDiscountSource === 'promo_code' && (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Applied</span>
+                        <span className="text-xs bg-green-100 text-green-600 px-1.5 py-0.5 rounded">Applied</span>
                       )}
                       {bestDiscountSource === 'early_bird' && promoDiscount && (
                         <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">Early Bird better</span>
@@ -1232,7 +1321,7 @@ export default function BookingPage() {
       fallback={
         <div className="min-h-screen bg-gradient-ochre flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary-teal)] mx-auto mb-4"></div>
+            <Loader2 className="h-12 w-12 animate-spin text-[var(--primary-teal)] mx-auto mb-4" />
             <p className="text-gray-600">Loading booking...</p>
           </div>
         </div>

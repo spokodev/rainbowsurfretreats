@@ -8,6 +8,7 @@ import Footer from '@/components/Footer'
 import WhatsAppButton from '@/components/WhatsAppButton'
 import { CookieConsent } from '@/components/CookieConsent'
 import NewsletterPopup from '@/components/NewsletterPopup'
+import { NProgressProvider } from '@/components/NProgressProvider'
 
 export const metadata: Metadata = {
   title: 'Rainbow Surf Retreats - LGBTQ+ Surf Adventures',
@@ -32,14 +33,16 @@ export default async function RootLayout({
     <html lang={locale}>
       <body>
         <NextIntlClientProvider messages={messages}>
-          {!isAdminOrLogin && <Header />}
-          <main>
-            {children}
-          </main>
-          {!isAdminOrLogin && <Footer />}
-          {!isAdminOrLogin && <WhatsAppButton />}
-          {!isAdminOrLogin && <CookieConsent />}
-          {!isAdminOrLogin && <NewsletterPopup />}
+          <NProgressProvider>
+            {!isAdminOrLogin && <Header />}
+            <main>
+              {children}
+            </main>
+            {!isAdminOrLogin && <Footer />}
+            {!isAdminOrLogin && <WhatsAppButton />}
+            {!isAdminOrLogin && <CookieConsent />}
+            {!isAdminOrLogin && <NewsletterPopup />}
+          </NProgressProvider>
         </NextIntlClientProvider>
       </body>
     </html>

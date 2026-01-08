@@ -192,7 +192,7 @@ function MyBookingContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-cyan-600 mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 animate-spin text-[var(--primary-teal)] mx-auto mb-4" />
           <p className="text-slate-600">Loading your booking...</p>
         </div>
       </div>
@@ -593,7 +593,7 @@ export default function MyBookingPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100">
-          <Loader2 className="w-12 h-12 animate-spin text-cyan-600" />
+          <Loader2 className="w-12 h-12 animate-spin text-[var(--primary-teal)]" />
         </div>
       }
     >
