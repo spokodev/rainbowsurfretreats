@@ -166,14 +166,11 @@ export default function RetreatPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12">
           <div className="container mx-auto">
-            <div className="flex flex-wrap gap-2 mb-4">
-              <Badge variant="secondary" className="bg-white/90 text-foreground">
-                {retreat.level}
-              </Badge>
-              {retreat.availability_status === 'sold_out' && (
-                <Badge className="bg-amber-500 text-white">Sold Out</Badge>
-              )}
-            </div>
+            {retreat.availability_status === 'sold_out' && (
+              <div className="mb-4">
+                <Badge className="bg-amber-500 text-white text-lg px-4 py-1">Sold Out</Badge>
+              </div>
+            )}
             <h1 className="text-3xl md:text-5xl font-bold text-white">
               {retreat.destination}
             </h1>
