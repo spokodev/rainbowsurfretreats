@@ -154,7 +154,7 @@ export default function Header() {
 
             {/* Book Now Button */}
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button asChild variant="outline" className="border-[var(--primary-teal)] text-[var(--primary-teal)] hover:bg-[var(--primary-teal)] hover:text-white">
+              <Button asChild variant="outline" className="border-[#FFD6D1] text-[#8B7355] bg-[#FFD6D1] hover:bg-[#F5C4BD] hover:border-[#F5C4BD]">
                 <Link href="/retreats">See Retreats</Link>
               </Button>
             </motion.div>
@@ -226,7 +226,7 @@ export default function Header() {
 
                 {/* Mobile See Retreats Button */}
                 <div className="mt-8 px-4">
-                  <Button asChild className="w-full bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]" size="lg">
+                  <Button asChild className="w-full bg-[#FFD6D1] hover:bg-[#F5C4BD] text-[#8B7355]" size="lg">
                     <Link
                       href="/retreats"
                       onClick={() => setIsMobileMenuOpen(false)}

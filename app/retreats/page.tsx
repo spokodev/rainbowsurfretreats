@@ -330,7 +330,7 @@ export default function RetreatsPage() {
                           );
                         }
                         return (
-                          <Button className="w-full bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]">
+                          <Button className="w-full bg-[#D4A59A] hover:bg-[#C49489] text-white">
                             {t('bookNow')}
                           </Button>
                         );

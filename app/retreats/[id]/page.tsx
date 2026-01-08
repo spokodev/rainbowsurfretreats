@@ -370,14 +370,14 @@ export default function RetreatPage() {
                             <span className="text-sm text-green-600">
                               {room.available} {room.available === 1 ? 'spot' : 'spots'} left
                             </span>
-                            <Button asChild size="sm">
+                            <Button asChild size="sm" className="bg-[#8B7355] hover:bg-[#7A6548] text-white">
                               <Link href={`/booking?slug=${retreat.slug}&roomId=${room.id}`}>
                                 {t('book')}
                               </Link>
                             </Button>
                           </div>
                         ) : !room.is_sold_out ? (
-                          <Button asChild size="sm">
+                          <Button asChild size="sm" className="bg-[#8B7355] hover:bg-[#7A6548] text-white">
                             <Link href={`/booking?slug=${retreat.slug}&roomId=${room.id}`}>
                               {t('book')}
                             </Link>
