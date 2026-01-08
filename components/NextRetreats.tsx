@@ -194,7 +194,7 @@ export default function NextRetreats() {
                           const { price, isSoldOut } = getLowestAvailablePrice(retreat);
                           if (isSoldOut) {
                             return (
-                              <span className="text-xl font-bold text-red-600">{t('soldOut')}</span>
+                              <span className="text-xl font-bold text-amber-600">{t('soldOut')}</span>
                             );
                           }
                           return (

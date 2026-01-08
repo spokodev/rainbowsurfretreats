@@ -344,7 +344,7 @@ export default function RetreatPage() {
                           )}
                         </div>
                         {room.is_sold_out && (
-                          <Badge variant="destructive" className="text-xs">Sold Out</Badge>
+                          <Badge className="bg-amber-500 text-white text-xs">Sold Out</Badge>
                         )}
                       </div>
                       <div className="flex justify-between items-center mt-3">
