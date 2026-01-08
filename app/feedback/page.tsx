@@ -35,7 +35,7 @@ function StarRating({
           className="p-1 transition-transform hover:scale-110"
         >
           <Star
-            className={`w-8 h-8 ${
+            className={`w-10 h-10 md:w-8 md:h-8 ${
               star <= (hover || value)
                 ? 'fill-yellow-400 text-yellow-400'
                 : 'text-gray-300'
@@ -61,7 +61,7 @@ function NPSRating({
           key={num}
           type="button"
           onClick={() => onChange(num)}
-          className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+          className={`w-12 h-12 md:w-10 md:h-10 rounded-lg font-semibold transition-all ${
             value === num
               ? num <= 6
                 ? 'bg-red-500 text-white'

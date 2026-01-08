@@ -93,16 +93,17 @@ export function BookingsTableWithSort({
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <AdminSortHeader
                 column="booking_number"
-                label="Booking ID"
+                label="ID"
                 currentSort={sortBy}
                 currentOrder={sortOrder}
                 onSort={onSort}
+                className="hidden sm:table-cell"
               />
               <AdminSortHeader
                 column="first_name"
@@ -111,18 +112,19 @@ export function BookingsTableWithSort({
                 currentOrder={sortOrder}
                 onSort={onSort}
               />
-              <TableHead>Retreat</TableHead>
-              <TableHead>Room</TableHead>
+              <TableHead className="hidden md:table-cell">Retreat</TableHead>
+              <TableHead className="hidden lg:table-cell">Room</TableHead>
               <AdminSortHeader
                 column="check_in_date"
                 label="Dates"
                 currentSort={sortBy}
                 currentOrder={sortOrder}
                 onSort={onSort}
+                className="hidden sm:table-cell"
               />
-              <TableHead>Guests</TableHead>
-              <TableHead className="text-right">Paid</TableHead>
-              <TableHead className="text-right">Balance</TableHead>
+              <TableHead className="hidden xl:table-cell">Guests</TableHead>
+              <TableHead className="hidden xl:table-cell text-right">Paid</TableHead>
+              <TableHead className="hidden lg:table-cell text-right">Balance</TableHead>
               <AdminSortHeader
                 column="total_amount"
                 label="Total"
@@ -132,14 +134,14 @@ export function BookingsTableWithSort({
                 className="text-right"
               />
               <TableHead>Status</TableHead>
-              <TableHead>Payment</TableHead>
+              <TableHead className="hidden lg:table-cell">Payment</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {bookings.map((booking) => (
               <TableRow key={booking.id}>
-                <TableCell className="font-mono text-sm">
+                <TableCell className="hidden sm:table-cell font-mono text-sm">
                   {booking.booking_number}
                 </TableCell>
                 <TableCell>
@@ -153,16 +155,23 @@ export function BookingsTableWithSort({
                     <span className="text-xs text-muted-foreground">
                       {booking.email}
                     </span>
+                    {/* Mobile-only: show booking ID and retreat */}
+                    <span className="text-xs text-muted-foreground sm:hidden mt-1">
+                      #{booking.booking_number}
+                    </span>
+                    <span className="text-xs text-muted-foreground md:hidden">
+                      {booking.retreat?.destination || 'N/A'}
+                    </span>
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span>{booking.retreat?.destination || 'N/A'}</span>
                   </div>
                 </TableCell>
-                <TableCell>{booking.room?.name || 'Standard'}</TableCell>
-                <TableCell>
+                <TableCell className="hidden lg:table-cell">{booking.room?.name || 'Standard'}</TableCell>
+                <TableCell className="hidden sm:table-cell">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <div className="text-sm">
@@ -182,13 +191,13 @@ export function BookingsTableWithSort({
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{booking.guests_count}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="hidden xl:table-cell">{booking.guests_count}</TableCell>
+                <TableCell className="hidden xl:table-cell text-right">
                   <span className="text-green-600 font-medium">
                     €{booking.deposit_amount?.toFixed(2) || '0.00'}
                   </span>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="hidden lg:table-cell text-right">
                   <span
                     className={
                       booking.balance_due > 0
@@ -209,13 +218,13 @@ export function BookingsTableWithSort({
                     {booking.status}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden lg:table-cell">
                   <Badge variant={getPaymentBadgeVariant(booking.payment_status)}>
                     {booking.payment_status}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" asChild>
                       <Link href={`/admin/bookings/${booking.id}`}>
                         <Eye className="h-4 w-4" />

@@ -1184,7 +1184,7 @@ function BookingContent() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl p-6 shadow-lg sticky top-24">
+            <div className="bg-white rounded-2xl p-6 shadow-lg md:sticky md:top-24">
               <h3 className="text-xl mb-2">Order Summary</h3>
               <p className="text-xs text-gray-500 mb-4">Prices exclude VAT. Tax will be added based on your country.</p>
 
@@ -1217,7 +1217,7 @@ function BookingContent() {
                         <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">Early Bird better</span>
                       )}
                     </div>
-                    <Button variant="ghost" size="sm" onClick={handleRemovePromoCode} className="h-6 w-6 p-0">
+                    <Button variant="ghost" size="sm" onClick={handleRemovePromoCode} className="h-8 w-8 p-0">
                       <X className="w-4 h-4" />
                     </Button>
                   </div>

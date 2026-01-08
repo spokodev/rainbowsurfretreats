@@ -110,7 +110,7 @@ export function WaitlistForm({ retreatId, roomId, retreatName, roomName }: Waitl
         {roomId && <input type="hidden" {...register('roomId')} />}
 
         {/* Name fields */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="firstName" className="text-amber-900">
               First Name <span className="text-red-500">*</span>
