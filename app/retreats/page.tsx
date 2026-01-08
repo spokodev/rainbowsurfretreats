@@ -7,7 +7,6 @@ import { motion } from 'motion/react'
 import { useTranslations } from 'next-intl'
 import {
   Calendar,
-  MapPin,
   Users,
   Clock,
   Utensils,
@@ -87,20 +86,6 @@ export default function RetreatsPage() {
     fetchRetreats()
   }, [])
 
-  const levels = [
-    { value: 'All Levels', label: t('filters.allLevels') },
-    { value: 'Beginners', label: t('filters.beginners') },
-    { value: 'Intermediate', label: t('filters.intermediate') },
-    { value: 'Advanced', label: t('filters.advanced') },
-  ]
-
-  const types = [
-    { value: 'All Types', label: t('filters.allTypes') },
-    { value: 'Budget', label: t('filters.budget') },
-    { value: 'Standard', label: t('filters.standard') },
-    { value: 'Premium', label: t('filters.premium') },
-  ]
-
   const sortOptions = [
     { value: 'date-asc', label: t('filters.dateAsc') },
     { value: 'date-desc', label: t('filters.dateDesc') },
@@ -108,8 +93,6 @@ export default function RetreatsPage() {
     { value: 'price-desc', label: t('filters.priceDesc') },
   ]
 
-  const [levelFilter, setLevelFilter] = useState('All Levels')
-  const [typeFilter, setTypeFilter] = useState('All Types')
   const [sortBy, setSortBy] = useState('date-asc')
 
   const formatDate = (startDate: string, endDate: string) => {
@@ -140,16 +123,6 @@ export default function RetreatsPage() {
   const filteredRetreats = useMemo(() => {
     let result = [...retreats]
 
-    // Filter by level
-    if (levelFilter !== 'All Levels') {
-      result = result.filter((r) => r.level === levelFilter)
-    }
-
-    // Filter by type
-    if (typeFilter !== 'All Types') {
-      result = result.filter((r) => r.type === typeFilter)
-    }
-
     // Sort
     result.sort((a, b) => {
       switch (sortBy) {
@@ -166,26 +139,7 @@ export default function RetreatsPage() {
     })
 
     return result
-  }, [retreats, levelFilter, typeFilter, sortBy])
-
-  const clearFilters = () => {
-    setLevelFilter('All Levels')
-    setTypeFilter('All Types')
-    setSortBy('date-asc')
-  }
-
-  const hasActiveFilters =
-    levelFilter !== 'All Levels' || typeFilter !== 'All Types'
-
-  const getLevelLabel = (value: string) => {
-    const level = levels.find(l => l.value === value)
-    return level ? level.label : value
-  }
-
-  const getTypeLabel = (value: string) => {
-    const type = types.find(t => t.value === value)
-    return type ? type.label : value
-  }
+  }, [retreats, sortBy])
 
   if (loading) {
     return (
@@ -245,32 +199,6 @@ export default function RetreatsPage() {
             </div>
 
             <div className="flex flex-wrap gap-3 items-center">
-              <Select value={levelFilter} onValueChange={setLevelFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder={tCommon('level')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {levels.map((level) => (
-                    <SelectItem key={level.value} value={level.value}>
-                      {level.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {types.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[170px]">
                   <SlidersHorizontal className="w-4 h-4 mr-2" />
@@ -285,17 +213,7 @@ export default function RetreatsPage() {
                 </SelectContent>
               </Select>
 
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="text-[var(--primary-teal)]"
-                >
-                  {tCommon('clearFilters')}
-                </Button>
-              )}
-            </div>
+                          </div>
           </div>
         </div>
       </section>
@@ -326,33 +244,18 @@ export default function RetreatsPage() {
                       ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
                       )}
-                      <div className="absolute top-3 left-3 flex gap-2">
-                        <Badge
-                          variant="secondary"
-                          className="bg-white/90 text-foreground"
-                        >
-                          {getLevelLabel(retreat.level)}
-                        </Badge>
-                        <Badge className="bg-[var(--primary-teal)]">
-                          {getTypeLabel(retreat.type)}
-                        </Badge>
-                      </div>
                       {retreat.availability_status === 'sold_out' && (
                         <div className="absolute top-3 right-3">
-                          <Badge variant="destructive">Sold Out</Badge>
+                          <Badge className="bg-amber-500 text-white">Sold Out</Badge>
                         </div>
                       )}
                     </div>
 
                     <CardContent className="flex-1 pt-4">
                       <div className="mb-3">
-                        <h3 className="text-xl font-semibold mb-1">
+                        <h3 className="text-xl font-semibold">
                           {retreat.destination}
                         </h3>
-                        <div className="flex items-center text-muted-foreground text-sm">
-                          <MapPin className="size-4 mr-1" />
-                          {retreat.location}
-                        </div>
                       </div>
 
                       <div className="flex items-center text-sm text-muted-foreground mb-4">
@@ -363,7 +266,7 @@ export default function RetreatsPage() {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="flex items-center text-muted-foreground">
                           <Users className="size-4 mr-2 shrink-0" />
-                          <span>{retreat.participants} {tCommon('people')}</span>
+                          <span>Max {retreat.participants} {tCommon('people')}</span>
                         </div>
                         <div className="flex items-center text-muted-foreground">
                           <Clock className="size-4 mr-2 shrink-0" />
@@ -440,12 +343,9 @@ export default function RetreatsPage() {
             </div>
           ) : (
             <div className="text-center py-16">
-              <p className="text-gray-500 text-lg mb-4">
+              <p className="text-gray-500 text-lg">
                 {t('noResults')}
               </p>
-              <Button variant="outline" onClick={clearFilters}>
-                {tCommon('clearFilters')}
-              </Button>
             </div>
           )}
         </div>

@@ -57,8 +57,8 @@ const contactInfo = [
   {
     icon: MapPin,
     label: 'Location',
-    value: 'Canary Islands, Spain',
-    href: 'https://maps.google.com/?q=Canary+Islands+Spain'
+    value: 'Cyprus',
+    href: 'https://maps.google.com/?q=Cyprus'
   }
 ]
 

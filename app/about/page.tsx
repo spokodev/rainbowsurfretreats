@@ -211,7 +211,7 @@ export default function AboutPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-[var(--primary-teal)]">
+      <section className="py-16 md:py-24 bg-[var(--earth-brown)]">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Ready to Join Our Community?
@@ -224,7 +224,7 @@ export default function AboutPage() {
             <Button
               asChild
               size="lg"
-              className="bg-white text-[var(--primary-teal)] hover:bg-white/90 px-8"
+              className="bg-white text-[var(--earth-brown)] hover:bg-white/90 px-8"
             >
               <Link href="/retreats">View Retreats</Link>
             </Button>
@@ -241,7 +241,7 @@ export default function AboutPage() {
       </section>
 
       {/* Footer Links Section */}
-      <section className="py-8 bg-[var(--primary-teal-hover)]">
+      <section className="py-8 bg-[var(--soft-gold)]">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap justify-center gap-6 text-white/80 text-sm">
             <Link href="/privacy-policy" className="hover:text-white transition-colors">

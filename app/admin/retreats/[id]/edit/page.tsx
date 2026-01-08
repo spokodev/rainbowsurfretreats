@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import RetreatForm from '@/components/admin/retreat-form'
+import GalleryManager from '@/components/admin/gallery-manager'
 import type { Retreat, RetreatRoom } from '@/lib/types/database'
 
 export default function EditRetreatPage() {
@@ -86,6 +87,11 @@ export default function EditRetreatPage() {
       </div>
 
       <RetreatForm retreat={retreat} isEdit />
+
+      {/* Gallery Manager */}
+      <div className="mt-8">
+        <GalleryManager retreatId={retreat.id} />
+      </div>
     </div>
   )
 }

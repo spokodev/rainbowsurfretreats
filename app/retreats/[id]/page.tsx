@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { RetreatMap } from '@/components/retreat-map'
 import { WaitlistForm } from '@/components/waitlist-form'
+import RetreatGallery from '@/components/RetreatGallery'
 import { Calendar, Users, Clock, Utensils, Waves, Check, X, Loader2, Bell } from 'lucide-react'
 
 interface RetreatRoom {
@@ -170,7 +171,7 @@ export default function RetreatPage() {
                 {retreat.level}
               </Badge>
               {retreat.availability_status === 'sold_out' && (
-                <Badge variant="destructive">Sold Out</Badge>
+                <Badge className="bg-amber-500 text-white">Sold Out</Badge>
               )}
             </div>
             <h1 className="text-3xl md:text-5xl font-bold text-white">
@@ -195,7 +196,7 @@ export default function RetreatPage() {
               </div>
               <div className="flex items-center text-muted-foreground">
                 <Users className="size-4 mr-2" />
-                <span>{retreat.participants} {tCommon('people')}</span>
+                <span>Max {retreat.participants} {tCommon('people')}</span>
               </div>
               <div className="flex items-center text-muted-foreground">
                 <Utensils className="size-4 mr-2" />
@@ -302,6 +303,9 @@ export default function RetreatPage() {
                 ))}
               </section>
             )}
+
+            {/* Photo Gallery */}
+            <RetreatGallery retreatId={retreat.id} />
 
           </div>
 
