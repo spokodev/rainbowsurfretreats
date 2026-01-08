@@ -3,6 +3,10 @@ import type { BookingData, PaymentData, ReminderData } from './index'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreats.com'
 const LOGO_URL = `${SITE_URL}/images/logo.png`
 
+// Company brand colors
+const PRIMARY_COLOR = '#E97451' // Burnt Sienna
+const PRIMARY_DARK = '#D4634A' // Darker shade for hover states
+
 // Base email layout
 function emailLayout(content: string, preheader: string = ''): string {
   return `
@@ -15,21 +19,20 @@ function emailLayout(content: string, preheader: string = ''): string {
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
     .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
-    .header { background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); padding: 30px 20px; text-align: center; }
-    .header img { max-width: 180px; height: auto; }
-    .header h1 { color: #ffffff; margin: 15px 0 0; font-size: 24px; font-weight: 600; }
+    .header { background: linear-gradient(135deg, ${PRIMARY_COLOR} 0%, ${PRIMARY_DARK} 100%); padding: 30px 20px; text-align: center; }
+    .header img { max-width: 200px; height: auto; }
     .content { padding: 40px 30px; }
-    .content h2 { color: #0ea5e9; margin-top: 0; }
-    .highlight-box { background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+    .content h2 { color: ${PRIMARY_COLOR}; margin-top: 0; }
+    .highlight-box { background: #fef7f5; border-left: 4px solid ${PRIMARY_COLOR}; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
     .payment-schedule { background: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0; }
     .payment-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0; }
     .payment-item:last-child { border-bottom: none; }
-    .amount { font-size: 24px; font-weight: 700; color: #0ea5e9; }
-    .button { display: inline-block; background: #0ea5e9; color: #ffffff !important; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 10px 0; }
-    .button:hover { background: #0284c7; }
+    .amount { font-size: 24px; font-weight: 700; color: ${PRIMARY_COLOR}; }
+    .button { display: inline-block; background: ${PRIMARY_COLOR}; color: #ffffff !important; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 10px 0; }
+    .button:hover { background: ${PRIMARY_DARK}; }
     .button-secondary { background: #64748b; }
     .footer { background: #1e293b; color: #94a3b8; padding: 30px; text-align: center; font-size: 14px; }
-    .footer a { color: #0ea5e9; text-decoration: none; }
+    .footer a { color: ${PRIMARY_COLOR}; text-decoration: none; }
     .social-links { margin: 20px 0; }
     .social-links a { display: inline-block; margin: 0 10px; }
     .divider { height: 1px; background: #e2e8f0; margin: 30px 0; }
@@ -52,7 +55,6 @@ function emailLayout(content: string, preheader: string = ''): string {
   <div class="container">
     <div class="header">
       <img src="${LOGO_URL}" alt="Rainbow Surf Retreats" />
-      <h1>Rainbow Surf Retreats</h1>
     </div>
     <div class="content">
       ${content}
@@ -122,7 +124,7 @@ export function bookingConfirmationEmail(data: BookingData): string {
 
     <div class="highlight-box">
       <div style="font-size: 14px; color: #64748b;">Booking Reference</div>
-      <div style="font-size: 24px; font-weight: 700; color: #0ea5e9;">${data.bookingNumber}</div>
+      <div style="font-size: 24px; font-weight: 700; color: ${PRIMARY_COLOR};">${data.bookingNumber}</div>
     </div>
 
     ${earlyBirdHtml}
@@ -310,7 +312,7 @@ export function preRetreatReminderEmail(data: {
 
     <div class="highlight-box">
       <div style="font-size: 14px; color: #64748b;">Retreat Dates</div>
-      <div style="font-size: 20px; font-weight: 700; color: #0ea5e9;">${data.retreatDates}</div>
+      <div style="font-size: 20px; font-weight: 700; color: ${PRIMARY_COLOR};">${data.retreatDates}</div>
     </div>
 
     <h3>Packing Essentials</h3>

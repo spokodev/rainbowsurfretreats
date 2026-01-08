@@ -94,3 +94,32 @@ export const newsletterSubscribeSchema = z.object({
 })
 
 export type NewsletterSubscribe = z.infer<typeof newsletterSubscribeSchema>
+
+// Waitlist join validation schema
+export const waitlistJoinSchema = z.object({
+  retreatId: z.string().uuid('Invalid retreat ID'),
+  roomId: z.string().uuid('Invalid room ID').optional(),
+  firstName: z.string()
+    .min(1, 'First name is required')
+    .max(100, 'First name too long')
+    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'First name contains invalid characters'),
+  lastName: z.string()
+    .min(1, 'Last name is required')
+    .max(100, 'Last name too long')
+    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'Last name contains invalid characters'),
+  email: z.string()
+    .email('Invalid email address')
+    .max(255, 'Email too long'),
+  phone: z.string()
+    .regex(/^[+]?[0-9\s\-().]{7,20}$/, 'Invalid phone number format')
+    .optional()
+    .or(z.literal('')),
+  guestsCount: z.number()
+    .int('Guest count must be an integer')
+    .min(1, 'At least 1 guest required')
+    .max(10, 'Maximum 10 guests')
+    .default(1),
+  notes: z.string().max(500, 'Notes too long').optional(),
+})
+
+export type WaitlistJoinRequest = z.output<typeof waitlistJoinSchema>

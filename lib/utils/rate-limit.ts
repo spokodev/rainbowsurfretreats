@@ -119,6 +119,9 @@ export const rateLimitPresets = {
 
   /** For webhooks - very lenient: 100 requests per minute */
   webhook: { id: 'webhook', limit: 100, windowSec: 60 } as RateLimitConfig,
+
+  /** For waitlist - moderate: 5 requests per hour */
+  waitlist: { id: 'waitlist', limit: 5, windowSec: 3600 } as RateLimitConfig,
 }
 
 /**
