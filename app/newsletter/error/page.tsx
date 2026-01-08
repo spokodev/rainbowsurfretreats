@@ -43,7 +43,7 @@ function ErrorContent() {
         <p className="text-gray-600 mb-6">{description}</p>
 
         <div className="space-y-3">
-          <Button asChild className="w-full bg-gradient-ocean">
+          <Button asChild className="w-full bg-gradient-ocean text-[var(--earth-brown)]">
             <Link href="/#newsletter">
               <RefreshCw className="mr-2 w-4 h-4" />
               Try Again

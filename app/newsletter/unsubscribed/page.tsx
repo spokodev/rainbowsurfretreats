@@ -20,7 +20,7 @@ export default function NewsletterUnsubscribedPage() {
         </p>
 
         <div className="space-y-3">
-          <Button asChild className="w-full bg-gradient-ocean">
+          <Button asChild className="w-full bg-gradient-ocean text-[var(--earth-brown)]">
             <Link href="/">
               Back to Homepage
             </Link>

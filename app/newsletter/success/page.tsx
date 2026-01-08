@@ -20,7 +20,7 @@ export default function NewsletterSuccessPage() {
         </p>
 
         <div className="space-y-3">
-          <Button asChild className="w-full bg-gradient-ocean">
+          <Button asChild className="w-full bg-gradient-ocean text-[var(--earth-brown)]">
             <Link href="/">
               Explore Retreats
               <ArrowRight className="ml-2 w-4 h-4" />

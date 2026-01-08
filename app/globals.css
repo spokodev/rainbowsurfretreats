@@ -41,10 +41,11 @@
   --font-body: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 
-  /* Primary: Burnt Sienna (was Ocean Teal) */
-  --primary-teal: #E97451;
-  --primary-teal-hover: #C4593A;
-  --primary-teal-light: #F08C6D;
+  /* Primary: Light Pink (was Burnt Sienna) */
+  --primary-teal: #FFD6D1;
+  --primary-teal-hover: #E8BAB4;
+  --primary-teal-light: #FFE8E5;
+  --primary-teal-dark: #D4A59A;
 
   /* Secondary: Warm Sand/Beige */
   --sand-light: #F7F1E3;
@@ -99,7 +100,7 @@
 
   /* Accent */
   --accent: var(--primary-teal);
-  --accent-foreground: var(--white);
+  --accent-foreground: var(--earth-brown);
 
   /* Destructive */
   --destructive: var(--error);
@@ -130,7 +131,7 @@
   --sidebar: var(--white);
   --sidebar-foreground: var(--near-black);
   --sidebar-primary: var(--primary-teal);
-  --sidebar-primary-foreground: var(--white);
+  --sidebar-primary-foreground: var(--earth-brown);
   --sidebar-accent: var(--sand-light);
   --sidebar-accent-foreground: var(--near-black);
   --sidebar-border: var(--gray-200);
@@ -160,7 +161,7 @@
   --sidebar: var(--gray-900);
   --sidebar-foreground: var(--sand-light);
   --sidebar-primary: var(--primary-teal-light);
-  --sidebar-primary-foreground: var(--white);
+  --sidebar-primary-foreground: var(--earth-brown);
   --sidebar-accent: var(--gray-800);
   --sidebar-accent-foreground: var(--sand-light);
   --sidebar-border: var(--gray-700);

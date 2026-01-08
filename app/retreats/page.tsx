@@ -330,7 +330,7 @@ export default function RetreatsPage() {
                           );
                         }
                         return (
-                          <Button className="w-full bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]">
+                          <Button className="w-full bg-[var(--primary-teal)] text-[var(--earth-brown)] hover:bg-[var(--primary-teal-hover)]">
                             {t('bookNow')}
                           </Button>
                         );
@@ -363,7 +363,7 @@ export default function RetreatsPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               asChild
-              className="bg-[var(--primary-teal)] hover:bg-[var(--primary-teal-hover)]"
+              className="bg-[var(--primary-teal)] text-[var(--earth-brown)] hover:bg-[var(--primary-teal-hover)]"
             >
               <Link href="/contact">{t('cta.contact')}</Link>
             </Button>
