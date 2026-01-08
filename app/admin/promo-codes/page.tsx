@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import {
   Plus,
   Pencil,
@@ -15,7 +16,6 @@ import {
   Check,
   X,
   Copy,
-  BarChart3,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -67,6 +67,15 @@ import {
 } from '@/components/ui/alert-dialog'
 import { toast } from 'sonner'
 import type { PromoCode, Retreat, RetreatRoom } from '@/lib/types/database'
+import {
+  AdminPagination,
+  AdminSearchInput,
+  AdminStatusFilter,
+  AdminFilterBar,
+  AdminSortHeader,
+  type StatusOption,
+} from '@/components/admin/table'
+import type { SortOrder } from '@/hooks/use-admin-table-state'
 
 interface PromoCodeWithStats extends PromoCode {
   stats?: {
@@ -74,6 +83,16 @@ interface PromoCodeWithStats extends PromoCode {
     totalDiscountGiven: number
     totalRevenue: number
     averageDiscount: number
+  }
+}
+
+interface PromoCodesResponse {
+  data: PromoCodeWithStats[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
   }
 }
 
@@ -107,10 +126,39 @@ const defaultFormData: PromoCodeFormData = {
   is_active: true,
 }
 
-export default function AdminPromoCodesPage() {
+const STATUS_OPTIONS: StatusOption[] = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+]
+
+const TYPE_OPTIONS: StatusOption[] = [
+  { value: 'percentage', label: 'Percentage' },
+  { value: 'fixed_amount', label: 'Fixed Amount' },
+]
+
+function PromoCodesPageContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  // Parse state from URL
+  const page = Number(searchParams.get('page')) || 1
+  const pageSize = Number(searchParams.get('pageSize')) || 25
+  const search = searchParams.get('search') || ''
+  const status = searchParams.get('status') || ''
+  const discountType = searchParams.get('type') || ''
+  const sortBy = searchParams.get('sort') || 'created_at'
+  const sortOrder = (searchParams.get('order') || 'desc') as SortOrder
+
   const [promoCodes, setPromoCodes] = useState<PromoCodeWithStats[]>([])
   const [retreats, setRetreats] = useState<Retreat[]>([])
   const [rooms, setRooms] = useState<RetreatRoom[]>([])
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 25,
+    total: 0,
+    totalPages: 0,
+  })
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null)
@@ -119,24 +167,74 @@ export default function AdminPromoCodesPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState<PromoCodeFormData>(defaultFormData)
 
+  // Update URL params
+  const updateParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString())
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === '' || value === 'all') {
+          params.delete(key)
+        } else {
+          params.set(key, value)
+        }
+      })
+      router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    },
+    [searchParams, router, pathname]
+  )
+
+  const hasActiveFilters = !!status || !!discountType || !!search
+
+  const resetFilters = useCallback(() => {
+    updateParams({
+      search: null,
+      status: null,
+      type: null,
+      page: null,
+    })
+  }, [updateParams])
+
+  const handleSort = useCallback(
+    (column: string) => {
+      if (sortBy === column) {
+        updateParams({ order: sortOrder === 'asc' ? 'desc' : 'asc', page: null })
+      } else {
+        updateParams({ sort: column, order: 'desc', page: null })
+      }
+    },
+    [sortBy, sortOrder, updateParams]
+  )
+
   const fetchPromoCodes = useCallback(async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/admin/promo-codes?stats=true')
-      const result = await response.json()
+
+      const params = new URLSearchParams()
+      params.set('stats', 'true')
+      params.set('page', page.toString())
+      params.set('pageSize', pageSize.toString())
+      if (search) params.set('search', search)
+      if (status) params.set('status', status)
+      if (discountType) params.set('type', discountType)
+      if (sortBy) params.set('sort', sortBy)
+      if (sortOrder) params.set('order', sortOrder)
+
+      const response = await fetch(`/api/admin/promo-codes?${params.toString()}`)
+      const result: PromoCodesResponse = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch promo codes')
+        throw new Error('Failed to fetch promo codes')
       }
 
       setPromoCodes(result.data || [])
+      setPagination(result.pagination)
     } catch (error) {
       console.error('Fetch error:', error)
       toast.error('Failed to load promo codes')
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [page, pageSize, search, status, discountType, sortBy, sortOrder])
 
   const fetchRetreats = useCallback(async () => {
     try {
@@ -197,7 +295,6 @@ export default function AdminPromoCodesPage() {
   }
 
   const handleSave = async () => {
-    // Validation
     if (!formData.code.trim()) {
       toast.error('Promo code is required')
       return
@@ -290,7 +387,6 @@ export default function AdminPromoCodesPage() {
   const handleDuplicate = async (promo: PromoCodeWithStats) => {
     setIsDuplicating(promo.id)
     try {
-      // Generate new code with -COPY suffix
       let newCode = `${promo.code}-COPY`
       let counter = 1
       while (promoCodes.some(p => p.code === newCode)) {
@@ -306,11 +402,11 @@ export default function AdminPromoCodesPage() {
         scope: promo.scope,
         retreat_id: promo.retreat_id || null,
         room_id: promo.room_id || null,
-        valid_from: new Date().toISOString().split('T')[0], // Reset to today
+        valid_from: new Date().toISOString().split('T')[0],
         valid_until: promo.valid_until || null,
         max_uses: promo.max_uses || null,
         min_order_amount: promo.min_order_amount || null,
-        is_active: false, // Draft status
+        is_active: false,
       }
 
       const response = await fetch('/api/admin/promo-codes', {
@@ -344,8 +440,7 @@ export default function AdminPromoCodesPage() {
     })
   }
 
-  // Stats cards
-  const totalCodes = promoCodes.length
+  const totalCodes = pagination.total
   const activeCodes = promoCodes.filter((p) => p.is_active).length
   const totalRedemptions = promoCodes.reduce((sum, p) => sum + (p.stats?.totalRedemptions || 0), 0)
   const totalDiscountGiven = promoCodes.reduce(
@@ -383,7 +478,6 @@ export default function AdminPromoCodesPage() {
               </DialogHeader>
 
               <div className="grid gap-4 py-4">
-                {/* Code */}
                 <div className="grid gap-2">
                   <Label htmlFor="code">Code *</Label>
                   <Input
@@ -397,7 +491,6 @@ export default function AdminPromoCodesPage() {
                   />
                 </div>
 
-                {/* Description */}
                 <div className="grid gap-2">
                   <Label htmlFor="description">Description</Label>
                   <Textarea
@@ -409,7 +502,6 @@ export default function AdminPromoCodesPage() {
                   />
                 </div>
 
-                {/* Discount Type & Value */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label>Discount Type *</Label>
@@ -444,7 +536,6 @@ export default function AdminPromoCodesPage() {
                   </div>
                 </div>
 
-                {/* Scope */}
                 <div className="grid gap-2">
                   <Label>Scope</Label>
                   <Select
@@ -464,7 +555,6 @@ export default function AdminPromoCodesPage() {
                   </Select>
                 </div>
 
-                {/* Retreat Selection */}
                 {(formData.scope === 'retreat' || formData.scope === 'room') && (
                   <div className="grid gap-2">
                     <Label>Retreat *</Label>
@@ -488,7 +578,6 @@ export default function AdminPromoCodesPage() {
                   </div>
                 )}
 
-                {/* Room Selection */}
                 {formData.scope === 'room' && formData.retreat_id && (
                   <div className="grid gap-2">
                     <Label>Room *</Label>
@@ -510,7 +599,6 @@ export default function AdminPromoCodesPage() {
                   </div>
                 )}
 
-                {/* Validity Period */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="valid_from">Valid From *</Label>
@@ -532,7 +620,6 @@ export default function AdminPromoCodesPage() {
                   </div>
                 </div>
 
-                {/* Usage Limits */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="max_uses">Max Uses</Label>
@@ -560,7 +647,6 @@ export default function AdminPromoCodesPage() {
                   </div>
                 </div>
 
-                {/* Active Toggle */}
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Active</Label>
@@ -589,7 +675,6 @@ export default function AdminPromoCodesPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -629,185 +714,263 @@ export default function AdminPromoCodesPage() {
         </Card>
       </div>
 
-      {/* Promo Codes Table */}
       <Card>
         <CardHeader>
           <CardTitle>All Promo Codes</CardTitle>
           <CardDescription>Manage your promotional discount codes</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="space-y-4">
+            <AdminSearchInput
+              value={search}
+              onChange={(value) => updateParams({ search: value || null, page: null })}
+              placeholder="Search by code or description..."
+              className="max-w-sm"
+            />
+
+            <AdminFilterBar hasActiveFilters={hasActiveFilters} onReset={resetFilters}>
+              <AdminStatusFilter
+                value={status || 'all'}
+                onChange={(value) => updateParams({ status: value, page: null })}
+                options={STATUS_OPTIONS}
+                placeholder="Status"
+                className="w-[140px]"
+              />
+              <AdminStatusFilter
+                value={discountType || 'all'}
+                onChange={(value) => updateParams({ type: value, page: null })}
+                options={TYPE_OPTIONS}
+                placeholder="Type"
+                className="w-[140px]"
+              />
+            </AdminFilterBar>
+          </div>
+
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : promoCodes.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">No promo codes found</p>
-              <Button onClick={() => handleOpenDialog()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create your first promo code
-              </Button>
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-4">
+                {hasActiveFilters ? 'No promo codes match your filters' : 'No promo codes found'}
+              </p>
+              {hasActiveFilters ? (
+                <Button variant="outline" onClick={resetFilters}>
+                  Clear filters
+                </Button>
+              ) : (
+                <Button onClick={() => handleOpenDialog()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create your first promo code
+                </Button>
+              )}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Discount</TableHead>
-                  <TableHead>Scope</TableHead>
-                  <TableHead>Validity</TableHead>
-                  <TableHead>Usage</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {promoCodes.map((promo) => (
-                  <TableRow key={promo.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <code className="font-mono font-semibold bg-muted px-2 py-1 rounded">
-                          {promo.code}
-                        </code>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => handleCopyCode(promo.code)}
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      {promo.description && (
-                        <p className="text-xs text-muted-foreground mt-1">{promo.description}</p>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        {promo.discount_type === 'percentage' ? (
-                          <>
-                            <Percent className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-semibold">{promo.discount_value}%</span>
-                          </>
-                        ) : (
-                          <>
-                            <Euro className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-semibold">{promo.discount_value}</span>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {promo.scope === 'global'
-                          ? 'All Retreats'
-                          : promo.scope === 'retreat'
-                          ? promo.retreat?.destination || 'Retreat'
-                          : promo.room?.name || 'Room'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>
-                          {formatDate(promo.valid_from)}
-                          {promo.valid_until && ` — ${formatDate(promo.valid_until)}`}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <span className="font-medium">{promo.current_uses}</span>
-                        <span className="text-muted-foreground">
-                          {promo.max_uses ? ` / ${promo.max_uses}` : ' uses'}
-                        </span>
-                      </div>
-                      {promo.stats && promo.stats.totalDiscountGiven > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          €{promo.stats.totalDiscountGiven.toFixed(0)} saved
-                        </p>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={promo.is_active ? 'default' : 'secondary'}>
-                        {promo.is_active ? (
-                          <>
-                            <Check className="mr-1 h-3 w-3" />
-                            Active
-                          </>
-                        ) : (
-                          <>
-                            <X className="mr-1 h-3 w-3" />
-                            Inactive
-                          </>
-                        )}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDuplicate(promo)}
-                          disabled={isDuplicating === promo.id}
-                          title="Duplicate as draft"
-                        >
-                          {isDuplicating === promo.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenDialog(promo)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                              disabled={isDeleting === promo.id}
-                            >
-                              {isDeleting === promo.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Promo Code?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete the promo code &quot;{promo.code}
-                                &quot;. This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(promo.id)}
-                                className="bg-red-500 hover:bg-red-600"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <AdminSortHeader
+                      column="code"
+                      label="Code"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      onSort={handleSort}
+                    />
+                    <TableHead>Discount</TableHead>
+                    <TableHead>Scope</TableHead>
+                    <AdminSortHeader
+                      column="valid_from"
+                      label="Validity"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      onSort={handleSort}
+                    />
+                    <AdminSortHeader
+                      column="current_uses"
+                      label="Usage"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      onSort={handleSort}
+                    />
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {promoCodes.map((promo) => (
+                    <TableRow key={promo.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <code className="font-mono font-semibold bg-muted px-2 py-1 rounded">
+                            {promo.code}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleCopyCode(promo.code)}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        {promo.description && (
+                          <p className="text-xs text-muted-foreground mt-1">{promo.description}</p>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          {promo.discount_type === 'percentage' ? (
+                            <>
+                              <Percent className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-semibold">{promo.discount_value}%</span>
+                            </>
+                          ) : (
+                            <>
+                              <Euro className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-semibold">{promo.discount_value}</span>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {promo.scope === 'global'
+                            ? 'All Retreats'
+                            : promo.scope === 'retreat'
+                            ? promo.retreat?.destination || 'Retreat'
+                            : promo.room?.name || 'Room'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span>
+                            {formatDate(promo.valid_from)}
+                            {promo.valid_until && ` — ${formatDate(promo.valid_until)}`}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <span className="font-medium">{promo.current_uses}</span>
+                          <span className="text-muted-foreground">
+                            {promo.max_uses ? ` / ${promo.max_uses}` : ' uses'}
+                          </span>
+                        </div>
+                        {promo.stats && promo.stats.totalDiscountGiven > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            €{promo.stats.totalDiscountGiven.toFixed(0)} saved
+                          </p>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={promo.is_active ? 'default' : 'secondary'}>
+                          {promo.is_active ? (
+                            <>
+                              <Check className="mr-1 h-3 w-3" />
+                              Active
+                            </>
+                          ) : (
+                            <>
+                              <X className="mr-1 h-3 w-3" />
+                              Inactive
+                            </>
+                          )}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDuplicate(promo)}
+                            disabled={isDuplicating === promo.id}
+                            title="Duplicate as draft"
+                          >
+                            {isDuplicating === promo.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenDialog(promo)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                disabled={isDeleting === promo.id}
+                              >
+                                {isDeleting === promo.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Promo Code?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete the promo code &quot;{promo.code}
+                                  &quot;. This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(promo.id)}
+                                  className="bg-red-500 hover:bg-red-600"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              <AdminPagination
+                page={pagination.page}
+                pageSize={pagination.pageSize}
+                total={pagination.total}
+                totalPages={pagination.totalPages}
+                onPageChange={(newPage) => updateParams({ page: newPage.toString() })}
+                onPageSizeChange={(size) =>
+                  updateParams({ pageSize: size.toString(), page: null })
+                }
+              />
+            </>
           )}
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function AdminPromoCodesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <PromoCodesPageContent />
+    </Suspense>
   )
 }

@@ -77,20 +77,59 @@ export async function GET(request: NextRequest) {
     const includeStats = searchParams.get('stats') === 'true'
     const activeOnly = searchParams.get('active') === 'true'
 
+    // New params
+    const page = parseInt(searchParams.get('page') || '1')
+    const pageSize = parseInt(searchParams.get('pageSize') || '25')
+    const sort = searchParams.get('sort') || 'created_at'
+    const order = searchParams.get('order') || 'desc'
+    const search = searchParams.get('search') || ''
+    const status = searchParams.get('status') || '' // active, inactive
+    const discountType = searchParams.get('type') || '' // percentage, fixed_amount
+
     let query = supabase
       .from('promo_codes')
       .select(`
         *,
         retreat:retreats(id, destination, start_date),
         room:retreat_rooms(id, name, retreat_id)
-      `)
-      .order('created_at', { ascending: false })
+      `, { count: 'exact' })
 
+    // Sorting
+    const validSortColumns = ['created_at', 'code', 'valid_from', 'valid_until', 'current_uses']
+    const sortColumn = validSortColumns.includes(sort) ? sort : 'created_at'
+    const ascending = order === 'asc'
+    query = query.order(sortColumn, { ascending })
+
+    // Legacy filter
     if (activeOnly) {
       query = query.eq('is_active', true)
     }
 
-    const { data, error } = await query
+    // New status filter
+    if (status === 'active') {
+      query = query.eq('is_active', true)
+    } else if (status === 'inactive') {
+      query = query.eq('is_active', false)
+    }
+
+    // Discount type filter
+    if (discountType && discountType !== 'all') {
+      query = query.eq('discount_type', discountType)
+    }
+
+    // Search
+    if (search) {
+      query = query.or(`code.ilike.%${search}%,description.ilike.%${search}%`)
+    }
+
+    // Pagination
+    if (searchParams.has('page')) {
+      const from = (page - 1) * pageSize
+      const to = from + pageSize - 1
+      query = query.range(from, to)
+    }
+
+    const { data, error, count } = await query
 
     if (error) {
       console.error('Error fetching promo codes:', error)
@@ -108,7 +147,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ data: codesWithStats })
+    const total = count || 0
+    const totalPages = Math.ceil(total / pageSize)
+
+    return NextResponse.json({
+      data: codesWithStats,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+      }
+    })
   } catch (error) {
     console.error('Promo codes API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -524,7 +524,7 @@ function BookingContent() {
   // Show waitlist form if selected room is sold out
   if (isRoomSoldOut) {
     return (
-      <div className="min-h-screen bg-gradient-ochre py-12 px-6">
+      <div className="min-h-screen bg-gradient-ochre pt-24 pb-12 px-6">
         <div className="max-w-lg mx-auto">
           {/* Back navigation */}
           <div className="mb-6">
@@ -583,7 +583,7 @@ function BookingContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-ochre py-12 px-6">
+    <div className="min-h-screen bg-gradient-ochre pt-24 pb-12 px-6">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">

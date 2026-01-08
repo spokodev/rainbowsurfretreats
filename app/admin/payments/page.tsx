@@ -1,11 +1,11 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { toast } from "sonner";
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import Link from 'next/link'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   Download,
-  CreditCard,
   DollarSign,
   TrendingUp,
   ArrowUpRight,
@@ -17,15 +17,15 @@ import {
   AlertCircle,
   Calendar,
   Clock,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -33,8 +33,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -42,245 +42,319 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/components/ui/tabs";
+} from '@/components/ui/tabs'
+import {
+  AdminPagination,
+  AdminSearchInput,
+  AdminStatusFilter,
+  AdminFilterBar,
+  AdminSortHeader,
+  type StatusOption,
+} from '@/components/admin/table'
+import type { SortOrder } from '@/hooks/use-admin-table-state'
 
 interface Payment {
-  id: string;
-  booking_id: string;
-  stripe_payment_intent_id: string | null;
-  stripe_customer_id: string | null;
-  amount: number;
-  currency: string;
-  payment_type: string;
-  status: string;
-  payment_method: string | null;
-  created_at: string;
+  id: string
+  booking_id: string
+  stripe_payment_intent_id: string | null
+  stripe_customer_id: string | null
+  amount: number
+  currency: string
+  payment_type: string
+  status: string
+  payment_method: string | null
+  created_at: string
   booking?: {
-    id: string;
-    booking_number: string;
-    first_name: string;
-    last_name: string;
-    email: string;
+    id: string
+    booking_number: string
+    first_name: string
+    last_name: string
+    email: string
     retreat?: {
-      destination: string;
-    };
-  };
+      destination: string
+    }
+  }
 }
 
 interface PaymentSchedule {
-  id: string;
-  booking_id: string;
-  payment_number: number;
-  amount: number;
-  due_date: string;
-  status: string;
-  description: string | null;
-  attempts: number;
-  max_attempts: number;
-  failure_reason: string | null;
-  paid_at: string | null;
+  id: string
+  booking_id: string
+  payment_number: number
+  amount: number
+  due_date: string
+  status: string
+  description: string | null
+  attempts: number
+  max_attempts: number
+  failure_reason: string | null
+  paid_at: string | null
   booking?: {
-    id: string;
-    booking_number: string;
-    first_name: string;
-    last_name: string;
-    email: string;
+    id: string
+    booking_number: string
+    first_name: string
+    last_name: string
+    email: string
     retreat?: {
-      destination: string;
-    };
-  };
+      destination: string
+    }
+  }
 }
+
+const PAYMENT_STATUS_OPTIONS: StatusOption[] = [
+  { value: 'succeeded', label: 'Succeeded' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'refunded', label: 'Refunded' },
+]
+
+const SCHEDULE_STATUS_OPTIONS: StatusOption[] = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'cancelled', label: 'Cancelled' },
+]
 
 const getStatusBadgeVariant = (status: string) => {
   switch (status) {
-    case "succeeded":
-    case "paid":
-      return "default";
-    case "pending":
-    case "processing":
-      return "secondary";
-    case "failed":
-      return "destructive";
-    case "refunded":
-      return "outline";
-    case "cancelled":
-      return "outline";
+    case 'succeeded':
+    case 'paid':
+      return 'default'
+    case 'pending':
+    case 'processing':
+      return 'secondary'
+    case 'failed':
+      return 'destructive'
+    case 'refunded':
+    case 'cancelled':
+      return 'outline'
     default:
-      return "secondary";
+      return 'secondary'
   }
-};
+}
 
 const getTypeBadgeVariant = (type: string) => {
   switch (type) {
-    case "deposit":
-    case "full":
-    case "installment":
-    case "balance":
-      return "default";
-    case "refund":
-      return "destructive";
+    case 'deposit':
+    case 'full':
+    case 'installment':
+    case 'balance':
+      return 'default'
+    case 'refund':
+      return 'destructive'
     default:
-      return "outline";
+      return 'outline'
   }
-};
+}
 
-const formatCurrency = (amount: number, currency: string = "EUR") => {
-  return new Intl.NumberFormat("en-EU", {
-    style: "currency",
+const formatCurrency = (amount: number, currency: string = 'EUR') => {
+  return new Intl.NumberFormat('en-EU', {
+    style: 'currency',
     currency: currency,
-  }).format(amount);
-};
+  }).format(amount)
+}
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
 
 const formatDateForCSV = (dateString: string) => {
-  return new Date(dateString).toISOString().split("T")[0];
-};
+  return new Date(dateString).toISOString().split('T')[0]
+}
 
 const exportToCSV = (payments: Payment[]) => {
-  // CSV headers
   const headers = [
-    "Date",
-    "Booking ID",
-    "Guest Name",
-    "Email",
-    "Retreat",
-    "Type",
-    "Amount",
-    "Currency",
-    "Status",
-    "Payment Method",
-    "Stripe ID",
-  ];
+    'Date',
+    'Booking ID',
+    'Guest Name',
+    'Email',
+    'Retreat',
+    'Type',
+    'Amount',
+    'Currency',
+    'Status',
+    'Payment Method',
+    'Stripe ID',
+  ]
 
-  // Convert payments to CSV rows
   const rows = payments.map((payment) => [
     formatDateForCSV(payment.created_at),
-    payment.booking?.booking_number || "",
+    payment.booking?.booking_number || '',
     payment.booking
       ? `${payment.booking.first_name} ${payment.booking.last_name}`
-      : "",
-    payment.booking?.email || "",
-    payment.booking?.retreat?.destination || "",
+      : '',
+    payment.booking?.email || '',
+    payment.booking?.retreat?.destination || '',
     payment.payment_type,
-    payment.payment_type === "refund"
+    payment.payment_type === 'refund'
       ? `-${payment.amount.toFixed(2)}`
       : payment.amount.toFixed(2),
     payment.currency,
     payment.status,
-    payment.payment_method || "",
-    payment.stripe_payment_intent_id || "",
-  ]);
+    payment.payment_method || '',
+    payment.stripe_payment_intent_id || '',
+  ])
 
-  // Build CSV content
   const csvContent = [
-    headers.join(","),
+    headers.join(','),
     ...rows.map((row) =>
-      row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')
     ),
-  ].join("\n");
+  ].join('\n')
 
-  // Create blob and download
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  link.setAttribute("href", url);
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+  link.setAttribute('href', url)
   link.setAttribute(
-    "download",
-    `payments-export-${new Date().toISOString().split("T")[0]}.csv`
-  );
-  link.style.visibility = "hidden";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+    'download',
+    `payments-export-${new Date().toISOString().split('T')[0]}.csv`
+  )
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
 
-export default function AdminPaymentsPage() {
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [schedules, setSchedules] = useState<PaymentSchedule[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const PAGE_SIZE = 25
+
+function PaymentsPageContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  // URL state
+  const activeTab = searchParams.get('tab') || 'payments'
+  const search = searchParams.get('search') || ''
+  const status = searchParams.get('status') || ''
+  const sortBy = searchParams.get('sort') || 'created_at'
+  const sortOrder = (searchParams.get('order') as SortOrder) || 'desc'
+  const page = Number(searchParams.get('page')) || 1
+
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [schedules, setSchedules] = useState<PaymentSchedule[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [totalPayments, setTotalPayments] = useState(0)
+  const [totalSchedules, setTotalSchedules] = useState(0)
 
   // Refund dialog state
   const [refundDialog, setRefundDialog] = useState<{
-    open: boolean;
-    payment: Payment | null;
-    amount: string;
-    reason: string;
-    isProcessing: boolean;
+    open: boolean
+    payment: Payment | null
+    amount: string
+    reason: string
+    isProcessing: boolean
   }>({
     open: false,
     payment: null,
-    amount: "",
-    reason: "",
+    amount: '',
+    reason: '',
     isProcessing: false,
-  });
+  })
 
   // Cancel dialog state
   const [cancelDialog, setCancelDialog] = useState<{
-    open: boolean;
-    schedule: PaymentSchedule | null;
-    reason: string;
-    isProcessing: boolean;
+    open: boolean
+    schedule: PaymentSchedule | null
+    reason: string
+    isProcessing: boolean
   }>({
     open: false,
     schedule: null,
-    reason: "",
+    reason: '',
     isProcessing: false,
-  });
+  })
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const updateParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString())
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === '' || value === 'all') {
+          params.delete(key)
+        } else {
+          params.set(key, value)
+        }
+      })
+      const newSearch = params.toString()
+      router.push(newSearch ? `${pathname}?${newSearch}` : pathname, { scroll: false })
+    },
+    [searchParams, router, pathname]
+  )
 
-  async function fetchData() {
-    setIsLoading(true);
-    setError(null);
+  const fetchData = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
 
     try {
+      // Build query params for payments
+      const paymentParams = new URLSearchParams()
+      paymentParams.set('page', page.toString())
+      paymentParams.set('pageSize', PAGE_SIZE.toString())
+      if (search) paymentParams.set('search', search)
+      if (status) paymentParams.set('status', status)
+      if (sortBy) paymentParams.set('sort', sortBy)
+      if (sortOrder) paymentParams.set('order', sortOrder)
+
       // Fetch payments
-      const paymentsRes = await fetch("/api/payments");
-      if (!paymentsRes.ok) throw new Error("Failed to fetch payments");
-      const paymentsData = await paymentsRes.json();
-      setPayments(paymentsData.data || []);
+      const paymentsRes = await fetch(`/api/payments?${paymentParams.toString()}`)
+      if (!paymentsRes.ok) throw new Error('Failed to fetch payments')
+      const paymentsData = await paymentsRes.json()
+      setPayments(paymentsData.data || [])
+      setTotalPayments(paymentsData.pagination?.total || paymentsData.data?.length || 0)
 
       // Fetch payment schedules
-      const schedulesRes = await fetch("/api/payment-schedules");
+      const schedulesRes = await fetch('/api/payment-schedules')
       if (schedulesRes.ok) {
-        const schedulesData = await schedulesRes.json();
-        setSchedules(schedulesData.data || []);
+        const schedulesData = await schedulesRes.json()
+        setSchedules(schedulesData.data || [])
+        setTotalSchedules(schedulesData.data?.length || 0)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }
+  }, [page, search, status, sortBy, sortOrder])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  const handleSort = useCallback(
+    (column: string) => {
+      const newOrder: SortOrder =
+        sortBy === column && sortOrder === 'desc' ? 'asc' : 'desc'
+      updateParams({
+        sort: column === 'created_at' && newOrder === 'desc' ? null : column,
+        order: newOrder === 'desc' ? null : newOrder,
+        page: null,
+      })
+    },
+    [sortBy, sortOrder, updateParams]
+  )
 
   async function handleRefund() {
-    if (!refundDialog.payment) return;
+    if (!refundDialog.payment) return
 
-    setRefundDialog((prev) => ({ ...prev, isProcessing: true }));
+    setRefundDialog((prev) => ({ ...prev, isProcessing: true }))
 
     try {
-      const res = await fetch("/api/admin/refunds", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/admin/refunds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           paymentId: refundDialog.payment.id,
           amount: refundDialog.amount
@@ -288,111 +362,99 @@ export default function AdminPaymentsPage() {
             : undefined,
           reason: refundDialog.reason || undefined,
         }),
-      });
+      })
 
-      const data = await res.json();
+      const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to process refund");
+        throw new Error(data.error || 'Failed to process refund')
       }
 
-      // Refresh data
-      await fetchData();
-
-      // Close dialog
+      await fetchData()
       setRefundDialog({
         open: false,
         payment: null,
-        amount: "",
-        reason: "",
+        amount: '',
+        reason: '',
         isProcessing: false,
-      });
-
-      toast.success(data.message || "Refund processed successfully");
+      })
+      toast.success(data.message || 'Refund processed successfully')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to process refund");
-      setRefundDialog((prev) => ({ ...prev, isProcessing: false }));
+      toast.error(err instanceof Error ? err.message : 'Failed to process refund')
+      setRefundDialog((prev) => ({ ...prev, isProcessing: false }))
     }
   }
 
   async function handleCancelSchedule() {
-    if (!cancelDialog.schedule) return;
+    if (!cancelDialog.schedule) return
 
-    setCancelDialog((prev) => ({ ...prev, isProcessing: true }));
+    setCancelDialog((prev) => ({ ...prev, isProcessing: true }))
 
     try {
-      const res = await fetch("/api/admin/refunds", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/admin/refunds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: "cancel",
+          action: 'cancel',
           paymentScheduleId: cancelDialog.schedule.id,
           reason: cancelDialog.reason || undefined,
         }),
-      });
+      })
 
-      const data = await res.json();
+      const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to cancel payment");
+        throw new Error(data.error || 'Failed to cancel payment')
       }
 
-      // Refresh data
-      await fetchData();
-
-      // Close dialog
+      await fetchData()
       setCancelDialog({
         open: false,
         schedule: null,
-        reason: "",
+        reason: '',
         isProcessing: false,
-      });
-
-      toast.success(data.message || "Payment cancelled successfully");
+      })
+      toast.success(data.message || 'Payment cancelled successfully')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to cancel payment");
-      setCancelDialog((prev) => ({ ...prev, isProcessing: false }));
+      toast.error(err instanceof Error ? err.message : 'Failed to cancel payment')
+      setCancelDialog((prev) => ({ ...prev, isProcessing: false }))
     }
   }
 
   async function triggerPaymentProcessing() {
     try {
-      const res = await fetch("/api/cron/process-payments", {
-        method: "POST",
-      });
-      const data = await res.json();
+      const res = await fetch('/api/cron/process-payments', {
+        method: 'POST',
+      })
+      const data = await res.json()
       toast.success(
         `Processing complete: ${data.processed || 0} processed, ${
           data.succeeded || 0
         } succeeded, ${data.failed || 0} failed`
-      );
-      await fetchData();
+      )
+      await fetchData()
     } catch {
-      toast.error("Failed to trigger payment processing");
+      toast.error('Failed to trigger payment processing')
     }
   }
 
-  // Calculate stats
+  // Calculate stats from all data (not just current page)
   const totalRevenue = payments
-    .filter((p) => p.status === "succeeded" && p.payment_type !== "refund")
-    .reduce((sum, p) => sum + p.amount, 0);
+    .filter((p) => p.status === 'succeeded' && p.payment_type !== 'refund')
+    .reduce((sum, p) => sum + p.amount, 0)
 
   const totalRefunds = payments
-    .filter((p) => p.payment_type === "refund")
-    .reduce((sum, p) => sum + Math.abs(p.amount), 0);
+    .filter((p) => p.payment_type === 'refund')
+    .reduce((sum, p) => sum + Math.abs(p.amount), 0)
 
-  const pendingSchedules = schedules.filter((s) => s.status === "pending");
-  const pendingAmount = pendingSchedules.reduce((sum, s) => sum + s.amount, 0);
+  const pendingSchedules = schedules.filter((s) => s.status === 'pending')
+  const pendingAmount = pendingSchedules.reduce((sum, s) => sum + s.amount, 0)
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const hasActiveFilters = search.length > 0 || status.length > 0
 
-  if (error) {
+  const totalPages = Math.ceil(totalPayments / PAGE_SIZE)
+
+  if (error && !isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="h-12 w-12 text-destructive mb-4" />
@@ -402,7 +464,7 @@ export default function AdminPaymentsPage() {
           Try Again
         </Button>
       </div>
-    );
+    )
   }
 
   return (
@@ -415,8 +477,8 @@ export default function AdminPaymentsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchData}>
-            <RefreshCw className="mr-2 h-4 w-4" />
+          <Button variant="outline" onClick={fetchData} disabled={isLoading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Button variant="outline" onClick={() => exportToCSV(payments)} disabled={payments.length === 0}>
@@ -445,7 +507,7 @@ export default function AdminPaymentsPage() {
             </div>
             <div className="flex items-center text-xs text-green-600">
               <TrendingUp className="mr-1 h-3 w-3" />
-              {payments.filter((p) => p.status === "succeeded").length} successful payments
+              {payments.filter((p) => p.status === 'succeeded').length} successful payments
             </div>
           </CardContent>
         </Card>
@@ -461,7 +523,7 @@ export default function AdminPaymentsPage() {
               {formatCurrency(totalRefunds)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {payments.filter((p) => p.payment_type === "refund").length} refunds processed
+              {payments.filter((p) => p.payment_type === 'refund').length} refunds processed
             </p>
           </CardContent>
         </Card>
@@ -497,13 +559,17 @@ export default function AdminPaymentsPage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="payments" className="space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => updateParams({ tab: value === 'payments' ? null : value, page: null })}
+        className="space-y-4"
+      >
         <TabsList>
           <TabsTrigger value="payments">
-            Completed Payments ({payments.length})
+            Completed Payments ({totalPayments})
           </TabsTrigger>
           <TabsTrigger value="scheduled">
-            Scheduled ({schedules.length})
+            Scheduled ({totalSchedules})
           </TabsTrigger>
         </TabsList>
 
@@ -515,96 +581,152 @@ export default function AdminPaymentsPage() {
                 All completed payment transactions and refunds
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              {payments.length === 0 ? (
+            <CardContent className="space-y-4">
+              {/* Search and Filters */}
+              <div className="space-y-4">
+                <AdminSearchInput
+                  value={search}
+                  onChange={(value) => updateParams({ search: value || null, page: null })}
+                  placeholder="Search by booking #, name, or email..."
+                  className="max-w-sm"
+                />
+
+                <AdminFilterBar
+                  hasActiveFilters={hasActiveFilters}
+                  onReset={() => updateParams({ search: null, status: null, page: null })}
+                >
+                  <AdminStatusFilter
+                    value={status || 'all'}
+                    onChange={(value) => updateParams({ status: value === 'all' ? null : value, page: null })}
+                    options={PAYMENT_STATUS_OPTIONS}
+                    placeholder="Status"
+                    className="w-[140px]"
+                  />
+                </AdminFilterBar>
+              </div>
+
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : payments.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  No payments yet
+                  {hasActiveFilters ? 'No payments match your filters' : 'No payments yet'}
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Booking</TableHead>
-                      <TableHead>Guest</TableHead>
-                      <TableHead>Retreat</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payments.map((payment) => (
-                      <TableRow key={payment.id}>
-                        <TableCell>
-                          {payment.booking?.booking_number ? (
-                            <Link
-                              href={`/admin/bookings/${payment.booking_id}`}
-                              className="text-primary hover:underline font-mono text-sm"
-                            >
-                              {payment.booking.booking_number}
-                            </Link>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {payment.booking
-                            ? `${payment.booking.first_name} ${payment.booking.last_name}`
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {payment.booking?.retreat?.destination || "-"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getTypeBadgeVariant(payment.payment_type)}>
-                            {payment.payment_type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={`font-semibold ${
-                              payment.payment_type === "refund"
-                                ? "text-red-600"
-                                : "text-green-600"
-                            }`}
-                          >
-                            {payment.payment_type === "refund" ? "-" : "+"}
-                            {formatCurrency(Math.abs(payment.amount), payment.currency)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusBadgeVariant(payment.status)}>
-                            {payment.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatDate(payment.created_at)}</TableCell>
-                        <TableCell className="text-right">
-                          {payment.status === "succeeded" &&
-                            payment.payment_type !== "refund" && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  setRefundDialog({
-                                    open: true,
-                                    payment,
-                                    amount: "",
-                                    reason: "",
-                                    isProcessing: false,
-                                  })
-                                }
+                <>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Booking</TableHead>
+                          <TableHead>Guest</TableHead>
+                          <TableHead>Retreat</TableHead>
+                          <TableHead>Type</TableHead>
+                          <AdminSortHeader
+                            column="amount"
+                            label="Amount"
+                            currentSort={sortBy}
+                            currentOrder={sortOrder}
+                            onSort={handleSort}
+                          />
+                          <TableHead>Status</TableHead>
+                          <AdminSortHeader
+                            column="created_at"
+                            label="Date"
+                            currentSort={sortBy}
+                            currentOrder={sortOrder}
+                            onSort={handleSort}
+                          />
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {payments.map((payment) => (
+                          <TableRow key={payment.id}>
+                            <TableCell>
+                              {payment.booking?.booking_number ? (
+                                <Link
+                                  href={`/admin/bookings/${payment.booking_id}`}
+                                  className="text-primary hover:underline font-mono text-sm"
+                                >
+                                  {payment.booking.booking_number}
+                                </Link>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {payment.booking
+                                ? `${payment.booking.first_name} ${payment.booking.last_name}`
+                                : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {payment.booking?.retreat?.destination || '-'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={getTypeBadgeVariant(payment.payment_type)}>
+                                {payment.payment_type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span
+                                className={`font-semibold ${
+                                  payment.payment_type === 'refund'
+                                    ? 'text-red-600'
+                                    : 'text-green-600'
+                                }`}
                               >
-                                <RotateCcw className="h-4 w-4 mr-1" />
-                                Refund
-                              </Button>
-                            )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                                {payment.payment_type === 'refund' ? '-' : '+'}
+                                {formatCurrency(Math.abs(payment.amount), payment.currency)}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={getStatusBadgeVariant(payment.status)}>
+                                {payment.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{formatDate(payment.created_at)}</TableCell>
+                            <TableCell className="text-right">
+                              {payment.status === 'succeeded' &&
+                                payment.payment_type !== 'refund' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      setRefundDialog({
+                                        open: true,
+                                        payment,
+                                        amount: '',
+                                        reason: '',
+                                        isProcessing: false,
+                                      })
+                                    }
+                                  >
+                                    <RotateCcw className="h-4 w-4 mr-1" />
+                                    Refund
+                                  </Button>
+                                )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {totalPages > 1 && (
+                    <AdminPagination
+                      page={page}
+                      pageSize={PAGE_SIZE}
+                      total={totalPayments}
+                      totalPages={totalPages}
+                      onPageChange={(newPage) =>
+                        updateParams({ page: newPage === 1 ? null : newPage.toString() })
+                      }
+                      showPageSizeSelector={false}
+                    />
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -624,92 +746,94 @@ export default function AdminPaymentsPage() {
                   No scheduled payments
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Booking</TableHead>
-                      <TableHead>Guest</TableHead>
-                      <TableHead>Payment #</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Attempts</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {schedules.map((schedule) => (
-                      <TableRow key={schedule.id}>
-                        <TableCell>
-                          {schedule.booking?.booking_number ? (
-                            <Link
-                              href={`/admin/bookings/${schedule.booking_id}`}
-                              className="text-primary hover:underline font-mono text-sm"
-                            >
-                              {schedule.booking.booking_number}
-                            </Link>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {schedule.booking
-                            ? `${schedule.booking.first_name} ${schedule.booking.last_name}`
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            #{schedule.payment_number}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{schedule.description || "-"}</TableCell>
-                        <TableCell className="font-semibold">
-                          {formatCurrency(schedule.amount)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            {formatDate(schedule.due_date)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusBadgeVariant(schedule.status)}>
-                            {schedule.status}
-                          </Badge>
-                          {schedule.failure_reason && (
-                            <p className="text-xs text-destructive mt-1">
-                              {schedule.failure_reason}
-                            </p>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {schedule.attempts}/{schedule.max_attempts}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {(schedule.status === "pending" ||
-                            schedule.status === "failed") && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                setCancelDialog({
-                                  open: true,
-                                  schedule,
-                                  reason: "",
-                                  isProcessing: false,
-                                })
-                              }
-                            >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Cancel
-                            </Button>
-                          )}
-                        </TableCell>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Booking</TableHead>
+                        <TableHead>Guest</TableHead>
+                        <TableHead>Payment #</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Attempts</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {schedules.map((schedule) => (
+                        <TableRow key={schedule.id}>
+                          <TableCell>
+                            {schedule.booking?.booking_number ? (
+                              <Link
+                                href={`/admin/bookings/${schedule.booking_id}`}
+                                className="text-primary hover:underline font-mono text-sm"
+                              >
+                                {schedule.booking.booking_number}
+                              </Link>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {schedule.booking
+                              ? `${schedule.booking.first_name} ${schedule.booking.last_name}`
+                              : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              #{schedule.payment_number}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{schedule.description || '-'}</TableCell>
+                          <TableCell className="font-semibold">
+                            {formatCurrency(schedule.amount)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              {formatDate(schedule.due_date)}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusBadgeVariant(schedule.status)}>
+                              {schedule.status}
+                            </Badge>
+                            {schedule.failure_reason && (
+                              <p className="text-xs text-destructive mt-1">
+                                {schedule.failure_reason}
+                              </p>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {schedule.attempts}/{schedule.max_attempts}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {(schedule.status === 'pending' ||
+                              schedule.status === 'failed') && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setCancelDialog({
+                                    open: true,
+                                    schedule,
+                                    reason: '',
+                                    isProcessing: false,
+                                  })
+                                }
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Cancel
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -728,10 +852,10 @@ export default function AdminPaymentsPage() {
           <DialogHeader>
             <DialogTitle>Process Refund</DialogTitle>
             <DialogDescription>
-              Refund payment for{" "}
+              Refund payment for{' '}
               {refundDialog.payment?.booking
                 ? `${refundDialog.payment.booking.first_name} ${refundDialog.payment.booking.last_name}`
-                : "this booking"}
+                : 'this booking'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -815,10 +939,10 @@ export default function AdminPaymentsPage() {
           <DialogHeader>
             <DialogTitle>Cancel Scheduled Payment</DialogTitle>
             <DialogDescription>
-              Cancel payment #{cancelDialog.schedule?.payment_number} for{" "}
+              Cancel payment #{cancelDialog.schedule?.payment_number} for{' '}
               {cancelDialog.schedule?.booking
                 ? `${cancelDialog.schedule.booking.first_name} ${cancelDialog.schedule.booking.last_name}`
-                : "this booking"}
+                : 'this booking'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -878,5 +1002,19 @@ export default function AdminPaymentsPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
+}
+
+export default function AdminPaymentsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <PaymentsPageContent />
+    </Suspense>
+  )
 }

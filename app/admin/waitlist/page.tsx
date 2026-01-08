@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Users,
@@ -12,13 +13,12 @@ import {
   Mail,
   Trash2,
   RefreshCw,
-  Search,
   AlertCircle,
   Calendar,
   MessageSquare,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Card,
   CardContent,
@@ -36,13 +36,6 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -53,6 +46,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import {
+  AdminPagination,
+  AdminSearchInput,
+  AdminStatusFilter,
+  AdminFilterBar,
+  type StatusOption,
+} from '@/components/admin/table'
 import type { WaitlistEntry, WaitlistStats } from '@/lib/types/database'
 
 interface WaitlistListResponse {
@@ -65,6 +65,15 @@ interface WaitlistListResponse {
     totalPages: number
   }
 }
+
+const STATUS_OPTIONS: StatusOption[] = [
+  { value: 'waiting', label: 'Waiting' },
+  { value: 'notified', label: 'Notified' },
+  { value: 'accepted', label: 'Accepted' },
+  { value: 'declined', label: 'Declined' },
+  { value: 'expired', label: 'Expired' },
+  { value: 'booked', label: 'Booked' },
+]
 
 const getStatusBadge = (status: string) => {
   const config = {
@@ -87,14 +96,39 @@ const getStatusBadge = (status: string) => {
   )
 }
 
-export default function AdminWaitlistPage() {
+const PAGE_SIZE = 25
+
+function WaitlistPageContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  // URL state
+  const search = searchParams.get('search') || ''
+  const statusFilter = searchParams.get('status') || ''
+  const page = Number(searchParams.get('page')) || 1
+
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<WaitlistListResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
   const [notifyingId, setNotifyingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const updateParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString())
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === '' || value === 'all') {
+          params.delete(key)
+        } else {
+          params.set(key, value)
+        }
+      })
+      const newSearch = params.toString()
+      router.push(newSearch ? `${pathname}?${newSearch}` : pathname, { scroll: false })
+    },
+    [searchParams, router, pathname]
+  )
 
   const fetchWaitlist = useCallback(async () => {
     setLoading(true)
@@ -102,8 +136,10 @@ export default function AdminWaitlistPage() {
 
     try {
       const params = new URLSearchParams()
+      params.set('page', page.toString())
+      params.set('pageSize', PAGE_SIZE.toString())
       if (search) params.set('search', search)
-      if (statusFilter !== 'all') params.set('status', statusFilter)
+      if (statusFilter) params.set('status', statusFilter)
 
       const response = await fetch(`/api/admin/waitlist?${params}`)
       const result = await response.json()
@@ -118,7 +154,7 @@ export default function AdminWaitlistPage() {
     } finally {
       setLoading(false)
     }
-  }, [search, statusFilter])
+  }, [search, statusFilter, page])
 
   useEffect(() => {
     fetchWaitlist()
@@ -141,7 +177,7 @@ export default function AdminWaitlistPage() {
 
       toast.success(result.message || 'Notification sent successfully')
       fetchWaitlist()
-    } catch (err) {
+    } catch {
       toast.error('Failed to send notification')
     } finally {
       setNotifyingId(null)
@@ -165,7 +201,7 @@ export default function AdminWaitlistPage() {
 
       toast.success(result.message || 'Entry deleted successfully')
       fetchWaitlist()
-    } catch (err) {
+    } catch {
       toast.error('Failed to delete entry')
     } finally {
       setDeletingId(null)
@@ -204,9 +240,12 @@ export default function AdminWaitlistPage() {
     return `${hours}h ${minutes}m`
   }
 
+  const hasActiveFilters = search.length > 0 || statusFilter.length > 0
+  const totalPages = data?.pagination?.totalPages || 1
+
   return (
-    <div className="container py-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Waitlist Management</h1>
           <p className="text-muted-foreground mt-1">
@@ -221,7 +260,7 @@ export default function AdminWaitlistPage() {
 
       {/* Stats Cards */}
       {data?.stats && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
@@ -283,45 +322,9 @@ export default function AdminWaitlistPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg">Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Search by name or email..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="waiting">Waiting</SelectItem>
-                <SelectItem value="notified">Notified</SelectItem>
-                <SelectItem value="accepted">Accepted</SelectItem>
-                <SelectItem value="declined">Declined</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
-                <SelectItem value="booked">Booked</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Error Message */}
       {error && (
-        <Card className="mb-6 border-destructive">
+        <Card className="border-destructive">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-destructive">
               <AlertCircle className="w-5 h-5" />
@@ -336,172 +339,235 @@ export default function AdminWaitlistPage() {
         <CardHeader>
           <CardTitle>Waitlist Entries</CardTitle>
           <CardDescription>
-            {data?.pagination.total || 0} entries found
+            {data?.pagination?.total || 0} entries found
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Search and Filters */}
+          <div className="space-y-4">
+            <AdminSearchInput
+              value={search}
+              onChange={(value) => updateParams({ search: value || null, page: null })}
+              placeholder="Search by name or email..."
+              className="max-w-sm"
+            />
+
+            <AdminFilterBar
+              hasActiveFilters={hasActiveFilters}
+              onReset={() => updateParams({ search: null, status: null, page: null })}
+            >
+              <AdminStatusFilter
+                value={statusFilter || 'all'}
+                onChange={(value) => updateParams({ status: value === 'all' ? null : value, page: null })}
+                options={STATUS_OPTIONS}
+                placeholder="Status"
+                className="w-[140px]"
+              />
+            </AdminFilterBar>
+          </div>
+
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
           ) : !data?.entries?.length ? (
             <div className="text-center py-12 text-muted-foreground">
               <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No waitlist entries found</p>
+              <p>{hasActiveFilters ? 'No entries match your filters' : 'No waitlist entries found'}</p>
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => updateParams({ search: null, status: null, page: null })}
+                >
+                  Clear filters
+                </Button>
+              )}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Guest</TableHead>
-                  <TableHead>Retreat</TableHead>
-                  <TableHead>Room</TableHead>
-                  <TableHead>Notes</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.entries.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell className="font-mono text-sm">
-                      {entry.position}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {entry.first_name} {entry.last_name}
-                        </div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Mail className="w-3 h-3" />
-                          {entry.email}
-                        </div>
-                        {entry.guests_count > 1 && (
-                          <div className="text-xs text-muted-foreground">
-                            {entry.guests_count} guests
+            <>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>#</TableHead>
+                      <TableHead>Guest</TableHead>
+                      <TableHead>Retreat</TableHead>
+                      <TableHead>Room</TableHead>
+                      <TableHead>Notes</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Expires</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.entries.map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell className="font-mono text-sm">
+                          {entry.position}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">
+                              {entry.first_name} {entry.last_name}
+                            </div>
+                            <div className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Mail className="w-3 h-3" />
+                              {entry.email}
+                            </div>
+                            {entry.guests_count > 1 && (
+                              <div className="text-xs text-muted-foreground">
+                                {entry.guests_count} guests
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {entry.retreat ? (
-                        <Link
-                          href={`/admin/retreats/${entry.retreat_id}`}
-                          className="hover:underline"
-                        >
-                          {entry.retreat.destination}
-                        </Link>
-                      ) : (
-                        <span className="text-muted-foreground">Unknown</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {entry.room?.name || (
-                        <span className="text-muted-foreground text-sm">Any room</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {entry.notes ? (
-                        <div className="max-w-[200px]">
-                          <div className="flex items-start gap-1">
-                            <MessageSquare className="w-3 h-3 mt-1 text-blue-500 shrink-0" />
-                            <span className="text-sm text-muted-foreground line-clamp-2" title={entry.notes}>
-                              {entry.notes}
-                            </span>
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(entry.status)}</TableCell>
-                    <TableCell>
-                      {entry.status === 'notified' && entry.notification_expires_at ? (
-                        <div className="text-sm">
-                          <div className="font-medium text-amber-600">
-                            {getTimeRemaining(entry.notification_expires_at)}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {formatDateTime(entry.notification_expires_at)}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Calendar className="w-3 h-3" />
-                        {formatDate(entry.created_at)}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        {entry.status === 'waiting' && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleNotify(entry.id)}
-                            disabled={notifyingId === entry.id}
-                          >
-                            <Bell className="w-4 h-4 mr-1" />
-                            {notifyingId === entry.id ? 'Sending...' : 'Notify'}
-                          </Button>
-                        )}
-
-                        {entry.status === 'expired' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleNotify(entry.id)}
-                            disabled={notifyingId === entry.id}
-                          >
-                            <RefreshCw className="w-4 h-4 mr-1" />
-                            Re-notify
-                          </Button>
-                        )}
-
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-destructive hover:text-destructive"
-                              disabled={deletingId === entry.id}
+                        </TableCell>
+                        <TableCell>
+                          {entry.retreat ? (
+                            <Link
+                              href={`/admin/retreats/${entry.retreat_id}`}
+                              className="hover:underline"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remove from Waitlist?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will remove {entry.first_name} {entry.last_name} from the waitlist
-                                for {entry.retreat?.destination || 'this retreat'}. This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(entry.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              {entry.retreat.destination}
+                            </Link>
+                          ) : (
+                            <span className="text-muted-foreground">Unknown</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {entry.room?.name || (
+                            <span className="text-muted-foreground text-sm">Any room</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {entry.notes ? (
+                            <div className="max-w-[200px]">
+                              <div className="flex items-start gap-1">
+                                <MessageSquare className="w-3 h-3 mt-1 text-blue-500 shrink-0" />
+                                <span className="text-sm text-muted-foreground line-clamp-2" title={entry.notes}>
+                                  {entry.notes}
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(entry.status)}</TableCell>
+                        <TableCell>
+                          {entry.status === 'notified' && entry.notification_expires_at ? (
+                            <div className="text-sm">
+                              <div className="font-medium text-amber-600">
+                                {getTimeRemaining(entry.notification_expires_at)}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {formatDateTime(entry.notification_expires_at)}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Calendar className="w-3 h-3" />
+                            {formatDate(entry.created_at)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {entry.status === 'waiting' && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleNotify(entry.id)}
+                                disabled={notifyingId === entry.id}
                               >
-                                Remove
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                                <Bell className="w-4 h-4 mr-1" />
+                                {notifyingId === entry.id ? 'Sending...' : 'Notify'}
+                              </Button>
+                            )}
+
+                            {entry.status === 'expired' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleNotify(entry.id)}
+                                disabled={notifyingId === entry.id}
+                              >
+                                <RefreshCw className="w-4 h-4 mr-1" />
+                                Re-notify
+                              </Button>
+                            )}
+
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-destructive hover:text-destructive"
+                                  disabled={deletingId === entry.id}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Remove from Waitlist?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will remove {entry.first_name} {entry.last_name} from the waitlist
+                                    for {entry.retreat?.destination || 'this retreat'}. This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDelete(entry.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Remove
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {totalPages > 1 && (
+                <AdminPagination
+                  page={page}
+                  pageSize={PAGE_SIZE}
+                  total={data.pagination.total}
+                  totalPages={totalPages}
+                  onPageChange={(newPage) =>
+                    updateParams({ page: newPage === 1 ? null : newPage.toString() })
+                  }
+                  showPageSizeSelector={false}
+                />
+              )}
+            </>
           )}
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function AdminWaitlistPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <WaitlistPageContent />
+    </Suspense>
   )
 }

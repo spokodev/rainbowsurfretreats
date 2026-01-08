@@ -15,6 +15,15 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit')
     const offset = searchParams.get('offset')
 
+    // New pagination params
+    const page = parseInt(searchParams.get('page') || '1')
+    const pageSize = parseInt(searchParams.get('pageSize') || '25')
+    const sort = searchParams.get('sort') || 'start_date'
+    const order = searchParams.get('order') || 'asc'
+    const search = searchParams.get('search') || ''
+    const level = searchParams.get('level') || ''
+    const status = searchParams.get('status') || '' // published, draft, all
+
     // If slug is provided, return single retreat
     if (slug) {
       const { data, error } = await supabase
@@ -41,33 +50,71 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         rooms:retreat_rooms(*)
-      `)
+      `, { count: 'exact' })
       .is('deleted_at', null)
-      .order('start_date', { ascending: true })
 
-    // Filter by published status
+    // Sorting
+    const validSortColumns = ['start_date', 'created_at', 'destination', 'level']
+    const sortColumn = validSortColumns.includes(sort) ? sort : 'start_date'
+    const ascending = order === 'asc'
+    query = query.order(sortColumn, { ascending })
+
+    // Filter by published status (for new-style queries)
+    if (status === 'published') {
+      query = query.eq('is_published', true)
+    } else if (status === 'draft') {
+      query = query.eq('is_published', false)
+    }
+
+    // Legacy filter by published status
     if (published === 'true') {
       query = query.eq('is_published', true)
     } else if (published === 'false') {
       query = query.eq('is_published', false)
     }
 
-    // Pagination
-    if (limit) {
-      query = query.limit(parseInt(limit))
-    }
-    if (offset) {
-      query = query.range(parseInt(offset), parseInt(offset) + (parseInt(limit || '10') - 1))
+    // Filter by level
+    if (level && level !== 'all') {
+      query = query.eq('level', level)
     }
 
-    const { data, error } = await query
+    // Search by destination
+    if (search) {
+      query = query.ilike('destination', `%${search}%`)
+    }
+
+    // Pagination - prefer new page/pageSize params
+    if (searchParams.has('page')) {
+      const from = (page - 1) * pageSize
+      const to = from + pageSize - 1
+      query = query.range(from, to)
+    } else if (limit) {
+      // Legacy pagination support
+      query = query.limit(parseInt(limit))
+      if (offset) {
+        query = query.range(parseInt(offset), parseInt(offset) + (parseInt(limit || '10') - 1))
+      }
+    }
+
+    const { data, error, count } = await query
 
     if (error) {
       const errorResponse = handleDatabaseError(error, 'GET /api/retreats (list)')
       if (errorResponse) return errorResponse
     }
 
-    return NextResponse.json<ApiResponse<Retreat[]>>({ data: data as Retreat[] })
+    const total = count || 0
+    const totalPages = Math.ceil(total / pageSize)
+
+    return NextResponse.json({
+      data: data as Retreat[],
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+      }
+    })
   } catch (error) {
     console.error('Error fetching retreats:', error)
     return NextResponse.json<ApiResponse<null>>(

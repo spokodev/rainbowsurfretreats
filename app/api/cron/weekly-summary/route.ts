@@ -34,15 +34,22 @@ interface WeeklySummary {
   totalRevenue: number
   paymentsReceived: number
   paymentsFailed: number
+  outstandingPayments: number
+  outstandingAmount: number
   waitlistJoins: number
   waitlistAccepted: number
   waitlistDeclined: number
+  waitlistNotified: number
   feedbackReceived: number
+  avgFeedbackRating: number
+  npsScore: number | null
   upcomingRetreats: Array<{
     destination: string
     startDate: string
     bookingsCount: number
     spotsRemaining: number
+    totalCapacity: number
+    occupancyRate: number
   }>
 }
 
@@ -73,10 +80,15 @@ export async function GET(request: NextRequest) {
       totalRevenue: 0,
       paymentsReceived: 0,
       paymentsFailed: 0,
+      outstandingPayments: 0,
+      outstandingAmount: 0,
       waitlistJoins: 0,
       waitlistAccepted: 0,
       waitlistDeclined: 0,
+      waitlistNotified: 0,
       feedbackReceived: 0,
+      avgFeedbackRating: 0,
+      npsScore: null,
       upcomingRetreats: [],
     }
 
@@ -110,6 +122,17 @@ export async function GET(request: NextRequest) {
 
     summary.paymentsFailed = failedCount || 0
 
+    // Outstanding payments (all pending)
+    const { data: outstandingPayments } = await supabase
+      .from('payment_schedules')
+      .select('amount')
+      .eq('status', 'pending')
+
+    if (outstandingPayments) {
+      summary.outstandingPayments = outstandingPayments.length
+      summary.outstandingAmount = outstandingPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+    }
+
     // Waitlist activity
     const { count: waitlistJoins } = await supabase
       .from('waitlist_entries')
@@ -134,13 +157,37 @@ export async function GET(request: NextRequest) {
 
     summary.waitlistDeclined = waitlistDeclined || 0
 
-    // Feedback received
-    const { count: feedbackCount } = await supabase
-      .from('feedback')
+    // Count how many were notified this week (for conversion rate)
+    const { count: waitlistNotified } = await supabase
+      .from('waitlist_entries')
       .select('*', { count: 'exact', head: true })
+      .gte('notified_at', weekAgoStr)
+
+    summary.waitlistNotified = waitlistNotified || 0
+
+    // Feedback received this week with ratings
+    const { data: feedbackData } = await supabase
+      .from('retreat_feedback')
+      .select('overall_rating, recommend_score')
       .gte('created_at', weekAgoStr)
 
-    summary.feedbackReceived = feedbackCount || 0
+    if (feedbackData && feedbackData.length > 0) {
+      summary.feedbackReceived = feedbackData.length
+
+      // Calculate average rating
+      const ratingsWithValues = feedbackData.filter(f => f.overall_rating !== null)
+      if (ratingsWithValues.length > 0) {
+        summary.avgFeedbackRating = ratingsWithValues.reduce((sum, f) => sum + f.overall_rating, 0) / ratingsWithValues.length
+      }
+
+      // Calculate NPS score
+      const npsResponses = feedbackData.filter(f => f.recommend_score !== null)
+      if (npsResponses.length > 0) {
+        const promoters = npsResponses.filter(f => f.recommend_score >= 9).length
+        const detractors = npsResponses.filter(f => f.recommend_score <= 6).length
+        summary.npsScore = Math.round(((promoters - detractors) / npsResponses.length) * 100)
+      }
+    }
 
     // Upcoming retreats (next 30 days)
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
@@ -149,7 +196,7 @@ export async function GET(request: NextRequest) {
       .select(`
         id, destination, start_date,
         bookings:bookings(count),
-        retreat_rooms(available)
+        retreat_rooms(available, capacity)
       `)
       .gte('start_date', now.toISOString())
       .lte('start_date', thirtyDaysFromNow.toISOString())
@@ -162,18 +209,26 @@ export async function GET(request: NextRequest) {
         const bookingsCountValue = Array.isArray(r.bookings) && r.bookings[0]
           ? (r.bookings[0] as { count: number }).count
           : 0
-        const spotsRemaining = Array.isArray(r.retreat_rooms)
-          ? r.retreat_rooms.reduce((sum: number, room: { available: number }) => sum + (room.available || 0), 0)
-          : 0
+        const rooms = Array.isArray(r.retreat_rooms) ? r.retreat_rooms : []
+        const spotsRemaining = rooms.reduce((sum: number, room: { available: number }) => sum + (room.available || 0), 0)
+        const totalCapacity = rooms.reduce((sum: number, room: { capacity: number }) => sum + (room.capacity || 0), 0)
+        const occupancyRate = totalCapacity > 0 ? Math.round(((totalCapacity - spotsRemaining) / totalCapacity) * 100) : 0
 
         return {
           destination: r.destination,
           startDate: r.start_date,
           bookingsCount: bookingsCountValue,
           spotsRemaining,
+          totalCapacity,
+          occupancyRate,
         }
       })
     }
+
+    // Calculate waitlist conversion rate
+    const waitlistConversionRate = summary.waitlistNotified > 0
+      ? Math.round((summary.waitlistAccepted / summary.waitlistNotified) * 100)
+      : null
 
     // Build email HTML
     const htmlContent = `
@@ -188,19 +243,40 @@ export async function GET(request: NextRequest) {
         ${summary.paymentsFailed > 0 ? `
           <p style="color: #ef4444;"><strong>Failed Payments:</strong> ${summary.paymentsFailed}</p>
         ` : ''}
+        ${summary.outstandingPayments > 0 ? `
+          <p style="color: #f59e0b;"><strong>Outstanding Payments:</strong> ${summary.outstandingPayments} (€${summary.outstandingAmount.toFixed(2)} pending)</p>
+        ` : ''}
       </div>
 
       <h3>Waitlist Activity</h3>
       <div class="highlight-box">
         <p><strong>New Waitlist Joins:</strong> ${summary.waitlistJoins}</p>
+        <p><strong>Notifications Sent:</strong> ${summary.waitlistNotified}</p>
         <p><strong>Offers Accepted:</strong> ${summary.waitlistAccepted}</p>
         <p><strong>Offers Declined:</strong> ${summary.waitlistDeclined}</p>
+        ${waitlistConversionRate !== null ? `
+          <p><strong>Conversion Rate:</strong> ${waitlistConversionRate}%</p>
+        ` : ''}
       </div>
 
       ${summary.feedbackReceived > 0 ? `
-        <h3>Feedback</h3>
+        <h3>Guest Feedback</h3>
         <div class="highlight-box">
-          <p><strong>Feedback Received:</strong> ${summary.feedbackReceived}</p>
+          <p><strong>Responses Received:</strong> ${summary.feedbackReceived}</p>
+          ${summary.avgFeedbackRating > 0 ? `
+            <p><strong>Average Rating:</strong> ${summary.avgFeedbackRating.toFixed(1)}/5 ⭐</p>
+          ` : ''}
+          ${summary.npsScore !== null ? `
+            <p>
+              <strong>NPS Score:</strong>
+              <span style="color: ${summary.npsScore >= 50 ? '#22c55e' : summary.npsScore >= 0 ? '#f59e0b' : '#ef4444'}; font-weight: bold;">
+                ${summary.npsScore}
+              </span>
+              <span style="font-size: 12px; color: #64748b;">
+                (${summary.npsScore >= 50 ? 'Excellent' : summary.npsScore >= 0 ? 'Good' : 'Needs Improvement'})
+              </span>
+            </p>
+          ` : ''}
         </div>
       ` : ''}
 
@@ -208,13 +284,18 @@ export async function GET(request: NextRequest) {
         <h3>Upcoming Retreats (Next 30 Days)</h3>
         <div class="highlight-box">
           ${summary.upcomingRetreats.map(r => `
-            <p>
-              <strong>${escapeHtml(r.destination)}</strong> -
-              ${new Date(r.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}<br>
+            <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+              <p style="margin: 0 0 8px 0;">
+                <strong>${escapeHtml(r.destination)}</strong> -
+                ${new Date(r.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </p>
+              <div style="background: #f1f5f9; border-radius: 4px; height: 8px; overflow: hidden; margin-bottom: 8px;">
+                <div style="background: ${r.occupancyRate >= 80 ? '#22c55e' : r.occupancyRate >= 50 ? '#f59e0b' : '#3b82f6'}; height: 100%; width: ${r.occupancyRate}%;"></div>
+              </div>
               <span style="color: #64748b; font-size: 14px;">
-                ${r.bookingsCount} bookings | ${r.spotsRemaining} spots remaining
+                ${r.occupancyRate}% booked | ${r.spotsRemaining} of ${r.totalCapacity} spots remaining
               </span>
-            </p>
+            </div>
           `).join('')}
         </div>
       ` : `

@@ -16,6 +16,12 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const slug = searchParams.get('slug')
 
+    // New pagination params
+    const page = parseInt(searchParams.get('page') || '1')
+    const pageSize = parseInt(searchParams.get('pageSize') || '25')
+    const sort = searchParams.get('sort') || 'published_at'
+    const order = searchParams.get('order') || 'desc'
+
     let query = supabase
       .from('blog_posts')
       .select(`
@@ -23,7 +29,12 @@ export async function GET(request: NextRequest) {
         category:blog_categories(*)
       `, { count: 'exact' })
       .is('deleted_at', null)
-      .order('published_at', { ascending: false, nullsFirst: false })
+
+    // Sorting
+    const validSortColumns = ['published_at', 'created_at', 'title', 'views']
+    const sortColumn = validSortColumns.includes(sort) ? sort : 'published_at'
+    const ascending = order === 'asc'
+    query = query.order(sortColumn, { ascending, nullsFirst: false })
 
     // Filter by slug (for single post lookup)
     if (slug) {
@@ -31,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter by status
-    if (status) {
+    if (status && status !== 'all') {
       query = query.eq('status', status)
     }
 
@@ -54,12 +65,17 @@ export async function GET(request: NextRequest) {
       query = query.or(`title.ilike.%${search}%,excerpt.ilike.%${search}%`)
     }
 
-    // Pagination
-    if (limit) {
+    // Pagination - prefer new page/pageSize params
+    if (searchParams.has('page')) {
+      const from = (page - 1) * pageSize
+      const to = from + pageSize - 1
+      query = query.range(from, to)
+    } else if (limit) {
+      // Legacy pagination support
       query = query.limit(parseInt(limit))
-    }
-    if (offset) {
-      query = query.range(parseInt(offset), parseInt(offset) + (parseInt(limit || '10') - 1))
+      if (offset) {
+        query = query.range(parseInt(offset), parseInt(offset) + (parseInt(limit || '10') - 1))
+      }
     }
 
     const { data, error, count } = await query
@@ -72,9 +88,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const total = count || 0
+    const totalPages = Math.ceil(total / pageSize)
+
     return NextResponse.json({
       data: data as BlogPost[],
-      count: count || 0
+      count: total,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages,
+      }
     })
   } catch (error) {
     console.error('Error fetching blog posts:', error)

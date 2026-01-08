@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/feedback - Get feedback for admin (admin only)
-export async function GET() {
+export async function GET(request: NextRequest) {
   // Check admin authentication
   const { user, isAdmin } = await checkAdminAuth()
   if (!user) {
@@ -94,23 +94,101 @@ export async function GET() {
   }
 
   try {
+    const { searchParams } = new URL(request.url)
+
+    // Pagination
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
+
+    // Filters
+    const retreatId = searchParams.get('retreatId')
+    const minRating = searchParams.get('minRating')
+    const dateFrom = searchParams.get('dateFrom')
+    const dateTo = searchParams.get('dateTo')
+    const search = searchParams.get('search')
+
+    // Sorting
+    const sortBy = searchParams.get('sortBy') || 'created_at'
+    const sortOrder = searchParams.get('sortOrder') || 'desc'
+
+    // Validate sortBy field
+    const allowedSortFields = ['created_at', 'overall_rating', 'recommend_score']
+    const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'created_at'
+
     const supabase = getSupabase()
 
-    const { data, error } = await supabase
+    // Build query
+    let query = supabase
       .from('retreat_feedback')
       .select(`
         *,
-        booking:bookings(first_name, last_name),
+        booking:bookings(first_name, last_name, email),
         retreat:retreats(destination)
-      `)
-      .order('created_at', { ascending: false })
+      `, { count: 'exact' })
+
+    // Apply filters
+    if (retreatId && retreatId !== 'all') {
+      query = query.eq('retreat_id', retreatId)
+    }
+
+    if (minRating) {
+      const rating = parseInt(minRating)
+      if (!isNaN(rating) && rating >= 1 && rating <= 5) {
+        query = query.gte('overall_rating', rating)
+      }
+    }
+
+    if (dateFrom) {
+      query = query.gte('created_at', dateFrom)
+    }
+
+    if (dateTo) {
+      // Add time to include the entire day
+      query = query.lte('created_at', `${dateTo}T23:59:59.999Z`)
+    }
+
+    // Apply sorting and pagination
+    query = query
+      .order(validSortBy, { ascending: sortOrder === 'asc' })
+      .range((page - 1) * limit, page * limit - 1)
+
+    const { data, error, count } = await query
 
     if (error) {
       console.error('Feedback fetch error:', error)
       return NextResponse.json({ error: 'Failed to fetch feedback' }, { status: 500 })
     }
 
-    return NextResponse.json({ data })
+    // Apply search filter in-memory (for name/email search across joined tables)
+    let filteredData = data || []
+    if (search && search.trim()) {
+      const searchLower = search.toLowerCase().trim()
+      filteredData = filteredData.filter(entry => {
+        const firstName = (entry.booking?.first_name || '').toLowerCase()
+        const lastName = (entry.booking?.last_name || '').toLowerCase()
+        const email = (entry.booking?.email || entry.email || '').toLowerCase()
+        const destination = (entry.retreat?.destination || '').toLowerCase()
+
+        return firstName.includes(searchLower) ||
+               lastName.includes(searchLower) ||
+               email.includes(searchLower) ||
+               destination.includes(searchLower) ||
+               `${firstName} ${lastName}`.includes(searchLower)
+      })
+    }
+
+    const total = count || 0
+    const totalPages = Math.ceil(total / limit)
+
+    return NextResponse.json({
+      data: filteredData,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      }
+    })
   } catch (error) {
     console.error('Feedback error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

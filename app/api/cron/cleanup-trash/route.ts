@@ -63,13 +63,31 @@ export async function GET(request: NextRequest) {
     const retreatsCount = deletedRetreats?.length || 0
     const postsCount = deletedPosts?.length || 0
 
-    console.log(`[Cron] Cleanup complete: ${retreatsCount} retreats, ${postsCount} posts`)
+    // Delete old email audit logs (older than 3 years)
+    const emailLogCutoffDate = new Date()
+    emailLogCutoffDate.setFullYear(emailLogCutoffDate.getFullYear() - 3)
+    const emailLogCutoffISO = emailLogCutoffDate.toISOString()
+
+    const { data: deletedEmailLogs, error: emailLogError } = await supabase
+      .from('email_audit_log')
+      .delete()
+      .lt('created_at', emailLogCutoffISO)
+      .select('id')
+
+    if (emailLogError) {
+      console.error('[Cron] Error deleting email logs:', emailLogError)
+    }
+
+    const emailLogsCount = deletedEmailLogs?.length || 0
+
+    console.log(`[Cron] Cleanup complete: ${retreatsCount} retreats, ${postsCount} posts, ${emailLogsCount} email logs`)
 
     return NextResponse.json({
       success: true,
       deleted_retreats: retreatsCount,
       deleted_blog_posts: postsCount,
-      message: `Permanently deleted ${retreatsCount} retreats and ${postsCount} blog posts`
+      deleted_email_logs: emailLogsCount,
+      message: `Permanently deleted ${retreatsCount} retreats, ${postsCount} blog posts, ${emailLogsCount} email logs (>3 years old)`
     })
   } catch (error) {
     console.error('[Cron] Cleanup error:', error)

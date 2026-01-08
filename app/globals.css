@@ -241,6 +241,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
+    font-optical-sizing: auto;
   }
 
   h1 {
@@ -287,6 +288,12 @@
 }
 
 @layer utilities {
+  /* Typography utilities */
+  .font-heading {
+    font-family: var(--font-heading);
+    font-optical-sizing: auto;
+  }
+
   .bg-gradient-ocean {
     background: linear-gradient(135deg, var(--primary-teal) 0%, var(--primary-teal-light) 100%);
   }

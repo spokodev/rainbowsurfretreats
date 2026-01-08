@@ -1,112 +1,138 @@
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+'use client'
+
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import Link from 'next/link'
+import { Plus, Loader2, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/server";
-import { checkAdminAuth } from "@/lib/settings";
-import { BookingsTable } from "@/components/admin/bookings-table";
+} from '@/components/ui/card'
+import { useAdminTableState } from '@/hooks/use-admin-table-state'
+import {
+  AdminPagination,
+  AdminSearchInput,
+  AdminStatusFilter,
+  AdminFilterBar,
+  AdminDateRangeFilter,
+  type StatusOption,
+} from '@/components/admin/table'
+import { BookingsTableWithSort } from '@/components/admin/bookings-table-with-sort'
 
 interface Booking {
-  id: string;
-  booking_number: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  guests_count: number;
-  total_amount: number;
-  deposit_amount: number;
-  balance_due: number;
-  status: string;
-  payment_status: string;
-  check_in_date: string;
-  check_out_date: string;
-  created_at: string;
-  language?: string;
+  id: string
+  booking_number: string
+  first_name: string
+  last_name: string
+  email: string
+  guests_count: number
+  total_amount: number
+  deposit_amount: number
+  balance_due: number
+  status: string
+  payment_status: string
+  check_in_date: string
+  check_out_date: string
+  created_at: string
+  language?: string
   retreat: {
-    destination: string;
-  } | null;
+    id: string
+    destination: string
+  } | null
   room: {
-    name: string;
-  } | null;
+    name: string
+  } | null
 }
 
-async function getBookings(): Promise<{
-  bookings: Booking[];
+interface BookingsResponse {
+  data: Booking[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
+  }
   stats: {
-    confirmed: number;
-    pending: number;
-    cancelled: number;
-    total: number;
-  };
-}> {
-  const supabase = await createClient();
-
-  const { data: bookings, error } = await supabase
-    .from("bookings")
-    .select(
-      `
-      id,
-      booking_number,
-      first_name,
-      last_name,
-      email,
-      guests_count,
-      total_amount,
-      deposit_amount,
-      balance_due,
-      status,
-      payment_status,
-      check_in_date,
-      check_out_date,
-      created_at,
-      language,
-      retreat:retreats(destination),
-      room:retreat_rooms(name)
-    `
-    )
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Error fetching bookings:", error);
-    return {
-      bookings: [],
-      stats: { confirmed: 0, pending: 0, cancelled: 0, total: 0 },
-    };
+    confirmed: number
+    pending: number
+    cancelled: number
+    total: number
   }
-
-  // Transform Supabase response to match Booking type
-  // Supabase returns joined tables as arrays, we need to extract first item
-  const bookingsList = (bookings || []).map((b) => ({
-    ...b,
-    retreat: Array.isArray(b.retreat) ? b.retreat[0] : b.retreat,
-    room: Array.isArray(b.room) ? b.room[0] : b.room,
-  })) as Booking[];
-
-  const stats = {
-    confirmed: bookingsList.filter((b) => b.status === "confirmed").length,
-    pending: bookingsList.filter((b) => b.status === "pending").length,
-    cancelled: bookingsList.filter((b) => b.status === "cancelled").length,
-    total: bookingsList.length,
-  };
-
-  return { bookings: bookingsList, stats };
 }
 
-export default async function AdminBookingsPage() {
-  // Server-side auth check (defense in depth - middleware also checks)
-  const { isAdmin } = await checkAdminAuth();
-  if (!isAdmin) {
-    redirect("/");
-  }
+const STATUS_OPTIONS: StatusOption[] = [
+  { value: 'confirmed', label: 'Confirmed' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'cancelled', label: 'Cancelled' },
+]
 
-  const { bookings, stats } = await getBookings();
+const PAYMENT_STATUS_OPTIONS: StatusOption[] = [
+  { value: 'paid', label: 'Paid' },
+  { value: 'deposit', label: 'Deposit' },
+  { value: 'unpaid', label: 'Unpaid' },
+  { value: 'refunded', label: 'Refunded' },
+]
+
+function BookingsPageContent() {
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [stats, setStats] = useState({ confirmed: 0, pending: 0, cancelled: 0, total: 0 })
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 25,
+    total: 0,
+    totalPages: 0,
+  })
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const tableState = useAdminTableState({
+    defaultPageSize: 25,
+    defaultSortBy: 'created_at',
+    defaultSortOrder: 'desc',
+    filterKeys: ['status', 'paymentStatus', 'retreatId', 'dateFrom', 'dateTo'],
+  })
+
+  const fetchBookings = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const params = new URLSearchParams()
+      params.set('page', tableState.page.toString())
+      params.set('pageSize', tableState.pageSize.toString())
+      if (tableState.search) params.set('search', tableState.search)
+      if (tableState.sortBy) params.set('sort', tableState.sortBy)
+      if (tableState.sortOrder) params.set('order', tableState.sortOrder)
+
+      // Add filters
+      Object.entries(tableState.filters).forEach(([key, value]) => {
+        if (value && value !== 'all') {
+          params.set(key, value)
+        }
+      })
+
+      const response = await fetch(`/api/admin/bookings?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch bookings')
+      }
+
+      const data: BookingsResponse = await response.json()
+      setBookings(data.data)
+      setPagination(data.pagination)
+      setStats(data.stats)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [tableState.page, tableState.pageSize, tableState.search, tableState.sortBy, tableState.sortOrder, tableState.filters])
+
+  useEffect(() => {
+    fetchBookings()
+  }, [fetchBookings])
 
   return (
     <div className="space-y-8">
@@ -117,12 +143,17 @@ export default async function AdminBookingsPage() {
             Manage guest bookings and reservations
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/bookings/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Booking
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={fetchBookings} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button asChild>
+            <Link href="/admin/bookings/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Booking
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Summary */}
@@ -158,19 +189,116 @@ export default async function AdminBookingsPage() {
           <CardTitle>All Bookings</CardTitle>
           <CardDescription>View and manage all guest reservations</CardDescription>
         </CardHeader>
-        <CardContent>
-          {bookings.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">No bookings found</p>
-              <Button asChild>
-                <Link href="/admin/bookings/new">Create your first booking</Link>
-              </Button>
+        <CardContent className="space-y-4">
+          {/* Search and Filters */}
+          <div className="space-y-4">
+            <AdminSearchInput
+              value={tableState.search}
+              onChange={tableState.setSearch}
+              placeholder="Search by booking #, name, or email..."
+              className="max-w-sm"
+            />
+
+            <AdminFilterBar
+              hasActiveFilters={tableState.hasActiveFilters}
+              onReset={tableState.resetFilters}
+            >
+              <AdminStatusFilter
+                value={tableState.filters.status || 'all'}
+                onChange={(value) => tableState.setFilter('status', value)}
+                options={STATUS_OPTIONS}
+                placeholder="Status"
+                className="w-[140px]"
+              />
+              <AdminStatusFilter
+                value={tableState.filters.paymentStatus || 'all'}
+                onChange={(value) => tableState.setFilter('paymentStatus', value)}
+                options={PAYMENT_STATUS_OPTIONS}
+                placeholder="Payment"
+                className="w-[140px]"
+              />
+              <AdminDateRangeFilter
+                fromValue={tableState.filters.dateFrom || null}
+                toValue={tableState.filters.dateTo || null}
+                onFromChange={(value) => tableState.setFilter('dateFrom', value)}
+                onToChange={(value) => tableState.setFilter('dateTo', value)}
+                fromPlaceholder="Check-in from"
+                toPlaceholder="Check-in to"
+              />
+            </AdminFilterBar>
+          </div>
+
+          {/* Error State */}
+          {error && (
+            <div className="text-center py-8">
+              <p className="text-red-500 mb-4">{error}</p>
+              <Button onClick={fetchBookings}>Try again</Button>
             </div>
-          ) : (
-            <BookingsTable bookings={bookings} />
+          )}
+
+          {/* Loading State */}
+          {isLoading && !error && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!isLoading && !error && bookings.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-4">
+                {tableState.hasActiveFilters
+                  ? 'No bookings match your filters'
+                  : 'No bookings found'}
+              </p>
+              {tableState.hasActiveFilters ? (
+                <Button variant="outline" onClick={tableState.resetFilters}>
+                  Clear filters
+                </Button>
+              ) : (
+                <Button asChild>
+                  <Link href="/admin/bookings/new">Create your first booking</Link>
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Table */}
+          {!isLoading && !error && bookings.length > 0 && (
+            <>
+              <BookingsTableWithSort
+                bookings={bookings}
+                sortBy={tableState.sortBy}
+                sortOrder={tableState.sortOrder}
+                onSort={tableState.setSort}
+              />
+
+              <AdminPagination
+                page={pagination.page}
+                pageSize={pagination.pageSize}
+                total={pagination.total}
+                totalPages={pagination.totalPages}
+                onPageChange={tableState.setPage}
+                onPageSizeChange={(size) => tableState.updateParams({ pageSize: size.toString(), page: null })}
+              />
+            </>
           )}
         </CardContent>
       </Card>
     </div>
-  );
+  )
+}
+
+export default function AdminBookingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <BookingsPageContent />
+    </Suspense>
+  )
 }

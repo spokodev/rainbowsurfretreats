@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
   Plus,
@@ -47,6 +48,32 @@ import {
 } from '@/components/ui/alert-dialog'
 import { toast } from 'sonner'
 import type { BlogPost, BlogStatus } from '@/lib/types/database'
+import {
+  AdminPagination,
+  AdminSearchInput,
+  AdminStatusFilter,
+  AdminFilterBar,
+  AdminSortHeader,
+  type StatusOption,
+} from '@/components/admin/table'
+import type { SortOrder } from '@/hooks/use-admin-table-state'
+
+interface BlogPostsResponse {
+  data: BlogPost[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
+  }
+}
+
+const STATUS_OPTIONS: StatusOption[] = [
+  { value: 'published', label: 'Published' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'archived', label: 'Archived' },
+]
 
 const getStatusBadgeVariant = (status: BlogStatus): 'default' | 'secondary' | 'outline' => {
   switch (status) {
@@ -76,30 +103,95 @@ const getStatusIcon = (status: BlogStatus) => {
   }
 }
 
-export default function AdminBlogPage() {
+function BlogPageContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  // Parse state from URL
+  const page = Number(searchParams.get('page')) || 1
+  const pageSize = Number(searchParams.get('pageSize')) || 25
+  const search = searchParams.get('search') || ''
+  const status = searchParams.get('status') || ''
+  const sortBy = searchParams.get('sort') || 'published_at'
+  const sortOrder = (searchParams.get('order') || 'desc') as SortOrder
+
   const [posts, setPosts] = useState<BlogPost[]>([])
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 25,
+    total: 0,
+    totalPages: 0,
+  })
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null)
 
+  // Update URL params
+  const updateParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString())
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === '' || value === 'all') {
+          params.delete(key)
+        } else {
+          params.set(key, value)
+        }
+      })
+      router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    },
+    [searchParams, router, pathname]
+  )
+
+  const hasActiveFilters = !!status || !!search
+
+  const resetFilters = useCallback(() => {
+    updateParams({
+      search: null,
+      status: null,
+      page: null,
+    })
+  }, [updateParams])
+
+  const handleSort = useCallback(
+    (column: string) => {
+      if (sortBy === column) {
+        updateParams({ order: sortOrder === 'asc' ? 'desc' : 'asc', page: null })
+      } else {
+        updateParams({ sort: column, order: 'desc', page: null })
+      }
+    },
+    [sortBy, sortOrder, updateParams]
+  )
+
   const fetchPosts = useCallback(async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/blog/posts')
-      const result = await response.json()
+
+      const params = new URLSearchParams()
+      params.set('page', page.toString())
+      params.set('pageSize', pageSize.toString())
+      if (search) params.set('search', search)
+      if (status) params.set('status', status)
+      if (sortBy) params.set('sort', sortBy)
+      if (sortOrder) params.set('order', sortOrder)
+
+      const response = await fetch(`/api/blog/posts?${params.toString()}`)
+      const result: BlogPostsResponse = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch posts')
+        throw new Error('Failed to fetch posts')
       }
 
       setPosts(result.data || [])
+      setPagination(result.pagination)
     } catch (error) {
       console.error('Fetch error:', error)
       toast.error('Failed to load posts')
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [page, pageSize, search, status, sortBy, sortOrder])
 
   useEffect(() => {
     fetchPosts()
@@ -141,7 +233,6 @@ export default function AdminBlogPage() {
       }
 
       toast.success('Post duplicated successfully')
-      // Refresh the list to show the new post
       fetchPosts()
     } catch (error) {
       console.error('Duplicate error:', error)
@@ -235,153 +326,227 @@ export default function AdminBlogPage() {
             Manage your blog content and articles
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Search and Filters */}
+          <div className="space-y-4">
+            <AdminSearchInput
+              value={search}
+              onChange={(value) => updateParams({ search: value || null, page: null })}
+              placeholder="Search by title or excerpt..."
+              className="max-w-sm"
+            />
+
+            <AdminFilterBar hasActiveFilters={hasActiveFilters} onReset={resetFilters}>
+              <AdminStatusFilter
+                value={status || 'all'}
+                onChange={(value) => updateParams({ status: value, page: null })}
+                options={STATUS_OPTIONS}
+                placeholder="Status"
+                className="w-[140px]"
+              />
+            </AdminFilterBar>
+          </div>
+
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : posts.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">No posts found</p>
-              <Button asChild>
-                <Link href="/admin/blog/new">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Write your first post
-                </Link>
-              </Button>
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-4">
+                {hasActiveFilters ? 'No posts match your filters' : 'No posts found'}
+              </p>
+              {hasActiveFilters ? (
+                <Button variant="outline" onClick={resetFilters}>
+                  Clear filters
+                </Button>
+              ) : (
+                <Button asChild>
+                  <Link href="/admin/blog/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Write your first post
+                  </Link>
+                </Button>
+              )}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Author</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Views</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {posts.map((post) => (
-                  <TableRow key={post.id}>
-                    <TableCell>
-                      <div className="max-w-[300px]">
-                        <div className="font-medium truncate">{post.title}</div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          /{post.slug}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span>{post.author_name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {post.category ? (
-                        <span
-                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                          style={{ backgroundColor: post.category.color + '20', color: post.category.color }}
-                        >
-                          {post.category.name}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(post.status)}>
-                        {getStatusIcon(post.status)}
-                        {post.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {post.published_at ? (
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>{formatDate(post.published_at)}</span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                        <span>{post.views.toLocaleString()}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/blog/${post.slug}`} target="_blank">
-                            <Eye className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/admin/blog/${post.id}/edit`}>
-                            <Pencil className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDuplicate(post.id)}
-                          disabled={isDuplicating === post.id}
-                          title="Duplicate post"
-                        >
-                          {isDuplicating === post.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                              disabled={isDeleting === post.id}
-                            >
-                              {isDeleting === post.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Move to Trash?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will move &quot;{post.title}&quot; to trash.
-                                You can restore it within 30 days or delete it permanently from the Trash page.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(post.id)}
-                                className="bg-red-500 hover:bg-red-600"
-                              >
-                                Move to Trash
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <AdminSortHeader
+                      column="title"
+                      label="Title"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      onSort={handleSort}
+                    />
+                    <TableHead>Author</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Status</TableHead>
+                    <AdminSortHeader
+                      column="published_at"
+                      label="Date"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      onSort={handleSort}
+                    />
+                    <AdminSortHeader
+                      column="views"
+                      label="Views"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      onSort={handleSort}
+                    />
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {posts.map((post) => (
+                    <TableRow key={post.id}>
+                      <TableCell>
+                        <div className="max-w-[300px]">
+                          <div className="font-medium truncate">{post.title}</div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            /{post.slug}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span>{post.author_name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {post.category ? (
+                          <span
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                            style={{ backgroundColor: post.category.color + '20', color: post.category.color }}
+                          >
+                            {post.category.name}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(post.status)}>
+                          {getStatusIcon(post.status)}
+                          {post.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {post.published_at ? (
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span>{formatDate(post.published_at)}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                          <span>{post.views.toLocaleString()}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/blog/${post.slug}`} target="_blank">
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/admin/blog/${post.id}/edit`}>
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDuplicate(post.id)}
+                            disabled={isDuplicating === post.id}
+                            title="Duplicate post"
+                          >
+                            {isDuplicating === post.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                disabled={isDeleting === post.id}
+                              >
+                                {isDeleting === post.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Move to Trash?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will move &quot;{post.title}&quot; to trash.
+                                  You can restore it within 30 days or delete it permanently from the Trash page.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(post.id)}
+                                  className="bg-red-500 hover:bg-red-600"
+                                >
+                                  Move to Trash
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Pagination */}
+              <AdminPagination
+                page={pagination.page}
+                pageSize={pagination.pageSize}
+                total={pagination.total}
+                totalPages={pagination.totalPages}
+                onPageChange={(newPage) => updateParams({ page: newPage.toString() })}
+                onPageSizeChange={(size) =>
+                  updateParams({ pageSize: size.toString(), page: null })
+                }
+              />
+            </>
           )}
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function AdminBlogPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <BlogPageContent />
+    </Suspense>
   )
 }

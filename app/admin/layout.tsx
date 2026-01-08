@@ -18,6 +18,8 @@ import {
   ScrollText,
   Tag,
   Users,
+  Mail,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +37,8 @@ const navItems = [
   { href: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
   { href: "/admin/waitlist", label: "Waitlist", icon: Users },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
+  { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
+  { href: "/admin/email-logs", label: "Email Logs", icon: Mail },
   { href: "/admin/promo-codes", label: "Promo Codes", icon: Tag },
   { href: "/admin/blog", label: "Blog", icon: FileText },
   { href: "/admin/policies", label: "Policies", icon: ScrollText },
