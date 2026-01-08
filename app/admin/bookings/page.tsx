@@ -1,13 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import {
-  Plus,
-  Eye,
-  Mail,
-  Calendar,
-  User,
-  MapPin,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,17 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import { checkAdminAuth } from "@/lib/settings";
+import { BookingsTable } from "@/components/admin/bookings-table";
 
 interface Booking {
   id: string;
@@ -43,6 +28,7 @@ interface Booking {
   check_in_date: string;
   check_out_date: string;
   created_at: string;
+  language?: string;
   retreat: {
     destination: string;
   } | null;
@@ -80,6 +66,7 @@ async function getBookings(): Promise<{
       check_in_date,
       check_out_date,
       created_at,
+      language,
       retreat:retreats(destination),
       room:retreat_rooms(name)
     `
@@ -111,34 +98,6 @@ async function getBookings(): Promise<{
 
   return { bookings: bookingsList, stats };
 }
-
-const getStatusBadgeVariant = (status: string) => {
-  switch (status) {
-    case "confirmed":
-      return "default";
-    case "pending":
-      return "secondary";
-    case "cancelled":
-      return "destructive";
-    default:
-      return "outline";
-  }
-};
-
-const getPaymentBadgeVariant = (status: string) => {
-  switch (status) {
-    case "paid":
-      return "default";
-    case "deposit":
-      return "secondary";
-    case "unpaid":
-      return "outline";
-    case "refunded":
-      return "destructive";
-    default:
-      return "outline";
-  }
-};
 
 export default async function AdminBookingsPage() {
   // Server-side auth check (defense in depth - middleware also checks)
@@ -208,115 +167,7 @@ export default async function AdminBookingsPage() {
               </Button>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Booking ID</TableHead>
-                  <TableHead>Guest</TableHead>
-                  <TableHead>Retreat</TableHead>
-                  <TableHead>Room</TableHead>
-                  <TableHead>Dates</TableHead>
-                  <TableHead>Guests</TableHead>
-                  <TableHead className="text-right">Paid</TableHead>
-                  <TableHead className="text-right">Balance</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {bookings.map((booking) => (
-                  <TableRow key={booking.id}>
-                    <TableCell className="font-mono text-sm">
-                      {booking.booking_number}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            {booking.first_name} {booking.last_name}
-                          </span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {booking.email}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{booking.retreat?.destination || "N/A"}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{booking.room?.name || "Standard"}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <div className="text-sm">
-                          <div>
-                            {new Date(booking.check_in_date).toLocaleDateString(
-                              "en-US",
-                              { month: "short", day: "numeric" }
-                            )}
-                          </div>
-                          <div className="text-muted-foreground">
-                            to{" "}
-                            {new Date(booking.check_out_date).toLocaleDateString(
-                              "en-US",
-                              { month: "short", day: "numeric" }
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{booking.guests_count}</TableCell>
-                    <TableCell className="text-right">
-                      <span className="text-green-600 font-medium">
-                        €{booking.deposit_amount?.toFixed(2) || "0.00"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className={booking.balance_due > 0 ? "text-orange-600 font-medium" : "text-muted-foreground"}>
-                        €{booking.balance_due?.toFixed(2) || "0.00"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className="font-semibold">
-                        €{booking.total_amount?.toFixed(2)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(booking.status)}>
-                        {booking.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={getPaymentBadgeVariant(booking.payment_status)}
-                      >
-                        {booking.payment_status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/admin/bookings/${booking.id}`}>
-                            <Eye className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        <Button variant="ghost" size="icon" asChild>
-                          <a href={`mailto:${booking.email}`}>
-                            <Mail className="h-4 w-4" />
-                          </a>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <BookingsTable bookings={bookings} />
           )}
         </CardContent>
       </Card>

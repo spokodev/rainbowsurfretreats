@@ -17,6 +17,7 @@ import {
   Trash2,
   ScrollText,
   Tag,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,11 +27,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Toaster } from "@/components/ui/sonner";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/retreats", label: "Retreats", icon: Palmtree },
   { href: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
+  { href: "/admin/waitlist", label: "Waitlist", icon: Users },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/promo-codes", label: "Promo Codes", icon: Tag },
   { href: "/admin/blog", label: "Blog", icon: FileText },
@@ -108,6 +111,7 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <Toaster />
       {/* Desktop Sidebar */}
       <Sidebar className="fixed left-0 top-0 z-40 hidden h-screen w-64 md:block" />
 
