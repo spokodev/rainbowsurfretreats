@@ -431,13 +431,38 @@ export default function BlogPostPage() {
               Share this article
             </h3>
             <div className="flex gap-3">
-              <Button variant="outline" size="icon" className="rounded-full">
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full"
+                onClick={() => {
+                  const url = encodeURIComponent(window.location.href)
+                  window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=600,height=400')
+                }}
+              >
                 <Facebook className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="icon" className="rounded-full">
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full"
+                onClick={() => {
+                  const url = encodeURIComponent(window.location.href)
+                  const text = encodeURIComponent(post.title)
+                  window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank', 'width=600,height=400')
+                }}
+              >
                 <Twitter className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="icon" className="rounded-full">
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full"
+                onClick={() => {
+                  const url = encodeURIComponent(window.location.href)
+                  window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank', 'width=600,height=400')
+                }}
+              >
                 <Linkedin className="w-4 h-4" />
               </Button>
             </div>

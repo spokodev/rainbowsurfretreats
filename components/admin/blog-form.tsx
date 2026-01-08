@@ -22,6 +22,7 @@ import {
 import { toast } from 'sonner'
 import ImageUpload from './image-upload'
 import BlogEditor from './blog-editor'
+import { TranslateButton } from './translate-button'
 import type { BlogPost, BlogCategory, BlogStatus } from '@/lib/types/database'
 
 // Validation schema
@@ -252,7 +253,13 @@ export function BlogForm({ post, isEdit = false }: BlogFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="meta_description">Meta Description</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="meta_description">Meta Description</Label>
+                  <TranslateButton
+                    text={watch('meta_description') || ''}
+                    onTranslated={(text) => setValue('meta_description', text)}
+                  />
+                </div>
                 <Textarea
                   id="meta_description"
                   {...register('meta_description')}
@@ -410,7 +417,13 @@ export function BlogForm({ post, isEdit = false }: BlogFormProps) {
           {/* Excerpt */}
           <Card>
             <CardHeader>
-              <CardTitle>Excerpt</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Excerpt</CardTitle>
+                <TranslateButton
+                  text={watch('excerpt') || ''}
+                  onTranslated={(text) => setValue('excerpt', text)}
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <Textarea

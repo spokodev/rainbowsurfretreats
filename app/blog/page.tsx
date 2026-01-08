@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Search, ArrowRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
@@ -11,10 +11,13 @@ import { blogPosts, blogCategories } from '@/lib/blog-data'
 import ImageWithFallback from '@/components/ImageWithFallback'
 import { BLOG_IMAGES } from '@/lib/images'
 
+const POSTS_PER_PAGE = 6
+
 export default function BlogPage() {
   const t = useTranslations('blog')
   const [activeCategory, setActiveCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE)
 
   const getCategoryLabel = (slug: string) => {
     const categoryMap: Record<string, string> = {
@@ -49,6 +52,18 @@ export default function BlogPage() {
 
     return posts
   }, [activeCategory, searchQuery])
+
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(POSTS_PER_PAGE)
+  }, [activeCategory, searchQuery])
+
+  const visiblePosts = filteredPosts.slice(0, visibleCount)
+  const hasMorePosts = filteredPosts.length > visibleCount
+
+  const handleLoadMore = () => {
+    setVisibleCount(prev => prev + POSTS_PER_PAGE)
+  }
 
   return (
     <div className="min-h-screen">
@@ -109,9 +124,9 @@ export default function BlogPage() {
           </Tabs>
 
           {/* Blog Grid */}
-          {filteredPosts.length > 0 ? (
+          {visiblePosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {filteredPosts.map((post) => (
+              {visiblePosts.map((post) => (
                 <BlogCard key={post.id} post={post} />
               ))}
             </div>
@@ -133,12 +148,13 @@ export default function BlogPage() {
           )}
 
           {/* Load More Button */}
-          {filteredPosts.length > 0 && (
+          {hasMorePosts && (
             <div className="text-center mt-12">
               <Button
                 variant="outline"
                 size="lg"
                 className="px-8 border-[var(--primary-teal)] text-[var(--primary-teal)] hover:bg-[var(--primary-teal)] hover:text-white"
+                onClick={handleLoadMore}
               >
                 {t('loadMore')}
                 <ArrowRight className="ml-2 w-4 h-4" />
