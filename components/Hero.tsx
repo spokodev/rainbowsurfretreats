@@ -97,11 +97,6 @@ export default function Hero() {
             <Logo variant="light" className="w-full h-auto" />
           </div>
 
-          {/* Main Heading */}
-          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-white">
-            {t('title')}
-          </h1>
-
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

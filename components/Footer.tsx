@@ -71,7 +71,7 @@ export default function Footer() {
 
   const legalLinks = [
     { href: '/policies', labelKey: 'policies' },
-    { href: '/privacy', labelKey: 'privacyPolicy' },
+    { href: '/privacy-policy', labelKey: 'privacyPolicy' },
     { href: '/terms', labelKey: 'termsOfService' },
   ];
 
@@ -168,7 +168,7 @@ export default function Footer() {
             </p>
             <div className="flex items-center space-x-6">
               <Link
-                href="/privacy"
+                href="/privacy-policy"
                 className="text-sm text-gray-500 hover:text-white transition-colors"
               >
                 {t('privacy')}

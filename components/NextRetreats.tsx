@@ -17,6 +17,7 @@ import {
   Utensils,
   Waves,
   Tag,
+  Bell,
 } from "lucide-react";
 
 interface RetreatRoom {
@@ -220,9 +221,24 @@ export default function NextRetreats() {
                 </CardContent>
 
                 <CardFooter className="pt-0">
-                  <Button asChild className="w-full">
-                    <Link href={`/retreats/${retreat.slug}`}>Book Now</Link>
-                  </Button>
+                  {(() => {
+                    const { isSoldOut } = getLowestAvailablePrice(retreat);
+                    if (isSoldOut) {
+                      return (
+                        <Button asChild className="w-full border-amber-500 text-amber-600 hover:bg-amber-50" variant="outline">
+                          <Link href={`/retreats/${retreat.slug}`}>
+                            <Bell className="w-4 h-4 mr-2" />
+                            {t('joinWaitlist')}
+                          </Link>
+                        </Button>
+                      );
+                    }
+                    return (
+                      <Button asChild className="w-full">
+                        <Link href={`/retreats/${retreat.slug}`}>{t('bookNow')}</Link>
+                      </Button>
+                    );
+                  })()}
                 </CardFooter>
               </Card>
             </motion.div>
