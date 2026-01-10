@@ -15,6 +15,7 @@ import {
   Download,
   Clock,
   AlertTriangle,
+  FileText,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -33,6 +34,17 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import {
   AdminPagination,
   AdminSearchInput,
@@ -230,6 +242,16 @@ function EmailLogsPageContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Email preview modal state
+  const [previewEmail, setPreviewEmail] = useState<{
+    id: string
+    subject: string
+    htmlContent: string | null
+    status: string
+    errorMessage: string | null
+  } | null>(null)
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false)
+
   // Update URL params
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -316,6 +338,36 @@ function EmailLogsPageContent() {
     }
   }, [])
 
+  // Fetch email content for preview
+  const fetchEmailPreview = useCallback(async (emailId: string, subject: string) => {
+    setIsLoadingPreview(true)
+    try {
+      const res = await fetch(`/api/admin/email-logs/${emailId}`)
+      if (!res.ok) {
+        throw new Error('Failed to fetch email content')
+      }
+      const data = await res.json()
+      setPreviewEmail({
+        id: emailId,
+        subject,
+        htmlContent: data.data?.html_content || null,
+        status: data.data?.status || 'sent',
+        errorMessage: data.data?.error_message || null,
+      })
+    } catch (err) {
+      console.error('Error fetching email preview:', err)
+      setPreviewEmail({
+        id: emailId,
+        subject,
+        htmlContent: null,
+        status: 'failed',
+        errorMessage: 'Failed to load email details',
+      })
+    } finally {
+      setIsLoadingPreview(false)
+    }
+  }, [])
+
   useEffect(() => {
     fetchLogs()
     fetchStats()
@@ -362,7 +414,7 @@ function EmailLogsPageContent() {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -371,7 +423,7 @@ function EmailLogsPageContent() {
             <Mail className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-2xl font-bold tabular-nums">{stats.total}</div>
             <p className="text-xs text-muted-foreground">All emails</p>
           </CardContent>
         </Card>
@@ -383,7 +435,7 @@ function EmailLogsPageContent() {
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold tabular-nums text-green-600">
               {stats.delivered}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -399,7 +451,7 @@ function EmailLogsPageContent() {
             <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">
+            <div className="text-2xl font-bold tabular-nums text-destructive">
               {stats.failed}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -415,7 +467,7 @@ function EmailLogsPageContent() {
             <Eye className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold tabular-nums text-blue-600">
               {stats.opened}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -429,9 +481,11 @@ function EmailLogsPageContent() {
       <Card>
         <CardHeader>
           <CardTitle>Email Activity</CardTitle>
-          <CardDescription>
-            Showing {logs.length} of {pagination.total} emails
-          </CardDescription>
+          {pagination.total > 0 && (
+            <CardDescription>
+              Showing {logs.length} of {pagination.total} emails
+            </CardDescription>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Search and Filters */}
@@ -481,15 +535,17 @@ function EmailLogsPageContent() {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : logs.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">
+            <div className="text-center py-16 text-muted-foreground">
+              <Mail className="w-16 h-16 mx-auto mb-4 opacity-30" />
+              <h3 className="text-lg font-medium text-foreground mb-1">No email logs yet</h3>
+              <p className="text-sm max-w-sm mx-auto">
                 {hasActiveFilters
-                  ? 'No email logs match your filters'
-                  : 'No email logs found'}
+                  ? 'No emails match your filters. Try adjusting or clearing them.'
+                  : 'Email delivery logs will appear here as emails are sent from the system.'}
               </p>
               {hasActiveFilters && (
-                <Button variant="outline" onClick={resetFilters}>
-                  Clear filters
+                <Button variant="outline" size="sm" className="mt-4" onClick={resetFilters}>
+                  Clear all filters
                 </Button>
               )}
             </div>
@@ -505,6 +561,7 @@ function EmailLogsPageContent() {
                     <TableHead>Status</TableHead>
                     <TableHead>Tracking</TableHead>
                     <TableHead>Booking</TableHead>
+                    <TableHead className="w-[80px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -551,21 +608,28 @@ function EmailLogsPageContent() {
                             {getStatusIcon(log.status)}
                             {log.status}
                           </Badge>
-                          {log.error_message && (
-                            <span
-                              className="text-xs text-destructive truncate max-w-[150px]"
-                              title={log.error_message}
-                            >
-                              {log.error_message}
-                            </span>
-                          )}
-                          {log.bounce_reason && (
-                            <span
-                              className="text-xs text-destructive truncate max-w-[150px]"
-                              title={log.bounce_reason}
-                            >
-                              {log.bounce_reason}
-                            </span>
+                          {(log.error_message || log.bounce_reason) && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button className="inline-flex items-center gap-1 text-xs text-destructive hover:text-destructive/80 cursor-help">
+                                  <AlertCircle className="h-3.5 w-3.5" />
+                                  <span className="underline decoration-dotted">
+                                    {log.bounce_reason ? 'Bounced' : 'Error'}
+                                  </span>
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="bottom"
+                                className="max-w-[300px] bg-destructive text-destructive-foreground"
+                              >
+                                <p className="text-sm font-medium mb-1">
+                                  {log.bounce_reason ? 'Bounce Reason' : 'Error Message'}
+                                </p>
+                                <p className="text-xs">
+                                  {log.error_message || log.bounce_reason}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       </TableCell>
@@ -631,6 +695,16 @@ function EmailLogsPageContent() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => fetchEmailPreview(log.id, log.subject)}
+                          title="View email content"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -651,6 +725,55 @@ function EmailLogsPageContent() {
           )}
         </CardContent>
       </Card>
+
+      {/* Email Preview Dialog */}
+      <Dialog open={!!previewEmail} onOpenChange={() => setPreviewEmail(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="truncate pr-8">
+              {previewEmail?.subject || 'Email Preview'}
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Error Banner */}
+          {previewEmail?.status === 'failed' && previewEmail.errorMessage && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <XCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-destructive">Email Failed to Send</p>
+                  <p className="text-sm text-destructive/80 mt-1">
+                    {previewEmail.errorMessage}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex-1 overflow-auto min-h-0">
+            {isLoadingPreview ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : previewEmail?.htmlContent ? (
+              <iframe
+                srcDoc={previewEmail.htmlContent}
+                className="w-full h-[70vh] border rounded-md bg-white"
+                title="Email Preview"
+                sandbox="allow-same-origin"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                <Mail className="h-12 w-12 mb-4 opacity-30" />
+                <p className="text-lg font-medium">No content available</p>
+                <p className="text-sm">
+                  Email content is only stored for emails sent after this feature was enabled.
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

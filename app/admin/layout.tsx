@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import {
@@ -20,6 +21,8 @@ import {
   Users,
   Mail,
   MessageSquare,
+  Newspaper,
+  LayoutTemplate,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,9 +42,11 @@ const navItems = [
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
   { href: "/admin/email-logs", label: "Email Logs", icon: Mail },
+  { href: "/admin/newsletter", label: "Newsletter", icon: Newspaper },
   { href: "/admin/promo-codes", label: "Promo Codes", icon: Tag },
   { href: "/admin/blog", label: "Blog", icon: FileText },
   { href: "/admin/policies", label: "Policies", icon: ScrollText },
+  { href: "/admin/pages", label: "Pages", icon: LayoutTemplate },
   { href: "/admin/trash", label: "Trash", icon: Trash2 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
@@ -64,7 +69,16 @@ function Sidebar({ className }: { className?: string }) {
     <aside className={className}>
       <div className="flex h-full flex-col bg-slate-900 text-white">
         <div className="p-6 border-b border-slate-700">
-          <h1 className="text-xl font-bold">Rainbow Surf Admin</h1>
+          <div className="flex items-center gap-3">
+            <Image
+              src="/images/logo/logo.png"
+              alt="Rainbow Surf"
+              width={40}
+              height={40}
+              className="rounded"
+            />
+            <h1 className="text-xl font-bold">Rainbow Surf Admin</h1>
+          </div>
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
@@ -121,7 +135,16 @@ export default function AdminLayout({
 
       {/* Mobile Header */}
       <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between bg-slate-900 px-4 md:hidden">
-        <h1 className="text-lg font-bold text-white">Rainbow Surf Admin</h1>
+        <div className="flex items-center gap-2">
+          <Image
+            src="/images/logo/logo.png"
+            alt="Rainbow Surf"
+            width={32}
+            height={32}
+            className="rounded"
+          />
+          <h1 className="text-lg font-bold text-white">Rainbow Surf Admin</h1>
+        </div>
         <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="text-white">
@@ -143,7 +166,7 @@ export default function AdminLayout({
 
       {/* Main Content */}
       <main className="md:ml-64 min-h-screen">
-        <div className="pt-16 md:pt-0 p-6">{children}</div>
+        <div className="pt-16 md:pt-10 p-6 md:p-8">{children}</div>
       </main>
     </div>
   );

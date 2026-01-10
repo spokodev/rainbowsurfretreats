@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { checkAdminAuth } from '@/lib/settings'
 import { Resend } from 'resend'
 import { escapeHtml } from '@/lib/utils/html-escape'
+import { FROM_EMAIL } from '@/lib/email'
 
 function getSupabase() {
   return createClient(
@@ -12,7 +13,6 @@ function getSupabase() {
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreats.com'
-const FROM_EMAIL = process.env.FROM_EMAIL || 'Rainbow Surf Retreats <noreply@rainbowsurfretreats.com>'
 const BATCH_SIZE = 10 // Send in batches to avoid rate limits
 const BATCH_DELAY = 1000 // 1 second between batches
 

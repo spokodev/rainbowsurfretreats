@@ -4,6 +4,7 @@ import { checkAdminAuth } from '@/lib/settings'
 import { Resend } from 'resend'
 import { escapeHtml } from '@/lib/utils/html-escape'
 import crypto from 'crypto'
+import { FROM_EMAIL } from '@/lib/email'
 
 function getSupabase() {
   return createClient(
@@ -13,7 +14,6 @@ function getSupabase() {
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreats.com'
-const FROM_EMAIL = process.env.FROM_EMAIL || 'Rainbow Surf Retreats <noreply@rainbowsurfretreats.com>'
 
 // POST /api/admin/newsletter/campaigns/[id]/test - Send a test email
 export async function POST(

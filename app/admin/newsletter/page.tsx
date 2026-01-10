@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Mail,
   Users,
@@ -124,6 +125,9 @@ interface Stats {
 }
 
 export default function AdminNewsletterPage() {
+  // BUG-019 FIX: Use translations for toast messages
+  const t = useTranslations('adminNewsletter')
+
   const [activeTab, setActiveTab] = useState('subscribers')
   const [subscribers, setSubscribers] = useState<Subscriber[]>([])
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
@@ -183,11 +187,11 @@ export default function AdminNewsletterPage() {
       setSummary(result.summary || { total: 0, active: 0, pending: 0, unsubscribed: 0, bounced: 0 })
     } catch (error) {
       console.error('Fetch subscribers error:', error)
-      toast.error('Failed to load subscribers')
+      toast.error(t('toast.loadSubscribersFailed'))
     } finally {
       setIsLoading(false)
     }
-  }, [page, statusFilter, languageFilter, debouncedSearch])
+  }, [page, statusFilter, languageFilter, debouncedSearch, t])
 
   const fetchCampaigns = useCallback(async () => {
     try {
@@ -199,9 +203,9 @@ export default function AdminNewsletterPage() {
       setCampaigns(result.data || [])
     } catch (error) {
       console.error('Fetch campaigns error:', error)
-      toast.error('Failed to load campaigns')
+      toast.error(t('toast.loadCampaignsFailed'))
     }
-  }, [])
+  }, [t])
 
   const fetchStats = useCallback(async () => {
     try {
@@ -213,9 +217,9 @@ export default function AdminNewsletterPage() {
       setStats(result)
     } catch (error) {
       console.error('Fetch stats error:', error)
-      toast.error('Failed to load statistics')
+      toast.error(t('toast.loadStatsFailed'))
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     if (activeTab === 'subscribers') {
@@ -236,11 +240,11 @@ export default function AdminNewsletterPage() {
 
       if (!response.ok) throw new Error('Failed to delete')
 
-      toast.success('Subscriber deleted')
+      toast.success(t('toast.subscriberDeleted'))
       fetchSubscribers()
     } catch (error) {
       console.error('Delete error:', error)
-      toast.error('Failed to delete subscriber')
+      toast.error(t('toast.deleteSubscriberFailed'))
     } finally {
       setIsDeleting(null)
     }
@@ -280,10 +284,10 @@ export default function AdminNewsletterPage() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
 
-      toast.success('Export downloaded')
+      toast.success(t('toast.exportSuccess'))
     } catch (error) {
       console.error('Export error:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to export subscribers')
+      toast.error(error instanceof Error ? error.message : t('toast.exportFailed'))
     }
   }
 
@@ -292,7 +296,7 @@ export default function AdminNewsletterPage() {
       case 'active':
         return <Badge variant="default" className="bg-green-600"><CheckCircle className="w-3 h-3 mr-1" />Active</Badge>
       case 'pending':
-        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Pending</Badge>
+        return <Badge className="bg-orange-100 text-orange-700 border-orange-200"><Clock className="w-3 h-3 mr-1" />Pending</Badge>
       case 'unsubscribed':
         return <Badge variant="outline"><XCircle className="w-3 h-3 mr-1" />Unsubscribed</Badge>
       case 'bounced':
@@ -320,11 +324,11 @@ export default function AdminNewsletterPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Newsletter</h1>
-          <p className="text-gray-500">Manage subscribers and email campaigns</p>
+          <h1 className="text-3xl font-bold tracking-tight">Newsletter</h1>
+          <p className="text-muted-foreground">Manage subscribers and email campaigns</p>
         </div>
       </div>
 
@@ -347,7 +351,7 @@ export default function AdminNewsletterPage() {
         {/* Subscribers Tab */}
         <TabsContent value="subscribers" className="space-y-4">
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-2xl">{summary.total}</CardTitle>
@@ -362,7 +366,7 @@ export default function AdminNewsletterPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-2xl text-yellow-600">{summary.pending}</CardTitle>
+                <CardTitle className="text-2xl text-orange-500">{summary.pending}</CardTitle>
                 <CardDescription>Pending</CardDescription>
               </CardHeader>
             </Card>
@@ -716,25 +720,25 @@ export default function AdminNewsletterPage() {
                   <CardTitle>Email Performance (Last 30 Days)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 text-center">
                     <div>
-                      <p className="text-2xl font-bold">{stats.emailPerformance.sent}</p>
+                      <p className="text-2xl font-bold tabular-nums">{stats.emailPerformance.sent}</p>
                       <p className="text-sm text-gray-500">Sent</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{stats.emailPerformance.delivered}</p>
+                      <p className="text-2xl font-bold tabular-nums">{stats.emailPerformance.delivered}</p>
                       <p className="text-sm text-gray-500">Delivered</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{stats.emailPerformance.opened}</p>
+                      <p className="text-2xl font-bold tabular-nums">{stats.emailPerformance.opened}</p>
                       <p className="text-sm text-gray-500">Opened</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{stats.emailPerformance.clicked}</p>
+                      <p className="text-2xl font-bold tabular-nums">{stats.emailPerformance.clicked}</p>
                       <p className="text-sm text-gray-500">Clicked</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-red-500">{stats.emailPerformance.bounced}</p>
+                      <p className="text-2xl font-bold tabular-nums text-red-500">{stats.emailPerformance.bounced}</p>
                       <p className="text-sm text-gray-500">Bounced</p>
                     </div>
                   </div>
