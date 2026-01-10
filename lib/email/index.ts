@@ -297,56 +297,220 @@ function renderTemplate(template: string, data: Record<string, unknown>): string
 }
 
 // Email layout wrapper
+// Brand colors
+const EMAIL_PRIMARY = '#E97451' // Burnt Sienna
+const EMAIL_PRIMARY_DARK = '#C4593A' // Darker for gradient
+const EMAIL_PRIMARY_LIGHT = '#F08C6D' // Light accent
+const EMAIL_HIGHLIGHT_BG = '#FEF7F4' // Warm tint for highlight boxes
+const EMAIL_BANNER_URL = 'https://gvsyyxpasulbcoyvpgjh.supabase.co/storage/v1/object/public/email-assets/email-banner.jpg'
+
+// Dark mode colors
+const EMAIL_DARK_BG = '#1a1a1a'
+const EMAIL_DARK_CONTAINER = '#2d2d2d'
+const EMAIL_DARK_TEXT = '#e0e0e0'
+const EMAIL_DARK_HIGHLIGHT = '#3d3530'
+
 export function wrapInLayout(content: string): string {
   return `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
   <title>Rainbow Surf Retreats</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
-    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
-    .header { background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); padding: 30px 20px; text-align: center; }
-    .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; }
-    .content { padding: 40px 30px; }
-    .content h2 { color: #0ea5e9; margin-top: 0; }
-    .highlight-box { background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
-    .warning-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
-    .success-box { background: #d1fae5; border-left: 4px solid #10b981; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
-    .amount { font-size: 24px; font-weight: 700; color: #0ea5e9; }
-    .button { display: inline-block; background: #0ea5e9; color: #ffffff !important; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 10px 0; }
-    .footer { background: #1e293b; color: #94a3b8; padding: 30px; text-align: center; font-size: 14px; }
-    .footer a { color: #0ea5e9; text-decoration: none; }
-    .divider { height: 1px; background: #e2e8f0; margin: 30px 0; }
-    @media only screen and (max-width: 600px) {
-      .content { padding: 20px 15px; }
+    /* Reset */
+    body, table, td, p, a, li { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+
+    /* Base */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333333;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
     }
+
+    /* Container */
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, ${EMAIL_PRIMARY} 0%, ${EMAIL_PRIMARY_DARK} 100%);
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .header img { max-width: 120px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
+    .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; }
+
+    /* Content */
+    .content { padding: 40px 30px; }
+    .content h2 { color: ${EMAIL_PRIMARY}; margin-top: 0; font-size: 22px; }
+
+    /* Boxes */
+    .highlight-box {
+      background: ${EMAIL_HIGHLIGHT_BG};
+      border-left: 4px solid ${EMAIL_PRIMARY};
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .warning-box {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 15px 20px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .success-box {
+      background: #d1fae5;
+      border-left: 4px solid #10b981;
+      padding: 15px 20px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    /* Typography */
+    .amount { font-size: 24px; font-weight: 700; color: ${EMAIL_PRIMARY}; }
+
+    /* Button */
+    .button {
+      display: inline-block;
+      background: ${EMAIL_PRIMARY};
+      color: #ffffff !important;
+      padding: 14px 28px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      margin: 10px 0;
+      mso-padding-alt: 0;
+    }
+    .button:hover { background: ${EMAIL_PRIMARY_DARK}; }
+
+    /* Footer */
+    .footer {
+      background: #1e293b;
+      color: #94a3b8;
+      padding: 30px;
+      text-align: center;
+      font-size: 14px;
+    }
+    .footer a { color: ${EMAIL_PRIMARY_LIGHT}; text-decoration: none; }
+    .footer-divider { height: 1px; background: #374151; margin: 20px 0; }
+
+    /* Divider */
+    .divider { height: 1px; background: #e2e8f0; margin: 30px 0; }
+
+    /* Mobile */
+    @media only screen and (max-width: 600px) {
+      .email-container { width: 100% !important; }
+      .content { padding: 20px 15px !important; }
+      .content h2 { font-size: 20px !important; }
+      .amount { font-size: 22px !important; }
+      .button {
+        display: block !important;
+        width: 100% !important;
+        text-align: center !important;
+        padding: 16px 20px !important;
+        box-sizing: border-box !important;
+      }
+      .header { padding: 20px 15px !important; }
+      .header h1 { font-size: 20px !important; }
+      .footer { padding: 20px 15px !important; }
+      .info-table td { display: block !important; width: 100% !important; padding: 8px 0 !important; }
+    }
+
+    /* Dark Mode */
+    @media (prefers-color-scheme: dark) {
+      body { background-color: ${EMAIL_DARK_BG} !important; }
+      .email-container { background-color: ${EMAIL_DARK_CONTAINER} !important; }
+      .content { color: ${EMAIL_DARK_TEXT} !important; }
+      .content h2 { color: ${EMAIL_PRIMARY_LIGHT} !important; }
+      .content p { color: ${EMAIL_DARK_TEXT} !important; }
+      .highlight-box {
+        background: ${EMAIL_DARK_HIGHLIGHT} !important;
+        border-left-color: ${EMAIL_PRIMARY_LIGHT} !important;
+      }
+      .warning-box { background: #433a20 !important; }
+      .success-box { background: #1a3a2a !important; }
+      .footer { background: #0f0f0f !important; }
+    }
+
+    /* Gmail dark mode fix */
+    [data-ogsc] .email-container { background-color: ${EMAIL_DARK_CONTAINER} !important; }
+    [data-ogsc] .content { color: ${EMAIL_DARK_TEXT} !important; }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Rainbow Surf Retreats</h1>
-    </div>
-    <div class="content">
-      ${content}
-    </div>
-    <div class="footer">
-      <p><strong>Rainbow Surf Retreats</strong></p>
-      <p>Catch the perfect wave, find your inner peace</p>
-      <div class="divider" style="background: #374151;"></div>
-      <p style="font-size: 12px;">
-        <a href="${SITE_URL}/privacy-policy">Privacy Policy</a> |
-        <a href="${SITE_URL}/policies">Terms & Conditions</a>
-      </p>
-      <p style="font-size: 12px; color: #64748b;">
-        You received this email because you made a booking with Rainbow Surf Retreats.<br>
-        If you have any questions, please contact us at <a href="mailto:info@rainbowsurfretreats.com">info@rainbowsurfretreats.com</a>
-      </p>
-    </div>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5;">
+  <!-- Preheader (hidden preview text) -->
+  <div style="display: none; font-size: 1px; color: #f5f5f5; line-height: 1px; max-height: 0; max-width: 0; opacity: 0; overflow: hidden; mso-hide: all;">
+    Rainbow Surf Retreats - Your journey to surf and serenity awaits
   </div>
+
+  <!-- Email wrapper table for Outlook -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f5f5;">
+    <tr>
+      <td align="center" style="padding: 20px 10px;">
+
+        <!-- Container table -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="max-width: 600px; background-color: #ffffff;">
+
+          <!-- Header -->
+          <tr>
+            <td>
+              <div class="header" style="padding: 0; text-align: center;">
+                <img src="${EMAIL_BANNER_URL}" alt="Rainbow Surf Retreats" width="600" style="width: 100%; max-width: 600px; display: block; margin: 0 auto;" />
+              </div>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td class="content" style="padding: 40px 30px;">
+              ${content}
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td class="footer" style="background: #1e293b; color: #94a3b8; padding: 30px; text-align: center; font-size: 14px;">
+              <p style="margin: 0 0 10px;"><strong style="color: #ffffff;">Rainbow Surf Retreats</strong></p>
+              <p style="margin: 0 0 20px; color: #94a3b8;">Catch the perfect wave, find your inner peace</p>
+              <div class="footer-divider" style="height: 1px; background: #374151; margin: 20px 0;"></div>
+              <p style="font-size: 12px; margin: 0 0 10px;">
+                <a href="${SITE_URL}/privacy-policy" style="color: ${EMAIL_PRIMARY_LIGHT}; text-decoration: none;">Privacy Policy</a> |
+                <a href="${SITE_URL}/policies" style="color: ${EMAIL_PRIMARY_LIGHT}; text-decoration: none;">Terms & Conditions</a>
+              </p>
+              <p style="font-size: 12px; color: #64748b; margin: 0;">
+                You received this email because you interacted with Rainbow Surf Retreats.<br>
+                Questions? Contact us at <a href="mailto:${REPLY_TO_EMAIL}" style="color: ${EMAIL_PRIMARY_LIGHT}; text-decoration: none;">${REPLY_TO_EMAIL}</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
 `
