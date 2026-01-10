@@ -11,7 +11,7 @@ import { blogPosts, blogCategories } from '@/lib/blog-data'
 import ImageWithFallback from '@/components/ImageWithFallback'
 import { BLOG_IMAGES } from '@/lib/images'
 import type { SingleImage } from '@/lib/validations/page-images'
-import { SeaShell, Starfish, Bird } from '@/components/illustrations'
+import { SeaShell, Starfish, Bird, WavePattern } from '@/components/illustrations'
 import { illustrationOpacity } from '@/lib/animations'
 
 const POSTS_PER_PAGE = 6
@@ -97,6 +97,14 @@ export default function BlogPageClient({ headerImage }: BlogPageClientProps) {
           animated
           className="absolute top-12 right-8 md:right-16 w-12 h-12 md:w-16 md:h-16 text-white pointer-events-none"
           style={{ opacity: illustrationOpacity.blogBird }}
+        />
+
+        {/* Wave Pattern - Bottom */}
+        <WavePattern
+          variant={2}
+          animated
+          className="absolute bottom-0 left-0 right-0 h-16 md:h-24 text-white pointer-events-none"
+          style={{ opacity: illustrationOpacity.heroWave }}
         />
 
         <div className="container relative z-10 mx-auto px-4 text-center">

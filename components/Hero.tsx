@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import { Logo } from '@/components/Logo';
-import { SunBurst, Bird, WavePattern, Palm } from '@/components/illustrations';
+import { SunBurst, Bird } from '@/components/illustrations';
 import { illustrationOpacity } from '@/lib/animations';
 
 // Default slider images (fallback)
@@ -98,19 +98,6 @@ export default function Hero({ sliderImages: propImages }: HeroProps) {
           animated
           className="absolute top-20 right-8 md:right-16 w-16 h-16 md:w-24 md:h-24 text-white"
           style={{ opacity: illustrationOpacity.heroBird }}
-        />
-        {/* Wave - Bottom */}
-        <WavePattern
-          variant={2}
-          animated
-          className="absolute -bottom-4 left-0 right-0 h-24 md:h-32 text-white"
-          style={{ opacity: illustrationOpacity.heroWave }}
-        />
-        {/* Palm - Bottom Right */}
-        <Palm
-          animated
-          className="absolute -bottom-8 -right-8 h-48 md:h-64 text-white hidden lg:block"
-          style={{ opacity: illustrationOpacity.palm }}
         />
       </div>
 
