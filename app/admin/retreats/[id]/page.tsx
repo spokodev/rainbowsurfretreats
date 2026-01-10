@@ -338,7 +338,7 @@ export default function AdminRetreatDetailPage({
       </div>
 
       {/* Status Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Status</CardTitle>
@@ -455,7 +455,7 @@ export default function AdminRetreatDetailPage({
         <CardContent>
           {/* Stats */}
           {waitlistData?.stats && (
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
               <div className="text-center p-2 bg-blue-50 rounded">
                 <div className="text-2xl font-bold tabular-nums text-blue-600">{waitlistData.stats.waiting}</div>
                 <div className="text-xs text-muted-foreground">Waiting</div>

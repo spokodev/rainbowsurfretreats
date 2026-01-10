@@ -57,6 +57,7 @@ export interface RetreatRoom {
   retreat_id: string
   name: string
   description: string | null
+  image_url: string | null
   price: number
   deposit_price: number
   capacity: number
@@ -101,6 +102,7 @@ export interface RetreatRoomInsert {
   retreat_id: string
   name: string
   description?: string | null
+  image_url?: string | null
   price: number
   deposit_price: number
   capacity?: number
@@ -405,6 +407,7 @@ export interface RetreatRoomFormData {
   id?: string
   name: string
   description: string
+  image_url: string | null
   price: string
   deposit_price: string
   capacity: number

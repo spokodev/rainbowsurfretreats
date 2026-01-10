@@ -483,7 +483,7 @@ export default function CampaignDetailPage({
 
       {/* Stats for sent campaigns */}
       {campaign.status === 'sent' && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-2xl flex items-center gap-2">

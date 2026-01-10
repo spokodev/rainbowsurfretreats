@@ -747,25 +747,25 @@ function PaymentsPageContent() {
                   No scheduled payments
                 </div>
               ) : (
-                <div className="rounded-md border">
+                <div className="rounded-md border overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Booking</TableHead>
+                        <TableHead className="hidden sm:table-cell">Booking</TableHead>
                         <TableHead>Guest</TableHead>
-                        <TableHead>Payment #</TableHead>
-                        <TableHead>Description</TableHead>
+                        <TableHead className="hidden lg:table-cell">Payment #</TableHead>
+                        <TableHead className="hidden md:table-cell">Description</TableHead>
                         <TableHead>Amount</TableHead>
-                        <TableHead>Due Date</TableHead>
+                        <TableHead className="hidden sm:table-cell">Due Date</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Attempts</TableHead>
+                        <TableHead className="hidden lg:table-cell">Attempts</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {schedules.map((schedule) => (
                         <TableRow key={schedule.id}>
-                          <TableCell>
+                          <TableCell className="hidden sm:table-cell">
                             {schedule.booking?.booking_number ? (
                               <Link
                                 href={`/admin/bookings/${schedule.booking_id}`}
@@ -782,16 +782,16 @@ function PaymentsPageContent() {
                               ? `${schedule.booking.first_name} ${schedule.booking.last_name}`
                               : '-'}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden lg:table-cell">
                             <Badge variant="outline">
                               #{schedule.payment_number}
                             </Badge>
                           </TableCell>
-                          <TableCell>{schedule.description || '-'}</TableCell>
+                          <TableCell className="hidden md:table-cell">{schedule.description || '-'}</TableCell>
                           <TableCell className="font-semibold">
                             {formatCurrency(schedule.amount)}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden sm:table-cell">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-muted-foreground" />
                               {formatDate(schedule.due_date)}
@@ -807,7 +807,7 @@ function PaymentsPageContent() {
                               </p>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden lg:table-cell">
                             {schedule.attempts}/{schedule.max_attempts}
                           </TableCell>
                           <TableCell className="text-right">

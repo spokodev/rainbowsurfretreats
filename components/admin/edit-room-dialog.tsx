@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { BedDouble, Loader2, Calendar } from 'lucide-react'
+import { BedDouble, Loader2, Calendar, Upload, ImageIcon, X, Link, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,6 +24,7 @@ import type { RoomWithGuests } from '@/lib/types/database'
 const roomSchema = z.object({
   name: z.string().min(1, 'Room name is required'),
   description: z.string().optional().nullable(),
+  image_url: z.string().nullable().optional(),
   price: z.number().min(1, 'Price must be positive'),
   deposit_price: z.number().min(0, 'Deposit must be 0 or more'),
   capacity: z.number().min(1, 'Capacity must be at least 1'),
@@ -71,6 +73,7 @@ export function EditRoomDialog({
       reset({
         name: room.name,
         description: room.description || '',
+        image_url: room.image_url || null,
         price: room.price,
         deposit_price: room.deposit_price,
         capacity: room.capacity,
@@ -80,10 +83,124 @@ export function EditRoomDialog({
         early_bird_enabled: room.early_bird_enabled,
         early_bird_deadline: room.early_bird_deadline,
       })
+      // Reset URL input state when room changes
+      setShowUrlInput(false)
+      setUrlInputValue('')
     }
   }, [room, reset])
 
   const earlyBirdEnabled = watch('early_bird_enabled')
+  const imageUrl = watch('image_url')
+  const [isUploading, setIsUploading] = useState(false)
+  const [isDraggingFile, setIsDraggingFile] = useState(false)
+  const [showUrlInput, setShowUrlInput] = useState(false)
+  const [urlInputValue, setUrlInputValue] = useState('')
+
+  const handleFileUpload = useCallback(async (file: File) => {
+    if (!file) return
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Allowed: JPEG, PNG, WebP, GIF')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File too large. Maximum size: 5MB')
+      return
+    }
+
+    setIsUploading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('bucket', 'retreat-images')
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Upload failed')
+      }
+
+      setValue('image_url', result.data.url)
+      toast.success('Image uploaded successfully')
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to upload image')
+    } finally {
+      setIsUploading(false)
+    }
+  }, [setValue])
+
+  const handleFileDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDraggingFile(true)
+  }, [])
+
+  const handleFileDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDraggingFile(false)
+  }, [])
+
+  const handleFileDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDraggingFile(false)
+    const file = e.dataTransfer.files[0]
+    if (file) {
+      handleFileUpload(file)
+    }
+  }, [handleFileUpload])
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleFileUpload(file)
+    }
+  }, [handleFileUpload])
+
+  const handleUrlSubmit = useCallback(() => {
+    const url = urlInputValue.trim()
+    if (!url) {
+      toast.error('Please enter a URL')
+      return
+    }
+
+    // Basic URL validation
+    try {
+      new URL(url)
+    } catch {
+      toast.error('Please enter a valid URL')
+      return
+    }
+
+    // Convert Google Drive sharing links to direct image URLs
+    let finalUrl = url
+
+    const driveMatch = url.match(/drive\.google\.com\/file\/d\/([^/]+)/)
+    if (driveMatch) {
+      const fileId = driveMatch[1]
+      finalUrl = `https://drive.google.com/uc?export=view&id=${fileId}`
+    }
+
+    const driveOpenMatch = url.match(/drive\.google\.com\/open\?id=([^&]+)/)
+    if (driveOpenMatch) {
+      const fileId = driveOpenMatch[1]
+      finalUrl = `https://drive.google.com/uc?export=view&id=${fileId}`
+    }
+
+    setValue('image_url', finalUrl)
+    setUrlInputValue('')
+    setShowUrlInput(false)
+    toast.success('Image URL added')
+  }, [urlInputValue, setValue])
 
   const onSubmit = async (data: RoomFormData) => {
     if (!room) return
@@ -161,6 +278,127 @@ export function EditRoomDialog({
                 {...register('description')}
                 placeholder="e.g., 4-6 beds per room"
               />
+            </div>
+
+            {/* Room Image Upload */}
+            <div className="space-y-2 col-span-2">
+              <Label>Room Image (optional)</Label>
+              {!imageUrl ? (
+                showUrlInput ? (
+                  // URL input mode
+                  <div className="border-2 border-dashed rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowUrlInput(false)}
+                      >
+                        <ArrowLeft className="w-4 h-4 mr-1" />
+                        Back
+                      </Button>
+                      <span className="text-xs text-gray-600">Paste image URL</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        type="url"
+                        placeholder="https://... or Google Drive link"
+                        value={urlInputValue}
+                        onChange={(e) => setUrlInputValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleUrlSubmit()
+                          }
+                        }}
+                        className="flex-1 text-sm"
+                      />
+                      <Button type="button" size="sm" onClick={handleUrlSubmit}>
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  // File upload mode
+                  <div className="space-y-2">
+                    <div
+                      className={`
+                        relative border-2 border-dashed rounded-lg p-4
+                        ${isDraggingFile ? 'border-primary bg-primary/5' : 'border-gray-300'}
+                        ${isUploading ? 'pointer-events-none opacity-50' : ''}
+                      `}
+                      onDragOver={handleFileDragOver}
+                      onDragLeave={handleFileDragLeave}
+                      onDrop={handleFileDrop}
+                    >
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        onChange={handleFileSelect}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        disabled={isUploading}
+                      />
+                      <div className="flex flex-col items-center justify-center text-center py-2">
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
+                            <p className="text-xs text-gray-600">Uploading...</p>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                              {isDraggingFile ? (
+                                <Upload className="w-5 h-5 text-primary" />
+                              ) : (
+                                <ImageIcon className="w-5 h-5 text-gray-400" />
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-600">
+                              <span className="font-medium text-primary">Click to upload</span>
+                              {' '}or drag and drop
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              PNG, JPG, WebP or GIF (max 5MB)
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs"
+                      onClick={() => setShowUrlInput(true)}
+                    >
+                      <Link className="w-3 h-3 mr-1" />
+                      Or paste URL
+                    </Button>
+                  </div>
+                )
+              ) : (
+                // Image preview
+                <div className="relative">
+                  <div className="relative aspect-video rounded-lg overflow-hidden border">
+                    <Image
+                      src={imageUrl}
+                      alt="Room preview"
+                      fill
+                      className="object-cover"
+                      unoptimized={imageUrl.includes('drive.google.com')}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 h-7 w-7"
+                    onClick={() => setValue('image_url', null)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
