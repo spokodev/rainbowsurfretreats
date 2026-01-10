@@ -9,6 +9,8 @@ import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { WavePattern, Surfer } from '@/components/illustrations';
+import { illustrationOpacity } from '@/lib/animations';
 
 type SubmitStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -83,20 +85,18 @@ export default function Newsletter() {
       <div className="absolute inset-0 bg-[var(--primary-teal)]" />
 
       {/* Wave Pattern Overlay */}
-      <div className="absolute inset-0 opacity-10">
-        <svg
-          className="absolute bottom-0 h-full w-full"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1440 320"
-          preserveAspectRatio="none"
-        >
-          <path
-            fill="currentColor"
-            fillOpacity="1"
-            d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,154.7C960,171,1056,181,1152,165.3C1248,149,1344,107,1392,85.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-          />
-        </svg>
-      </div>
+      <WavePattern
+        variant={2}
+        animated
+        className="absolute bottom-0 left-0 right-0 h-32 md:h-48 text-white"
+        style={{ opacity: illustrationOpacity.newsletterWave }}
+      />
+
+      {/* Surfer Silhouette */}
+      <Surfer
+        className="absolute -right-8 md:right-4 bottom-8 h-48 md:h-64 text-white hidden sm:block"
+        style={{ opacity: illustrationOpacity.newsletterSurfer }}
+      />
 
       <div className="container relative z-10 mx-auto px-4">
         <motion.div

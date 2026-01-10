@@ -4,6 +4,8 @@ import { motion } from 'framer-motion'
 import { Star, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { SeaShell, Starfish } from '@/components/illustrations'
+import { illustrationOpacity } from '@/lib/animations'
 
 interface Testimonial {
   name: string
@@ -50,8 +52,30 @@ function StarRating({ rating }: { rating: number }) {
 
 export default function Testimonials() {
   return (
-    <section className="py-16 md:py-24 bg-[var(--sand-light)]">
-      <div className="container mx-auto px-4">
+    <section className="py-16 md:py-24 bg-[var(--sand-light)] relative overflow-hidden">
+      {/* Scattered Decorative Shells */}
+      <div className="absolute inset-0 pointer-events-none">
+        <SeaShell
+          variant={3}
+          className="absolute top-12 left-[5%] w-16 h-16 md:w-24 md:h-24 text-[var(--sand-dark)] rotate-[25deg]"
+          style={{ opacity: illustrationOpacity.testimonialsShell }}
+        />
+        <Starfish
+          className="absolute top-1/3 right-[3%] w-12 h-12 md:w-20 md:h-20 text-[var(--primary-teal)] rotate-[15deg]"
+          style={{ opacity: illustrationOpacity.testimonialsStarfish }}
+        />
+        <SeaShell
+          variant={2}
+          className="absolute bottom-16 left-[8%] w-14 h-14 md:w-20 md:h-20 text-[var(--earth-brown)] -rotate-[30deg]"
+          style={{ opacity: illustrationOpacity.testimonialsShell }}
+        />
+        <Starfish
+          className="absolute bottom-24 right-[6%] w-10 h-10 md:w-16 md:h-16 text-[var(--sand-dark)] rotate-[45deg]"
+          style={{ opacity: illustrationOpacity.testimonialsStarfish }}
+        />
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

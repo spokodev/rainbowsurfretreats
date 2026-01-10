@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { Instagram, Facebook, Youtube } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Logo } from '@/components/Logo';
+import { WavePattern, ShakaHand } from '@/components/illustrations';
+import { illustrationOpacity } from '@/lib/animations';
 
 interface FooterRetreat {
   id: string;
@@ -52,8 +54,21 @@ export default function Footer({ initialRetreats = [] }: FooterProps) {
   ];
 
   return (
-    <footer className="bg-gray-900 text-gray-300">
-      <div className="container mx-auto px-4 py-12 md:py-16">
+    <footer className="bg-gray-900 text-gray-300 relative overflow-hidden">
+      {/* Decorative Wave - Top Border */}
+      <WavePattern
+        variant={2}
+        className="absolute top-0 left-0 right-0 h-8 text-gray-800 rotate-180"
+        style={{ opacity: illustrationOpacity.footerWave }}
+      />
+
+      {/* Shaka Hand - Fun element */}
+      <ShakaHand
+        className="absolute -right-16 top-16 w-48 h-48 text-gray-800 rotate-[-15deg] hidden lg:block"
+        style={{ opacity: illustrationOpacity.footerShaka }}
+      />
+
+      <div className="container mx-auto px-4 py-12 md:py-16 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Logo and Description */}
           <div className="lg:col-span-1">

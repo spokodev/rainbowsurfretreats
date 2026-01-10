@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import { Logo } from '@/components/Logo';
+import { SunBurst, Bird, WavePattern } from '@/components/illustrations';
+import { illustrationOpacity } from '@/lib/animations';
 
 // Default slider images (fallback)
 const defaultSliderImages = [
@@ -82,6 +84,29 @@ export default function Hero({ sliderImages: propImages }: HeroProps) {
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
         </motion.div>
       </AnimatePresence>
+
+      {/* Decorative Illustrations */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-[5]">
+        {/* Sun - Top Left */}
+        <SunBurst
+          animated
+          className="absolute -top-16 -left-16 w-48 h-48 md:w-64 md:h-64 text-white"
+          style={{ opacity: illustrationOpacity.heroSun }}
+        />
+        {/* Bird - Top Right */}
+        <Bird
+          animated
+          className="absolute top-20 right-8 md:right-16 w-16 h-16 md:w-24 md:h-24 text-white"
+          style={{ opacity: illustrationOpacity.heroBird }}
+        />
+        {/* Wave - Bottom */}
+        <WavePattern
+          variant={2}
+          animated
+          className="absolute -bottom-4 left-0 right-0 h-24 md:h-32 text-white"
+          style={{ opacity: illustrationOpacity.heroWave }}
+        />
+      </div>
 
       {/* Slide Indicators */}
       <div className="absolute bottom-32 left-1/2 z-10 flex -translate-x-1/2 gap-2">

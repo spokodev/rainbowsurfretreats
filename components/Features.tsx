@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { useTranslations } from 'next-intl';
 import { Card, CardContent } from "@/components/ui/card";
+import { SeaShell, Starfish } from '@/components/illustrations';
+import { illustrationOpacity } from '@/lib/animations';
 
 const featureIcons = [Heart, Award, Users, Globe, MapPin, Sparkles];
 const featureKeys = ['safe', 'instructors', 'community', 'destinations', 'wellness', 'inclusive'];
@@ -18,8 +20,21 @@ export default function Features() {
   const t = useTranslations('features');
 
   return (
-    <section className="py-16 md:py-24 bg-muted/50">
-      <div className="container mx-auto px-4">
+    <section className="py-16 md:py-24 bg-muted/50 relative overflow-hidden">
+      {/* Decorative Illustrations */}
+      <div className="absolute inset-0 pointer-events-none">
+        <SeaShell
+          variant={2}
+          className="absolute -top-8 -left-8 w-32 h-32 md:w-48 md:h-48 text-[var(--sand-dark)] rotate-12"
+          style={{ opacity: illustrationOpacity.featuresShell }}
+        />
+        <Starfish
+          className="absolute -bottom-8 -right-8 w-32 h-32 md:w-48 md:h-48 text-[var(--primary-teal)] -rotate-12"
+          style={{ opacity: illustrationOpacity.featuresStarfish }}
+        />
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             {t('title')}
