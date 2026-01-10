@@ -34,7 +34,20 @@
     "people": "people",
     "days": "days",
     "clearFilters": "Clear filters",
-    "contactUs": "Contact Us"
+    "contactUs": "Contact Us",
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "loadFailed": "Failed to load data. Please refresh the page.",
+      "saveFailed": "Failed to save changes. Please try again.",
+      "networkError": "Network error. Please check your connection.",
+      "notFound": "The requested item was not found.",
+      "unauthorized": "You are not authorized to perform this action.",
+      "sessionExpired": "Your session has expired. Please log in again.",
+      "validationFailed": "Please check the form for errors.",
+      "fileTooLarge": "The file is too large. Maximum size is {size}MB.",
+      "invalidFileType": "Invalid file type. Allowed types: {types}.",
+      "rateLimited": "Too many requests. Please wait a moment and try again."
+    }
   },
   "nav": {
     "retreats": "Retreats",
@@ -367,6 +380,79 @@
     "legal": {
       "title": "Legal Terms",
       "text": "This retreat is organized under Spanish law. By booking, you're agreeing to our terms and conditions and understand that any disputes will be handled in Spanish courts."
+    }
+  },
+  "adminNewsletter": {
+    "title": "Newsletter",
+    "subtitle": "Manage subscribers and email campaigns",
+    "tabs": {
+      "subscribers": "Subscribers",
+      "campaigns": "Campaigns",
+      "analytics": "Analytics"
+    },
+    "subscribers": {
+      "total": "Total",
+      "active": "Active",
+      "pending": "Pending",
+      "unsubscribed": "Unsubscribed",
+      "bounced": "Bounced",
+      "searchPlaceholder": "Search by email...",
+      "allStatus": "All Status",
+      "allLanguages": "All Languages",
+      "exportCsv": "Export CSV",
+      "refresh": "Refresh",
+      "noSubscribers": "No subscribers found",
+      "deleteTitle": "Delete Subscriber?",
+      "deleteDescription": "This will permanently delete {email} from the newsletter list.",
+      "name": "Name",
+      "status": "Status",
+      "language": "Language",
+      "source": "Source",
+      "lastBooking": "Last Booking",
+      "subscribed": "Subscribed"
+    },
+    "campaigns": {
+      "title": "Email Campaigns",
+      "newCampaign": "New Campaign",
+      "noCampaigns": "No campaigns yet. Create your first campaign!",
+      "campaignName": "Campaign Name",
+      "recipients": "Recipients",
+      "opens": "Opens",
+      "clicks": "Clicks",
+      "sentAt": "Sent At",
+      "status": {
+        "sent": "Sent",
+        "sending": "Sending",
+        "scheduled": "Scheduled",
+        "draft": "Draft",
+        "cancelled": "Cancelled"
+      }
+    },
+    "analytics": {
+      "totalSubscribers": "Total Subscribers",
+      "thisWeek": "+{count} this week",
+      "campaignsSent": "Campaigns Sent",
+      "drafts": "{count} drafts",
+      "openRate": "Open Rate (30d)",
+      "opens": "{count} opens",
+      "clickRate": "Click Rate (30d)",
+      "clicks": "{count} clicks",
+      "byLanguage": "Subscribers by Language",
+      "bySource": "Subscribers by Source",
+      "emailPerformance": "Email Performance (Last 30 Days)",
+      "sent": "Sent",
+      "delivered": "Delivered",
+      "opened": "Opened",
+      "clicked": "Clicked"
+    },
+    "toast": {
+      "loadSubscribersFailed": "Failed to load subscribers",
+      "loadCampaignsFailed": "Failed to load campaigns",
+      "loadStatsFailed": "Failed to load statistics",
+      "subscriberDeleted": "Subscriber deleted",
+      "deleteSubscriberFailed": "Failed to delete subscriber",
+      "exportSuccess": "Export downloaded",
+      "exportFailed": "Failed to export subscribers"
     }
   }
 }

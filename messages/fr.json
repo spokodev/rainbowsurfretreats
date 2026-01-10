@@ -34,7 +34,20 @@
     "people": "personnes",
     "days": "jours",
     "clearFilters": "Effacer les filtres",
-    "contactUs": "Contact"
+    "contactUs": "Contact",
+    "errors": {
+      "generic": "Une erreur s'est produite. Veuillez réessayer.",
+      "loadFailed": "Impossible de charger les données. Veuillez actualiser la page.",
+      "saveFailed": "Impossible d'enregistrer les modifications. Veuillez réessayer.",
+      "networkError": "Erreur réseau. Veuillez vérifier votre connexion.",
+      "notFound": "L'élément demandé n'a pas été trouvé.",
+      "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action.",
+      "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+      "validationFailed": "Veuillez vérifier les erreurs dans le formulaire.",
+      "fileTooLarge": "Le fichier est trop volumineux. Taille maximale : {size} Mo.",
+      "invalidFileType": "Type de fichier invalide. Types autorisés : {types}.",
+      "rateLimited": "Trop de requêtes. Veuillez patienter un moment et réessayer."
+    }
   },
   "nav": {
     "retreats": "Retraites",
@@ -367,6 +380,79 @@
     "legal": {
       "title": "Conditions Légales",
       "text": "Cette retraite est organisée selon le droit espagnol. En réservant, vous acceptez nos conditions générales et comprenez que tout litige sera traité par les tribunaux espagnols."
+    }
+  },
+  "adminNewsletter": {
+    "title": "Newsletter",
+    "subtitle": "Gérer les abonnés et les campagnes email",
+    "tabs": {
+      "subscribers": "Abonnés",
+      "campaigns": "Campagnes",
+      "analytics": "Analyses"
+    },
+    "subscribers": {
+      "total": "Total",
+      "active": "Actifs",
+      "pending": "En attente",
+      "unsubscribed": "Désabonnés",
+      "bounced": "Rejetés",
+      "searchPlaceholder": "Rechercher par email...",
+      "allStatus": "Tous les statuts",
+      "allLanguages": "Toutes les langues",
+      "exportCsv": "Exporter CSV",
+      "refresh": "Actualiser",
+      "noSubscribers": "Aucun abonné trouvé",
+      "deleteTitle": "Supprimer l'abonné ?",
+      "deleteDescription": "Cela supprimera définitivement {email} de la liste newsletter.",
+      "name": "Nom",
+      "status": "Statut",
+      "language": "Langue",
+      "source": "Source",
+      "lastBooking": "Dernière réservation",
+      "subscribed": "Abonné"
+    },
+    "campaigns": {
+      "title": "Campagnes email",
+      "newCampaign": "Nouvelle campagne",
+      "noCampaigns": "Pas encore de campagnes. Créez votre première campagne !",
+      "campaignName": "Nom de campagne",
+      "recipients": "Destinataires",
+      "opens": "Ouvertures",
+      "clicks": "Clics",
+      "sentAt": "Envoyé le",
+      "status": {
+        "sent": "Envoyé",
+        "sending": "En cours d'envoi",
+        "scheduled": "Programmé",
+        "draft": "Brouillon",
+        "cancelled": "Annulé"
+      }
+    },
+    "analytics": {
+      "totalSubscribers": "Total abonnés",
+      "thisWeek": "+{count} cette semaine",
+      "campaignsSent": "Campagnes envoyées",
+      "drafts": "{count} brouillons",
+      "openRate": "Taux d'ouverture (30j)",
+      "opens": "{count} ouvertures",
+      "clickRate": "Taux de clics (30j)",
+      "clicks": "{count} clics",
+      "byLanguage": "Abonnés par langue",
+      "bySource": "Abonnés par source",
+      "emailPerformance": "Performance email (30 derniers jours)",
+      "sent": "Envoyés",
+      "delivered": "Livrés",
+      "opened": "Ouverts",
+      "clicked": "Cliqués"
+    },
+    "toast": {
+      "loadSubscribersFailed": "Échec du chargement des abonnés",
+      "loadCampaignsFailed": "Échec du chargement des campagnes",
+      "loadStatsFailed": "Échec du chargement des statistiques",
+      "subscriberDeleted": "Abonné supprimé",
+      "deleteSubscriberFailed": "Échec de la suppression de l'abonné",
+      "exportSuccess": "Export téléchargé",
+      "exportFailed": "Échec de l'export des abonnés"
     }
   }
 }

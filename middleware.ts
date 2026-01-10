@@ -3,9 +3,21 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  // BUG-024 FIX: Redirect locale-prefixed URLs to root paths
+  // App uses cookie-based locale detection, not URL prefixes
+  const localeMatch = pathname.match(/^\/(en|de|es|fr|nl)(\/.*)?$/)
+  if (localeMatch) {
+    const pathWithoutLocale = localeMatch[2] || '/'
+    const url = request.nextUrl.clone()
+    url.pathname = pathWithoutLocale
+    return NextResponse.redirect(url, 301)
+  }
+
   // Add pathname to headers for layout to detect admin/login pages
   const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-pathname', request.nextUrl.pathname)
+  requestHeaders.set('x-pathname', pathname)
 
   let supabaseResponse = NextResponse.next({
     request: {

@@ -34,7 +34,20 @@
     "people": "personas",
     "days": "días",
     "clearFilters": "Limpiar filtros",
-    "contactUs": "Contacto"
+    "contactUs": "Contacto",
+    "errors": {
+      "generic": "Algo salió mal. Por favor, inténtalo de nuevo.",
+      "loadFailed": "No se pudieron cargar los datos. Por favor, actualiza la página.",
+      "saveFailed": "No se pudieron guardar los cambios. Por favor, inténtalo de nuevo.",
+      "networkError": "Error de red. Por favor, verifica tu conexión.",
+      "notFound": "El elemento solicitado no fue encontrado.",
+      "unauthorized": "No tienes autorización para realizar esta acción.",
+      "sessionExpired": "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.",
+      "validationFailed": "Por favor, revisa los errores en el formulario.",
+      "fileTooLarge": "El archivo es demasiado grande. Tamaño máximo: {size} MB.",
+      "invalidFileType": "Tipo de archivo inválido. Tipos permitidos: {types}.",
+      "rateLimited": "Demasiadas solicitudes. Por favor, espera un momento e inténtalo de nuevo."
+    }
   },
   "nav": {
     "retreats": "Retiros",
@@ -367,6 +380,79 @@
     "legal": {
       "title": "Términos Legales",
       "text": "Este retiro está organizado bajo la ley española. Al reservar, aceptas nuestros términos y condiciones y entiendes que cualquier disputa será tratada en los tribunales españoles."
+    }
+  },
+  "adminNewsletter": {
+    "title": "Newsletter",
+    "subtitle": "Gestionar suscriptores y campañas de correo",
+    "tabs": {
+      "subscribers": "Suscriptores",
+      "campaigns": "Campañas",
+      "analytics": "Análisis"
+    },
+    "subscribers": {
+      "total": "Total",
+      "active": "Activos",
+      "pending": "Pendientes",
+      "unsubscribed": "Cancelados",
+      "bounced": "Rebotados",
+      "searchPlaceholder": "Buscar por correo...",
+      "allStatus": "Todos los estados",
+      "allLanguages": "Todos los idiomas",
+      "exportCsv": "Exportar CSV",
+      "refresh": "Actualizar",
+      "noSubscribers": "No se encontraron suscriptores",
+      "deleteTitle": "¿Eliminar suscriptor?",
+      "deleteDescription": "Esto eliminará permanentemente {email} de la lista del newsletter.",
+      "name": "Nombre",
+      "status": "Estado",
+      "language": "Idioma",
+      "source": "Fuente",
+      "lastBooking": "Última reserva",
+      "subscribed": "Suscrito"
+    },
+    "campaigns": {
+      "title": "Campañas de correo",
+      "newCampaign": "Nueva campaña",
+      "noCampaigns": "Aún no hay campañas. ¡Crea tu primera campaña!",
+      "campaignName": "Nombre de campaña",
+      "recipients": "Destinatarios",
+      "opens": "Aperturas",
+      "clicks": "Clics",
+      "sentAt": "Enviado el",
+      "status": {
+        "sent": "Enviado",
+        "sending": "Enviando",
+        "scheduled": "Programado",
+        "draft": "Borrador",
+        "cancelled": "Cancelado"
+      }
+    },
+    "analytics": {
+      "totalSubscribers": "Total de suscriptores",
+      "thisWeek": "+{count} esta semana",
+      "campaignsSent": "Campañas enviadas",
+      "drafts": "{count} borradores",
+      "openRate": "Tasa de apertura (30d)",
+      "opens": "{count} aperturas",
+      "clickRate": "Tasa de clics (30d)",
+      "clicks": "{count} clics",
+      "byLanguage": "Suscriptores por idioma",
+      "bySource": "Suscriptores por fuente",
+      "emailPerformance": "Rendimiento del correo (Últimos 30 días)",
+      "sent": "Enviados",
+      "delivered": "Entregados",
+      "opened": "Abiertos",
+      "clicked": "Clicados"
+    },
+    "toast": {
+      "loadSubscribersFailed": "Error al cargar suscriptores",
+      "loadCampaignsFailed": "Error al cargar campañas",
+      "loadStatsFailed": "Error al cargar estadísticas",
+      "subscriberDeleted": "Suscriptor eliminado",
+      "deleteSubscriberFailed": "Error al eliminar suscriptor",
+      "exportSuccess": "Exportación descargada",
+      "exportFailed": "Error al exportar suscriptores"
     }
   }
 }

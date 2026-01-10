@@ -34,7 +34,20 @@
     "people": "Personen",
     "days": "Tage",
     "clearFilters": "Filter zurücksetzen",
-    "contactUs": "Kontakt"
+    "contactUs": "Kontakt",
+    "errors": {
+      "generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+      "loadFailed": "Daten konnten nicht geladen werden. Bitte aktualisieren Sie die Seite.",
+      "saveFailed": "Änderungen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+      "networkError": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.",
+      "notFound": "Das angeforderte Element wurde nicht gefunden.",
+      "unauthorized": "Sie sind nicht berechtigt, diese Aktion durchzuführen.",
+      "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+      "validationFailed": "Bitte überprüfen Sie das Formular auf Fehler.",
+      "fileTooLarge": "Die Datei ist zu groß. Maximale Größe: {size} MB.",
+      "invalidFileType": "Ungültiger Dateityp. Erlaubte Typen: {types}.",
+      "rateLimited": "Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut."
+    }
   },
   "nav": {
     "retreats": "Retreats",
@@ -367,6 +380,79 @@
     "legal": {
       "title": "Rechtliche Bedingungen",
       "text": "Dieses Retreat wird nach spanischem Recht organisiert. Mit der Buchung stimmst du unseren Allgemeinen Geschäftsbedingungen zu und verstehst, dass etwaige Streitigkeiten vor spanischen Gerichten behandelt werden."
+    }
+  },
+  "adminNewsletter": {
+    "title": "Newsletter",
+    "subtitle": "Abonnenten und E-Mail-Kampagnen verwalten",
+    "tabs": {
+      "subscribers": "Abonnenten",
+      "campaigns": "Kampagnen",
+      "analytics": "Analysen"
+    },
+    "subscribers": {
+      "total": "Gesamt",
+      "active": "Aktiv",
+      "pending": "Ausstehend",
+      "unsubscribed": "Abgemeldet",
+      "bounced": "Zurückgewiesen",
+      "searchPlaceholder": "Nach E-Mail suchen...",
+      "allStatus": "Alle Status",
+      "allLanguages": "Alle Sprachen",
+      "exportCsv": "CSV exportieren",
+      "refresh": "Aktualisieren",
+      "noSubscribers": "Keine Abonnenten gefunden",
+      "deleteTitle": "Abonnent löschen?",
+      "deleteDescription": "Dies wird {email} dauerhaft aus der Newsletter-Liste entfernen.",
+      "name": "Name",
+      "status": "Status",
+      "language": "Sprache",
+      "source": "Quelle",
+      "lastBooking": "Letzte Buchung",
+      "subscribed": "Abonniert"
+    },
+    "campaigns": {
+      "title": "E-Mail-Kampagnen",
+      "newCampaign": "Neue Kampagne",
+      "noCampaigns": "Noch keine Kampagnen. Erstelle deine erste Kampagne!",
+      "campaignName": "Kampagnenname",
+      "recipients": "Empfänger",
+      "opens": "Öffnungen",
+      "clicks": "Klicks",
+      "sentAt": "Gesendet am",
+      "status": {
+        "sent": "Gesendet",
+        "sending": "Wird gesendet",
+        "scheduled": "Geplant",
+        "draft": "Entwurf",
+        "cancelled": "Abgebrochen"
+      }
+    },
+    "analytics": {
+      "totalSubscribers": "Gesamte Abonnenten",
+      "thisWeek": "+{count} diese Woche",
+      "campaignsSent": "Kampagnen gesendet",
+      "drafts": "{count} Entwürfe",
+      "openRate": "Öffnungsrate (30T)",
+      "opens": "{count} Öffnungen",
+      "clickRate": "Klickrate (30T)",
+      "clicks": "{count} Klicks",
+      "byLanguage": "Abonnenten nach Sprache",
+      "bySource": "Abonnenten nach Quelle",
+      "emailPerformance": "E-Mail-Leistung (Letzte 30 Tage)",
+      "sent": "Gesendet",
+      "delivered": "Zugestellt",
+      "opened": "Geöffnet",
+      "clicked": "Geklickt"
+    },
+    "toast": {
+      "loadSubscribersFailed": "Abonnenten konnten nicht geladen werden",
+      "loadCampaignsFailed": "Kampagnen konnten nicht geladen werden",
+      "loadStatsFailed": "Statistiken konnten nicht geladen werden",
+      "subscriberDeleted": "Abonnent gelöscht",
+      "deleteSubscriberFailed": "Abonnent konnte nicht gelöscht werden",
+      "exportSuccess": "Export heruntergeladen",
+      "exportFailed": "Abonnenten konnten nicht exportiert werden"
     }
   }
 }

@@ -34,7 +34,20 @@
     "people": "personen",
     "days": "dagen",
     "clearFilters": "Filters wissen",
-    "contactUs": "Contact"
+    "contactUs": "Contact",
+    "errors": {
+      "generic": "Er ging iets mis. Probeer het opnieuw.",
+      "loadFailed": "Gegevens konden niet worden geladen. Vernieuw de pagina.",
+      "saveFailed": "Wijzigingen konden niet worden opgeslagen. Probeer het opnieuw.",
+      "networkError": "Netwerkfout. Controleer je verbinding.",
+      "notFound": "Het gevraagde item is niet gevonden.",
+      "unauthorized": "Je bent niet gemachtigd om deze actie uit te voeren.",
+      "sessionExpired": "Je sessie is verlopen. Log opnieuw in.",
+      "validationFailed": "Controleer het formulier op fouten.",
+      "fileTooLarge": "Het bestand is te groot. Maximale grootte: {size} MB.",
+      "invalidFileType": "Ongeldig bestandstype. Toegestane typen: {types}.",
+      "rateLimited": "Te veel verzoeken. Wacht even en probeer het opnieuw."
+    }
   },
   "nav": {
     "retreats": "Retreats",
@@ -367,6 +380,79 @@
     "legal": {
       "title": "Juridische Voorwaarden",
       "text": "Deze retreat wordt georganiseerd onder Spaans recht. Door te boeken, ga je akkoord met onze algemene voorwaarden en begrijp je dat eventuele geschillen worden behandeld door Spaanse rechtbanken."
+    }
+  },
+  "adminNewsletter": {
+    "title": "Nieuwsbrief",
+    "subtitle": "Beheer abonnees en e-mailcampagnes",
+    "tabs": {
+      "subscribers": "Abonnees",
+      "campaigns": "Campagnes",
+      "analytics": "Analyses"
+    },
+    "subscribers": {
+      "total": "Totaal",
+      "active": "Actief",
+      "pending": "In afwachting",
+      "unsubscribed": "Uitgeschreven",
+      "bounced": "Afgewezen",
+      "searchPlaceholder": "Zoeken op e-mail...",
+      "allStatus": "Alle statussen",
+      "allLanguages": "Alle talen",
+      "exportCsv": "CSV exporteren",
+      "refresh": "Vernieuwen",
+      "noSubscribers": "Geen abonnees gevonden",
+      "deleteTitle": "Abonnee verwijderen?",
+      "deleteDescription": "Dit verwijdert {email} permanent uit de nieuwsbrieflijst.",
+      "name": "Naam",
+      "status": "Status",
+      "language": "Taal",
+      "source": "Bron",
+      "lastBooking": "Laatste boeking",
+      "subscribed": "Geabonneerd"
+    },
+    "campaigns": {
+      "title": "E-mailcampagnes",
+      "newCampaign": "Nieuwe campagne",
+      "noCampaigns": "Nog geen campagnes. Maak je eerste campagne!",
+      "campaignName": "Campagnenaam",
+      "recipients": "Ontvangers",
+      "opens": "Openingen",
+      "clicks": "Klikken",
+      "sentAt": "Verzonden op",
+      "status": {
+        "sent": "Verzonden",
+        "sending": "Wordt verzonden",
+        "scheduled": "Gepland",
+        "draft": "Concept",
+        "cancelled": "Geannuleerd"
+      }
+    },
+    "analytics": {
+      "totalSubscribers": "Totaal abonnees",
+      "thisWeek": "+{count} deze week",
+      "campaignsSent": "Campagnes verzonden",
+      "drafts": "{count} concepten",
+      "openRate": "Openingspercentage (30d)",
+      "opens": "{count} openingen",
+      "clickRate": "Klikpercentage (30d)",
+      "clicks": "{count} klikken",
+      "byLanguage": "Abonnees per taal",
+      "bySource": "Abonnees per bron",
+      "emailPerformance": "E-mailprestaties (Laatste 30 dagen)",
+      "sent": "Verzonden",
+      "delivered": "Afgeleverd",
+      "opened": "Geopend",
+      "clicked": "Geklikt"
+    },
+    "toast": {
+      "loadSubscribersFailed": "Kon abonnees niet laden",
+      "loadCampaignsFailed": "Kon campagnes niet laden",
+      "loadStatsFailed": "Kon statistieken niet laden",
+      "subscriberDeleted": "Abonnee verwijderd",
+      "deleteSubscriberFailed": "Kon abonnee niet verwijderen",
+      "exportSuccess": "Export gedownload",
+      "exportFailed": "Kon abonnees niet exporteren"
     }
   }
 }
