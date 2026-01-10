@@ -9,7 +9,7 @@ import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { WavePattern, Surfer, Palm } from '@/components/illustrations';
+import { WavePattern, Surfer } from '@/components/illustrations';
 import { illustrationOpacity } from '@/lib/animations';
 
 type SubmitStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -96,13 +96,6 @@ export default function Newsletter() {
       <Surfer
         className="absolute -right-8 md:right-4 bottom-8 h-48 md:h-64 text-white hidden sm:block"
         style={{ opacity: illustrationOpacity.newsletterSurfer }}
-      />
-
-      {/* Palm Tree - Left Side */}
-      <Palm
-        animated
-        className="absolute -left-12 md:left-4 bottom-4 h-40 md:h-56 text-white hidden md:block"
-        style={{ opacity: illustrationOpacity.palm }}
       />
 
       <div className="container relative z-10 mx-auto px-4">
