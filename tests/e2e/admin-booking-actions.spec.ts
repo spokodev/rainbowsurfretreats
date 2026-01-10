@@ -8,19 +8,19 @@ test.describe('Admin Booking Actions', () => {
   test.beforeEach(async ({ page }) => {
     // Login to admin
     await page.goto(`${BASE_URL}/login`)
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
 
     await page.fill('input[type="email"]', ADMIN_EMAIL)
     await page.fill('input[type="password"]', ADMIN_PASSWORD)
     await page.click('button[type="submit"]')
 
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(2000)
   })
 
   test('should show booking list with test bookings', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/bookings`)
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.screenshot({ path: 'test-results/actions-1-bookings-list.png' })
 
     // Check for test bookings
@@ -33,7 +33,7 @@ test.describe('Admin Booking Actions', () => {
 
   test('should show Confirm button for pending booking with deposit', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/bookings`)
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
 
     // Find pending booking row and click the eye (view) button
     const pendingRow = page.locator('tr:has-text("TEST-PENDING-001")')
@@ -41,7 +41,7 @@ test.describe('Admin Booking Actions', () => {
       // Click on the eye icon link to go to detail page
       const viewButton = pendingRow.locator('a[href*="/admin/bookings/"]')
       await viewButton.click()
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForTimeout(1000)
       await page.screenshot({ path: 'test-results/actions-2-pending-detail.png' })
 
@@ -57,14 +57,14 @@ test.describe('Admin Booking Actions', () => {
 
   test('should show action buttons for confirmed booking', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/bookings`)
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
 
     // Find confirmed booking row and click the eye (view) button
     const confirmedRow = page.locator('tr:has-text("TEST-CONFIRMED-001")')
     if (await confirmedRow.isVisible()) {
       const viewButton = confirmedRow.locator('a[href*="/admin/bookings/"]')
       await viewButton.click()
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForTimeout(1000)
       await page.screenshot({ path: 'test-results/actions-3-confirmed-detail.png' })
 
@@ -76,14 +76,14 @@ test.describe('Admin Booking Actions', () => {
 
   test('should show Refund button for paid booking', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/bookings`)
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
 
     // Find refund booking row and click the eye (view) button
     const refundRow = page.locator('tr:has-text("TEST-REFUND-001")')
     if (await refundRow.isVisible()) {
       const viewButton = refundRow.locator('a[href*="/admin/bookings/"]')
       await viewButton.click()
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForTimeout(1000)
       await page.screenshot({ path: 'test-results/actions-4-refund-detail.png' })
 
@@ -95,14 +95,14 @@ test.describe('Admin Booking Actions', () => {
 
   test('should open Cancel Booking dialog', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/bookings`)
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
 
     // Find pending booking and go to detail
     const pendingRow = page.locator('tr:has-text("TEST-PENDING-001")')
     if (await pendingRow.isVisible()) {
       const viewButton = pendingRow.locator('a[href*="/admin/bookings/"]')
       await viewButton.click()
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForTimeout(1000)
 
       const cancelButton = page.locator('button:has-text("Cancel Booking")')
@@ -132,14 +132,14 @@ test.describe('Admin Booking Actions', () => {
 
   test('should open Refund dialog for paid booking', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/bookings`)
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
 
     // Find refund booking and go to detail
     const refundRow = page.locator('tr:has-text("TEST-REFUND-001")')
     if (await refundRow.isVisible()) {
       const viewButton = refundRow.locator('a[href*="/admin/bookings/"]')
       await viewButton.click()
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForTimeout(1000)
 
       const refundButton = page.locator('button:has-text("Process Refund")')
@@ -165,14 +165,14 @@ test.describe('Admin Booking Actions', () => {
 
   test('should execute Cancel Booking action', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/bookings`)
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
 
     // Find TEST-PENDING-001 booking (fresh booking to cancel)
     const pendingRow = page.locator('tr:has-text("TEST-PENDING-001")')
     if (await pendingRow.isVisible()) {
       const viewButton = pendingRow.locator('a[href*="/admin/bookings/"]')
       await viewButton.click()
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForTimeout(1000)
 
       const cancelButton = page.locator('button:has-text("Cancel Booking")')

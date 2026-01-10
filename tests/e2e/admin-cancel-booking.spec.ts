@@ -8,20 +8,20 @@ test.describe('Admin Cancel Booking', () => {
   test('should show cancel and refund buttons on booking detail page', async ({ page }) => {
     // Login to admin
     await page.goto(`${BASE_URL}/login`)
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     
     await page.fill('input[type="email"]', ADMIN_EMAIL)
     await page.fill('input[type="password"]', ADMIN_PASSWORD)
     await page.click('button[type="submit"]')
     
     // Wait for login to complete (redirects to home for regular users)
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(2000)
     await page.screenshot({ path: 'test-results/cancel-test-1-after-login.png' })
 
     // Go directly to admin bookings
     await page.goto(`${BASE_URL}/admin/bookings`)
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.screenshot({ path: 'test-results/cancel-test-2-bookings-list.png' })
     
     // Check if there are any bookings
@@ -35,7 +35,7 @@ test.describe('Admin Cancel Booking', () => {
     
     // Click first booking to go to detail
     await bookingRows.first().click()
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.screenshot({ path: 'test-results/cancel-test-3-booking-detail.png' })
     
     // Check for action buttons

@@ -115,8 +115,8 @@ test.describe('Rainbow Surf Retreats - Full E2E Tests', () => {
       await page.goto(`${BASE_URL}/login`);
 
       // Fill login form
-      await page.fill('input[type="email"], input[name="email"]', 'admin@rainbowsurfretreats.com');
-      await page.fill('input[type="password"], input[name="password"]', 'RainbowSurf2024!');
+      await page.fill('input[type="email"], input[name="email"]', 'test@admin.com');
+      await page.fill('input[type="password"], input[name="password"]', 'Admin123!');
 
       // Submit
       await page.click('button[type="submit"]');
@@ -134,14 +134,14 @@ test.describe('Rainbow Surf Retreats - Full E2E Tests', () => {
     test('should access admin blog section', async ({ page }) => {
       // First login
       await page.goto(`${BASE_URL}/login`);
-      await page.fill('input[type="email"], input[name="email"]', 'admin@rainbowsurfretreats.com');
-      await page.fill('input[type="password"], input[name="password"]', 'RainbowSurf2024!');
+      await page.fill('input[type="email"], input[name="email"]', 'test@admin.com');
+      await page.fill('input[type="password"], input[name="password"]', 'Admin123!');
       await page.click('button[type="submit"]');
       await page.waitForTimeout(3000);
 
       // Go to admin blog
       await page.goto(`${BASE_URL}/admin/blog`);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       await page.screenshot({ path: 'test-results/admin-blog.png', fullPage: true });
     });
@@ -151,14 +151,14 @@ test.describe('Rainbow Surf Retreats - Full E2E Tests', () => {
     test('should create a new blog post', async ({ page }) => {
       // Login first
       await page.goto(`${BASE_URL}/login`);
-      await page.fill('input[type="email"], input[name="email"]', 'admin@rainbowsurfretreats.com');
-      await page.fill('input[type="password"], input[name="password"]', 'RainbowSurf2024!');
+      await page.fill('input[type="email"], input[name="email"]', 'test@admin.com');
+      await page.fill('input[type="password"], input[name="password"]', 'Admin123!');
       await page.click('button[type="submit"]');
       await page.waitForTimeout(3000);
 
       // Navigate to new blog post page
       await page.goto(`${BASE_URL}/admin/blog/new`);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       await page.screenshot({ path: 'test-results/admin-blog-new.png', fullPage: true });
 
@@ -439,14 +439,14 @@ test.describe('Rainbow Surf Retreats - Full E2E Tests', () => {
     test('should access admin policies page after login', async ({ page }) => {
       // Login first
       await page.goto(`${BASE_URL}/login`);
-      await page.fill('input[type="email"], input[name="email"]', 'admin@rainbowsurfretreats.com');
-      await page.fill('input[type="password"], input[name="password"]', 'RainbowSurf2024!');
+      await page.fill('input[type="email"], input[name="email"]', 'test@admin.com');
+      await page.fill('input[type="password"], input[name="password"]', 'Admin123!');
       await page.click('button[type="submit"]');
       await page.waitForTimeout(3000);
 
       // Navigate to policies admin
       await page.goto(`${BASE_URL}/admin/policies`);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Check page loaded - use more specific selector for main content h1
       await expect(page.locator('main h1.text-3xl')).toContainText(/Policies/i);
@@ -461,14 +461,14 @@ test.describe('Rainbow Surf Retreats - Full E2E Tests', () => {
     test('should edit policy content in admin', async ({ page }) => {
       // Login first
       await page.goto(`${BASE_URL}/login`);
-      await page.fill('input[type="email"], input[name="email"]', 'admin@rainbowsurfretreats.com');
-      await page.fill('input[type="password"], input[name="password"]', 'RainbowSurf2024!');
+      await page.fill('input[type="email"], input[name="email"]', 'test@admin.com');
+      await page.fill('input[type="password"], input[name="password"]', 'Admin123!');
       await page.click('button[type="submit"]');
       await page.waitForTimeout(3000);
 
       // Navigate to policies admin
       await page.goto(`${BASE_URL}/admin/policies`);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await page.waitForTimeout(2000);
 
       // Click on first policy section to expand

@@ -1,13 +1,13 @@
 import { test, expect, Page } from '@playwright/test';
 
 // Admin credentials (for testing only)
-const ADMIN_EMAIL = 'admin@rainbowsurfretreats.com';
-const ADMIN_PASSWORD = 'RainbowSurf2024!';
+const ADMIN_EMAIL = 'test@admin.com';
+const ADMIN_PASSWORD = 'Admin123!';
 
 // Helper function to login
 async function loginAsAdmin(page: Page) {
   await page.goto('/login');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 
   await page.fill('input[type="email"], input[name="email"]', ADMIN_EMAIL);
   await page.fill('input[type="password"], input[name="password"]', ADMIN_PASSWORD);
@@ -15,7 +15,7 @@ async function loginAsAdmin(page: Page) {
 
   // Wait for redirect
   await page.waitForTimeout(3000);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 }
 
 // Helper to close popups
@@ -39,7 +39,7 @@ test.describe('Admin Retreat Form - Authentication', () => {
 
   test('should redirect to login when not authenticated', async ({ page }) => {
     await page.goto('/admin/retreats/new');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Should redirect to login
     await expect(page).toHaveURL(/\/login/);
@@ -50,7 +50,7 @@ test.describe('Admin Retreat Form - Authentication', () => {
     await closePopups(page);
 
     await page.goto('/admin/retreats/new');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Should see the form
     await expect(page.locator('form')).toBeVisible({ timeout: 10000 });
@@ -64,7 +64,7 @@ test.describe('Admin Retreat Form - Accordion Sections', () => {
     await loginAsAdmin(page);
     await closePopups(page);
     await page.goto('/admin/retreats/new');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   test('should display all accordion sections', async ({ page }) => {
@@ -111,7 +111,7 @@ test.describe('Admin Retreat Form - Basic Information Validation', () => {
     await loginAsAdmin(page);
     await closePopups(page);
     await page.goto('/admin/retreats/new');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   test('should show validation error when destination is empty', async ({ page }) => {
@@ -526,7 +526,7 @@ test.describe('Admin Retreat Form - Image Upload', () => {
     await loginAsAdmin(page);
     await closePopups(page);
     await page.goto('/admin/retreats/new');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Expand Media section
     const mediaSection = page.locator('button:has-text("Media & Description")');
@@ -620,14 +620,14 @@ test.describe('Admin Retreat Form - Edit Existing Retreat', () => {
 
     // Go to retreats list
     await page.goto('/admin/retreats');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Click edit on first retreat
     const editButton = page.locator('a:has-text("Edit"), button:has-text("Edit")').first();
 
     if (await editButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await editButton.click();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Form should be loaded with data
       const destinationInput = page.locator('input#destination');
@@ -645,7 +645,7 @@ test.describe('Admin Retreat Form - Cancel Navigation', () => {
     await loginAsAdmin(page);
     await closePopups(page);
     await page.goto('/admin/retreats/new');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   test('should navigate back on cancel', async ({ page }) => {
