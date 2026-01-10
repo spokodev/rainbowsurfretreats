@@ -96,9 +96,43 @@ export async function POST(
       )
     }
 
-    // Note: Room availability is NOT returned here
-    // If the booking was paid, admin must process a refund separately
-    // The refund process will handle returning the room availability
+    // Return room availability on cancellation (using actual guests_count)
+    if (booking.room_id) {
+      const { error: incrementError } = await supabase.rpc('increment_room_availability', {
+        room_uuid: booking.room_id,
+        increment_count: booking.guests_count || 1
+      })
+
+      if (incrementError) {
+        console.error('Error returning room availability:', incrementError)
+      } else {
+        console.log(`Room ${booking.room_id} availability restored after cancellation`)
+      }
+    }
+
+    // BUG-006 FIX: Clean up promo code redemption on cancellation
+    if (booking.promo_code_id) {
+      // Delete the redemption record
+      const { error: redemptionError } = await supabase
+        .from('promo_code_redemptions')
+        .delete()
+        .eq('booking_id', bookingId)
+
+      if (redemptionError) {
+        console.error('Error deleting promo redemption:', redemptionError)
+      }
+
+      // Decrement the usage counter
+      const { error: decrementError } = await supabase.rpc('decrement_promo_code_usage', {
+        code_id: booking.promo_code_id
+      })
+
+      if (decrementError) {
+        console.error('Error decrementing promo code usage:', decrementError)
+      } else {
+        console.log(`Promo code ${booking.promo_code_id} usage decremented after cancellation`)
+      }
+    }
 
     // Send cancellation email if requested
     if (sendEmail) {

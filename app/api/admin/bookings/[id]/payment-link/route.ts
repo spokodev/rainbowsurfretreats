@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { checkAdminAuth } from '@/lib/settings'
 import { stripe } from '@/lib/stripe'
 import { Resend } from 'resend'
+import { FROM_EMAIL, REPLY_TO_EMAIL } from '@/lib/email'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreats.com'
 
@@ -195,8 +196,8 @@ export async function POST(
         const resend = new Resend(process.env.RESEND_API_KEY)
 
         await resend.emails.send({
-          from: 'Rainbow Surf Retreats <noreply@rainbowsurfretreats.com>',
-          replyTo: 'info@rainbowsurfretreats.com',
+          from: FROM_EMAIL,
+          replyTo: REPLY_TO_EMAIL,
           to: booking.email,
           subject: `Payment Link for Your ${booking.retreat?.title || 'Retreat'} Booking`,
           html: `

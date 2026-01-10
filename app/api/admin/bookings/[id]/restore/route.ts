@@ -79,15 +79,20 @@ export async function POST(
       )
     }
 
-    // Check if retreat hasn't started yet
-    if (booking.retreat?.start_date) {
-      const retreatStart = new Date(booking.retreat.start_date)
-      if (retreatStart <= new Date()) {
-        return NextResponse.json(
-          { error: 'Cannot restore booking for a retreat that has already started' },
-          { status: 400 }
-        )
-      }
+    // BUG-009 FIX: Strict validation that retreat exists and hasn't started
+    if (!booking.retreat?.start_date) {
+      return NextResponse.json(
+        { error: 'Cannot restore booking: Retreat information not available' },
+        { status: 400 }
+      )
+    }
+
+    const retreatStart = new Date(booking.retreat.start_date)
+    if (retreatStart <= new Date()) {
+      return NextResponse.json(
+        { error: 'Cannot restore booking for a retreat that has already started or ended' },
+        { status: 400 }
+      )
     }
 
     // Check room availability
