@@ -19,6 +19,7 @@ import {
   AlertCircle,
   MapPin,
   ExternalLink,
+  BedDouble,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -48,7 +49,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import type { Retreat, WaitlistEntry, WaitlistStats } from '@/lib/types/database'
+import type { Retreat, WaitlistEntry, WaitlistStats, RoomOccupancyResponse, RoomWithGuests } from '@/lib/types/database'
+import { RoomManagementProvider, InteractiveRoomView } from '@/components/admin/room-management'
+import { AddRoomDialog } from '@/components/admin/add-room-dialog'
+import { EditRoomDialog } from '@/components/admin/edit-room-dialog'
 
 interface WaitlistListResponse {
   entries: WaitlistEntry[]
@@ -98,6 +102,14 @@ export default function AdminRetreatDetailPage({
   const [notifyingId, setNotifyingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
+  // Room management state
+  const [roomData, setRoomData] = useState<RoomOccupancyResponse | null>(null)
+  const [roomLoading, setRoomLoading] = useState(true)
+  const [addRoomDialogOpen, setAddRoomDialogOpen] = useState(false)
+  const [selectedRoomForEdit, setSelectedRoomForEdit] = useState<RoomWithGuests | null>(null)
+  const [selectedRoomForDelete, setSelectedRoomForDelete] = useState<RoomWithGuests | null>(null)
+  const [deletingRoom, setDeletingRoom] = useState(false)
+
   // Fetch retreat details
   useEffect(() => {
     async function fetchRetreat() {
@@ -142,6 +154,52 @@ export default function AdminRetreatDetailPage({
   useEffect(() => {
     fetchWaitlist()
   }, [fetchWaitlist])
+
+  // Fetch room data
+  const fetchRoomData = useCallback(async () => {
+    setRoomLoading(true)
+    try {
+      const response = await fetch(`/api/admin/retreats/${id}/room-occupancy`)
+      const result = await response.json()
+      if (response.ok) {
+        setRoomData(result.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch room data:', err)
+    } finally {
+      setRoomLoading(false)
+    }
+  }, [id])
+
+  useEffect(() => {
+    fetchRoomData()
+  }, [fetchRoomData])
+
+  const confirmDeleteRoom = async () => {
+    if (!selectedRoomForDelete) return
+
+    setDeletingRoom(true)
+    try {
+      const response = await fetch(`/api/retreats/${id}/rooms/${selectedRoomForDelete.id}`, {
+        method: 'DELETE',
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        toast.error(result.error || 'Failed to delete room')
+        return
+      }
+
+      toast.success(`Room "${selectedRoomForDelete.name}" deleted successfully`)
+      setSelectedRoomForDelete(null)
+      fetchRoomData()
+    } catch {
+      toast.error('Failed to delete room')
+    } finally {
+      setDeletingRoom(false)
+    }
+  }
 
   const handleNotify = async (entryId: string) => {
     setNotifyingId(entryId)
@@ -263,7 +321,7 @@ export default function AdminRetreatDetailPage({
             )}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" asChild>
             <Link href={`/retreats/${retreat.slug}`} target="_blank">
               <ExternalLink className="w-4 h-4 mr-2" />
@@ -331,6 +389,47 @@ export default function AdminRetreatDetailPage({
         </Card>
       </div>
 
+      {/* Room Management Section */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <BedDouble className="w-5 h-5" />
+                Room Management
+              </CardTitle>
+              <CardDescription>
+                Drag guests between rooms or click + to assign
+              </CardDescription>
+            </div>
+            <Button variant="outline" onClick={fetchRoomData} disabled={roomLoading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${roomLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {roomLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : roomData ? (
+            <RoomManagementProvider retreatId={id} initialData={roomData}>
+              <InteractiveRoomView
+                onAddRoom={() => setAddRoomDialogOpen(true)}
+                onEditRoom={(room) => setSelectedRoomForEdit(room)}
+                onDeleteRoom={(room) => setSelectedRoomForDelete(room)}
+              />
+            </RoomManagementProvider>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              <BedDouble className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Failed to load room data</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Waitlist Section */}
       <Card>
         <CardHeader>
@@ -358,27 +457,27 @@ export default function AdminRetreatDetailPage({
           {waitlistData?.stats && (
             <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">
               <div className="text-center p-2 bg-blue-50 rounded">
-                <div className="text-2xl font-bold text-blue-600">{waitlistData.stats.waiting}</div>
+                <div className="text-2xl font-bold tabular-nums text-blue-600">{waitlistData.stats.waiting}</div>
                 <div className="text-xs text-muted-foreground">Waiting</div>
               </div>
-              <div className="text-center p-2 bg-yellow-50 rounded">
-                <div className="text-2xl font-bold text-yellow-600">{waitlistData.stats.notified}</div>
+              <div className="text-center p-2 bg-orange-50 rounded">
+                <div className="text-2xl font-bold tabular-nums text-orange-500">{waitlistData.stats.notified}</div>
                 <div className="text-xs text-muted-foreground">Notified</div>
               </div>
               <div className="text-center p-2 bg-green-50 rounded">
-                <div className="text-2xl font-bold text-green-600">{waitlistData.stats.accepted}</div>
+                <div className="text-2xl font-bold tabular-nums text-green-600">{waitlistData.stats.accepted}</div>
                 <div className="text-xs text-muted-foreground">Accepted</div>
               </div>
               <div className="text-center p-2 bg-red-50 rounded">
-                <div className="text-2xl font-bold text-red-600">{waitlistData.stats.declined}</div>
+                <div className="text-2xl font-bold tabular-nums text-red-600">{waitlistData.stats.declined}</div>
                 <div className="text-xs text-muted-foreground">Declined</div>
               </div>
               <div className="text-center p-2 bg-gray-50 rounded">
-                <div className="text-2xl font-bold text-gray-600">{waitlistData.stats.expired}</div>
+                <div className="text-2xl font-bold tabular-nums text-gray-600">{waitlistData.stats.expired}</div>
                 <div className="text-xs text-muted-foreground">Expired</div>
               </div>
               <div className="text-center p-2 bg-green-50 rounded">
-                <div className="text-2xl font-bold text-green-600">{waitlistData.stats.booked}</div>
+                <div className="text-2xl font-bold tabular-nums text-green-600">{waitlistData.stats.booked}</div>
                 <div className="text-xs text-muted-foreground">Booked</div>
               </div>
             </div>
@@ -498,6 +597,62 @@ export default function AdminRetreatDetailPage({
           )}
         </CardContent>
       </Card>
+
+      {/* Room Dialogs */}
+      {retreat && (
+        <>
+          <AddRoomDialog
+            open={addRoomDialogOpen}
+            onOpenChange={setAddRoomDialogOpen}
+            retreatId={id}
+            retreatStartDate={retreat.start_date}
+            onSuccess={() => {
+              setAddRoomDialogOpen(false)
+              fetchRoomData()
+            }}
+          />
+
+          {selectedRoomForEdit && (
+            <EditRoomDialog
+              open={!!selectedRoomForEdit}
+              onOpenChange={(open) => !open && setSelectedRoomForEdit(null)}
+              retreatId={id}
+              room={selectedRoomForEdit}
+              retreatStartDate={retreat.start_date}
+              onSuccess={() => {
+                setSelectedRoomForEdit(null)
+                fetchRoomData()
+              }}
+            />
+          )}
+
+          {/* Delete Room Dialog */}
+          <AlertDialog open={!!selectedRoomForDelete} onOpenChange={(open) => !open && setSelectedRoomForDelete(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <Trash2 className="w-5 h-5 text-destructive" />
+                  Delete Room?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete the room <strong>{selectedRoomForDelete?.name}</strong>.
+                  This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deletingRoom}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmDeleteRoom}
+                  disabled={deletingRoom}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deletingRoom ? 'Deleting...' : 'Delete Room'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
     </div>
   )
 }

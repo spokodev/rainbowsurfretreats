@@ -260,7 +260,7 @@ function RetreatsPageContent() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
               <Eye className="h-5 w-5 text-green-600" />
-              <div className="text-2xl font-bold">{publishedCount}</div>
+              <div className="text-2xl font-bold tabular-nums">{publishedCount}</div>
             </div>
             <p className="text-xs text-muted-foreground">Published</p>
           </CardContent>
@@ -269,7 +269,7 @@ function RetreatsPageContent() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
               <EyeOff className="h-5 w-5 text-gray-600" />
-              <div className="text-2xl font-bold">{draftCount}</div>
+              <div className="text-2xl font-bold tabular-nums">{draftCount}</div>
             </div>
             <p className="text-xs text-muted-foreground">Drafts</p>
           </CardContent>
@@ -278,7 +278,7 @@ function RetreatsPageContent() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
               <MapPin className="h-5 w-5 text-blue-600" />
-              <div className="text-2xl font-bold">{pagination.total}</div>
+              <div className="text-2xl font-bold tabular-nums">{pagination.total}</div>
             </div>
             <p className="text-xs text-muted-foreground">Total Retreats</p>
           </CardContent>
@@ -379,7 +379,11 @@ function RetreatsPageContent() {
                   </TableHeader>
                   <TableBody>
                     {retreats.map((retreat) => (
-                      <TableRow key={retreat.id}>
+                      <TableRow
+                        key={retreat.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => router.push(`/admin/retreats/${retreat.id}`)}
+                      >
                         <TableCell>
                           <div className="flex flex-col">
                             <div className="flex items-center gap-2">
@@ -433,8 +437,8 @@ function RetreatsPageContent() {
                           </Badge>
                         </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="icon" asChild>
+                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon" asChild title="Edit retreat">
                             <Link href={`/admin/retreats/${retreat.id}/edit`}>
                               <Pencil className="h-4 w-4" />
                             </Link>
