@@ -1,0 +1,182 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - region "Notifications alt+T"
+      - complementary [ref=e4]:
+        - generic [ref=e5]:
+          - heading "Rainbow Surf Admin" [level=1] [ref=e7]
+          - navigation [ref=e8]:
+            - link "Dashboard" [ref=e9] [cursor=pointer]:
+              - /url: /admin
+              - img [ref=e10]
+              - generic [ref=e15]: Dashboard
+            - link "Retreats" [ref=e16] [cursor=pointer]:
+              - /url: /admin/retreats
+              - img [ref=e17]
+              - generic [ref=e22]: Retreats
+            - link "Bookings" [ref=e23] [cursor=pointer]:
+              - /url: /admin/bookings
+              - img [ref=e24]
+              - generic [ref=e27]: Bookings
+            - link "Waitlist" [ref=e28] [cursor=pointer]:
+              - /url: /admin/waitlist
+              - img [ref=e29]
+              - generic [ref=e34]: Waitlist
+            - link "Payments" [ref=e35] [cursor=pointer]:
+              - /url: /admin/payments
+              - img [ref=e36]
+              - generic [ref=e38]: Payments
+            - link "Feedback" [ref=e39] [cursor=pointer]:
+              - /url: /admin/feedback
+              - img [ref=e40]
+              - generic [ref=e42]: Feedback
+            - link "Email Logs" [ref=e43] [cursor=pointer]:
+              - /url: /admin/email-logs
+              - img [ref=e44]
+              - generic [ref=e47]: Email Logs
+            - link "Newsletter" [ref=e48] [cursor=pointer]:
+              - /url: /admin/newsletter
+              - img [ref=e49]
+              - generic [ref=e52]: Newsletter
+            - link "Promo Codes" [ref=e53] [cursor=pointer]:
+              - /url: /admin/promo-codes
+              - img [ref=e54]
+              - generic [ref=e57]: Promo Codes
+            - link "Blog" [ref=e58] [cursor=pointer]:
+              - /url: /admin/blog
+              - img [ref=e59]
+              - generic [ref=e62]: Blog
+            - link "Policies" [ref=e63] [cursor=pointer]:
+              - /url: /admin/policies
+              - img [ref=e64]
+              - generic [ref=e67]: Policies
+            - link "Pages" [ref=e68] [cursor=pointer]:
+              - /url: /admin/pages
+              - img [ref=e69]
+              - generic [ref=e73]: Pages
+            - link "Trash" [ref=e74] [cursor=pointer]:
+              - /url: /admin/trash
+              - img [ref=e75]
+              - generic [ref=e78]: Trash
+            - link "Settings" [ref=e79] [cursor=pointer]:
+              - /url: /admin/settings
+              - img [ref=e80]
+              - generic [ref=e83]: Settings
+          - button "Logout" [ref=e85]:
+            - img
+            - generic [ref=e86]: Logout
+      - main [ref=e87]:
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - link [ref=e91] [cursor=pointer]:
+              - /url: /admin/retreats
+              - img
+            - generic [ref=e92]:
+              - heading "Create New Retreat" [level=1] [ref=e93]
+              - paragraph [ref=e94]: Add a new surf retreat experience
+          - generic [ref=e95]:
+            - generic [ref=e98]:
+              - generic [ref=e99]:
+                - switch "Publish Retreat" [ref=e100]
+                - checkbox
+                - generic [ref=e101]:
+                  - generic [ref=e102]: Publish Retreat
+                  - paragraph [ref=e103]: Hidden from website
+              - generic [ref=e104]: Draft
+            - generic [ref=e105]:
+              - generic [ref=e106]:
+                - heading "Basic Information Required" [level=3] [ref=e107]:
+                  - button "Basic Information Required" [expanded] [ref=e108]:
+                    - generic [ref=e109]:
+                      - img [ref=e110]
+                      - generic [ref=e112]: Basic Information
+                      - generic [ref=e113]: Required
+                    - img
+                - region "Basic Information Required" [ref=e114]:
+                  - generic [ref=e115]:
+                    - generic [ref=e116]:
+                      - generic [ref=e117]: Destination *
+                      - textbox "Destination *" [ref=e118]:
+                        - /placeholder: e.g., Bali, Indonesia
+                    - generic [ref=e119]:
+                      - generic [ref=e120]:
+                        - generic [ref=e121]: Start Date *
+                        - textbox "Start Date *" [ref=e122]
+                      - generic [ref=e123]:
+                        - generic [ref=e124]: End Date *
+                        - textbox "End Date *" [ref=e125]
+                      - generic [ref=e126]:
+                        - generic [ref=e127]: Level *
+                        - combobox [ref=e128]:
+                          - generic: All Levels
+                          - img
+                        - combobox [ref=e129]
+                    - generic [ref=e130]:
+                      - generic [ref=e131]:
+                        - generic [ref=e132]: Duration
+                        - generic [ref=e133]: Select start and end dates
+                        - paragraph [ref=e134]: Auto-calculated from dates
+                      - generic [ref=e135]:
+                        - generic [ref=e136]: Participants *
+                        - textbox "Participants *" [ref=e137]:
+                          - /placeholder: e.g., 10-16
+                          - text: 10-16
+              - generic [ref=e138]:
+                - heading "Rooms & Pricing 0 rooms" [level=3] [ref=e139]:
+                  - button "Rooms & Pricing 0 rooms" [expanded] [ref=e140]:
+                    - generic [ref=e141]:
+                      - img [ref=e142]
+                      - generic [ref=e144]: Rooms & Pricing
+                      - generic [ref=e145]: 0 rooms
+                    - img
+                - region "Rooms & Pricing 0 rooms" [ref=e146]:
+                  - generic [ref=e148]:
+                    - generic [ref=e149]:
+                      - generic [ref=e150]:
+                        - heading "Room Options" [level=4] [ref=e151]
+                        - paragraph [ref=e152]: Add different accommodation types with their prices
+                      - button "Add Room" [ref=e153]:
+                        - img
+                        - text: Add Room
+                    - generic [ref=e154]:
+                      - img [ref=e155]
+                      - paragraph [ref=e157]: No rooms added yet. Add rooms to offer different accommodation options.
+                      - button "Add First Room" [ref=e158]:
+                        - img
+                        - text: Add First Room
+              - heading "Media & Description" [level=3] [ref=e160]:
+                - button "Media & Description" [ref=e161]:
+                  - generic [ref=e162]:
+                    - img [ref=e163]
+                    - generic [ref=e167]: Media & Description
+                  - img
+              - heading "Retreat Details" [level=3] [ref=e169]:
+                - button "Retreat Details" [ref=e170]:
+                  - generic [ref=e171]:
+                    - img [ref=e172]
+                    - generic [ref=e175]: Retreat Details
+                  - img
+              - heading "Location & Map" [level=3] [ref=e177]:
+                - button "Location & Map" [ref=e178]:
+                  - generic [ref=e179]:
+                    - img [ref=e180]
+                    - generic [ref=e183]: Location & Map
+                  - img
+              - heading "Additional Information" [level=3] [ref=e185]:
+                - button "Additional Information" [ref=e186]:
+                  - generic [ref=e187]:
+                    - img [ref=e188]
+                    - generic [ref=e190]: Additional Information
+                  - img
+            - generic [ref=e191]:
+              - button "Cancel" [ref=e192]
+              - button "Create Retreat" [ref=e193]:
+                - img
+                - text: Create Retreat
+  - button "Open Next.js Dev Tools" [ref=e199] [cursor=pointer]:
+    - img [ref=e200]
+  - alert [ref=e203]
+```

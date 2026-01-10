@@ -1,0 +1,118 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - region "Notifications alt+T"
+      - complementary [ref=e4]:
+        - generic [ref=e5]:
+          - heading "Rainbow Surf Admin" [level=1] [ref=e7]
+          - navigation [ref=e8]:
+            - link "Dashboard" [ref=e9] [cursor=pointer]:
+              - /url: /admin
+              - img [ref=e10]
+              - generic [ref=e15]: Dashboard
+            - link "Retreats" [ref=e16] [cursor=pointer]:
+              - /url: /admin/retreats
+              - img [ref=e17]
+              - generic [ref=e22]: Retreats
+            - link "Bookings" [ref=e23] [cursor=pointer]:
+              - /url: /admin/bookings
+              - img [ref=e24]
+              - generic [ref=e27]: Bookings
+            - link "Waitlist" [ref=e28] [cursor=pointer]:
+              - /url: /admin/waitlist
+              - img [ref=e29]
+              - generic [ref=e34]: Waitlist
+            - link "Payments" [ref=e35] [cursor=pointer]:
+              - /url: /admin/payments
+              - img [ref=e36]
+              - generic [ref=e38]: Payments
+            - link "Feedback" [ref=e39] [cursor=pointer]:
+              - /url: /admin/feedback
+              - img [ref=e40]
+              - generic [ref=e42]: Feedback
+            - link "Email Logs" [ref=e43] [cursor=pointer]:
+              - /url: /admin/email-logs
+              - img [ref=e44]
+              - generic [ref=e47]: Email Logs
+            - link "Promo Codes" [ref=e48] [cursor=pointer]:
+              - /url: /admin/promo-codes
+              - img [ref=e49]
+              - generic [ref=e52]: Promo Codes
+            - link "Blog" [ref=e53] [cursor=pointer]:
+              - /url: /admin/blog
+              - img [ref=e54]
+              - generic [ref=e57]: Blog
+            - link "Policies" [ref=e58] [cursor=pointer]:
+              - /url: /admin/policies
+              - img [ref=e59]
+              - generic [ref=e62]: Policies
+            - link "Trash" [ref=e63] [cursor=pointer]:
+              - /url: /admin/trash
+              - img [ref=e64]
+              - generic [ref=e67]: Trash
+            - link "Settings" [ref=e68] [cursor=pointer]:
+              - /url: /admin/settings
+              - img [ref=e69]
+              - generic [ref=e72]: Settings
+          - button "Logout" [ref=e74]:
+            - img
+            - generic [ref=e75]: Logout
+      - main [ref=e76]:
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - generic [ref=e80]:
+              - heading "Bookings" [level=1] [ref=e81]
+              - paragraph [ref=e82]: Manage guest bookings and reservations
+            - generic [ref=e83]:
+              - button [disabled]:
+                - img
+              - link "Add New Booking" [ref=e84] [cursor=pointer]:
+                - /url: /admin/bookings/new
+                - img
+                - text: Add New Booking
+          - generic [ref=e85]:
+            - generic [ref=e87]:
+              - generic [ref=e88]: "0"
+              - paragraph [ref=e89]: Confirmed
+            - generic [ref=e91]:
+              - generic [ref=e92]: "0"
+              - paragraph [ref=e93]: Pending
+            - generic [ref=e95]:
+              - generic [ref=e96]: "0"
+              - paragraph [ref=e97]: Cancelled
+            - generic [ref=e99]:
+              - generic [ref=e100]: "0"
+              - paragraph [ref=e101]: Total Bookings
+          - generic [ref=e102]:
+            - generic [ref=e103]:
+              - heading "All Bookings" [level=4] [ref=e104]
+              - paragraph [ref=e105]: View and manage all guest reservations
+            - generic [ref=e106]:
+              - generic [ref=e107]:
+                - generic [ref=e108]:
+                  - img [ref=e109]
+                  - 'searchbox "Search by booking #, name, or email..." [ref=e112]'
+                - generic [ref=e113]:
+                  - generic [ref=e114]:
+                    - img [ref=e115]
+                    - generic [ref=e116]: "Filters:"
+                  - combobox [ref=e117]:
+                    - generic: All
+                    - img
+                  - combobox [ref=e118]:
+                    - generic: All
+                    - img
+                  - generic [ref=e119]:
+                    - button "Check-in from" [ref=e120]:
+                      - img
+                      - text: Check-in from
+                    - generic [ref=e121]: "-"
+                    - button "Check-in to" [ref=e122]:
+                      - img
+                      - text: Check-in to
+              - img [ref=e124]
+  - alert [ref=e126]
+```
