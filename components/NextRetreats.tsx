@@ -26,6 +26,7 @@ interface RetreatRoom {
   price: number;
   available: number;
   is_sold_out: boolean;
+  is_published?: boolean;
 }
 
 interface Retreat {
@@ -49,7 +50,7 @@ interface Retreat {
 
 const getLowestAvailablePrice = (retreat: Retreat): { price: number | null; isSoldOut: boolean } => {
   const availableRooms = retreat.rooms?.filter(
-    room => room.available > 0 && !room.is_sold_out
+    room => room.available > 0 && !room.is_sold_out && room.is_published !== false
   ) || [];
 
   if (availableRooms.length === 0) {
@@ -93,10 +94,10 @@ export default function NextRetreats() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
             Upcoming Retreats
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
             Join us for an unforgettable surf adventure. Choose from our
             carefully curated retreats around the world.
           </p>

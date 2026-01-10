@@ -62,6 +62,7 @@ export interface RetreatRoom {
   capacity: number
   available: number
   is_sold_out: boolean
+  is_published: boolean
   sort_order: number
   early_bird_enabled: boolean
   early_bird_deadline: string | null
@@ -105,6 +106,7 @@ export interface RetreatRoomInsert {
   capacity?: number
   available: number
   is_sold_out?: boolean
+  is_published?: boolean
   sort_order?: number
   early_bird_enabled?: boolean
   early_bird_deadline?: string | null
@@ -121,6 +123,19 @@ export interface BlogCategory {
   color: string
   created_at: string
 }
+
+// Translation content for a blog post
+export interface BlogPostTranslation {
+  title: string
+  slug: string
+  excerpt?: string
+  content: string
+  meta_title?: string
+  meta_description?: string
+}
+
+// Supported languages for blog posts
+export type BlogLanguage = 'en' | 'de' | 'es' | 'fr' | 'nl'
 
 export interface BlogPost {
   id: string
@@ -141,6 +156,9 @@ export interface BlogPost {
   tags: string[]
   created_at: string
   updated_at: string
+  // Multilingual support
+  primary_language: BlogLanguage
+  translations: Record<BlogLanguage, BlogPostTranslation>
   // Soft delete
   deleted_at: string | null
   deleted_by: string | null
@@ -163,6 +181,9 @@ export interface BlogPostInsert {
   meta_title?: string | null
   meta_description?: string | null
   tags?: string[]
+  // Multilingual support
+  primary_language?: BlogLanguage
+  translations?: Record<string, BlogPostTranslation>
 }
 
 export interface BlogCategoryInsert {
@@ -389,6 +410,7 @@ export interface RetreatRoomFormData {
   capacity: number
   available: number
   is_sold_out: boolean
+  is_published: boolean
   early_bird_enabled: boolean
   early_bird_deadline: string | null
 }
@@ -586,4 +608,65 @@ export interface EmailAuditLogInsert {
   status?: EmailStatus
   error_message?: string | null
   metadata?: Record<string, unknown>
+}
+
+// =====================
+// ROOM OCCUPANCY TYPES
+// =====================
+
+// Guest info for room occupancy display
+export interface RoomGuest {
+  booking_id: string
+  booking_number: string
+  first_name: string
+  last_name: string
+  email: string
+  phone: string | null
+  guests_count: number
+  payment_status: PaymentStatus
+  status: BookingStatus
+  check_in_date: string
+  check_out_date: string
+}
+
+// Room with guests for occupancy view
+export interface RoomWithGuests extends RetreatRoom {
+  guests: RoomGuest[]
+  occupied: number // Total guests_count in this room
+}
+
+// Unassigned booking (no room assigned yet)
+export interface UnassignedBooking {
+  id: string
+  booking_number: string
+  first_name: string
+  last_name: string
+  email: string
+  phone: string | null
+  guests_count: number
+  payment_status: PaymentStatus
+  status: BookingStatus
+  check_in_date: string
+  check_out_date: string
+  created_at: string
+}
+
+// Room occupancy response from API
+export interface RoomOccupancyResponse {
+  retreat: {
+    id: string
+    destination: string
+    start_date: string
+    end_date: string
+    slug: string | null
+  }
+  rooms: RoomWithGuests[]
+  unassigned: UnassignedBooking[]
+  waitlist: WaitlistEntry[]
+  summary: {
+    totalCapacity: number
+    totalOccupied: number
+    unassignedCount: number
+    waitlistCount: number
+  }
 }
