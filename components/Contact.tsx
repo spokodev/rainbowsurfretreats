@@ -335,7 +335,7 @@ export default function Contact({ headerImage }: ContactProps) {
                   <motion.p
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-green-600 dark:text-green-400"
+                    className="text-green-600"
                   >
                     Thank you! Your message has been sent successfully.
                   </motion.p>
@@ -344,7 +344,7 @@ export default function Contact({ headerImage }: ContactProps) {
                   <motion.p
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-red-600 dark:text-red-400"
+                    className="text-red-600"
                   >
                     Oops! Something went wrong. Please try again.
                   </motion.p>

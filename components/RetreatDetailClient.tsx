@@ -22,6 +22,7 @@ interface RetreatRoom {
   id: string
   name: string
   description: string
+  image_url?: string | null
   price: number
   deposit_price: number
   capacity: number
@@ -374,7 +375,7 @@ export default function RetreatDetailClient({ retreat }: RetreatDetailClientProp
 
       {/* Waitlist Dialog */}
       <Dialog open={!!waitlistRoom} onOpenChange={(open) => !open && setWaitlistRoom(null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Join Waitlist</DialogTitle>
           </DialogHeader>

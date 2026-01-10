@@ -120,8 +120,8 @@ export default function PoliciesPageClient({ initialPolicies, headerImage }: Pol
               </div>
             )}
             {content.noteTitle && (
-              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                <p className="text-amber-800 dark:text-amber-200">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-amber-800">
                   <strong>{content.noteTitle}:</strong> {content.noteText}
                 </p>
               </div>
@@ -146,8 +146,8 @@ export default function PoliciesPageClient({ initialPolicies, headerImage }: Pol
               </div>
             )}
             {content.tipTitle && (
-              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <p className="text-blue-800 dark:text-blue-200">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-blue-800">
                   <strong>{content.tipTitle}:</strong> {content.tipText}
                 </p>
               </div>

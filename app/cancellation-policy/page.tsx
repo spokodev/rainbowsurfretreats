@@ -90,11 +90,11 @@ export default function CancellationPolicyPage() {
 
             {/* Important Note */}
             {content.noteTitle && (
-              <section className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-2 text-amber-800 dark:text-amber-200">
+              <section className="bg-amber-50 border border-amber-200 rounded-lg p-6">
+                <h2 className="text-xl font-semibold mb-2 text-amber-800">
                   {content.noteTitle}
                 </h2>
-                <p className="text-amber-700 dark:text-amber-300">{content.noteText}</p>
+                <p className="text-amber-700">{content.noteText}</p>
               </section>
             )}
 
