@@ -50,6 +50,7 @@ export function BlogEditor({ content, onChange, placeholder = 'Start writing you
   const [imageDialogOpen, setImageDialogOpen] = useState(false)
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: {

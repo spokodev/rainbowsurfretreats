@@ -2,15 +2,25 @@
 
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useLocale } from 'next-intl'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, Clock, User, Share2, Facebook, Twitter, Linkedin } from 'lucide-react'
+import { ArrowLeft, Calendar, Clock, User, Share2, Facebook, Twitter, Linkedin, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { BlogPost } from '@/lib/types/database'
+import type { BlogPost, BlogLanguage } from '@/lib/types/database'
 import { getBlogPostBySlug } from '@/lib/blog-data'
 import type { BlogPost as StaticBlogPost } from '@/components/BlogCard'
+
+// Available languages for language switcher
+const LANGUAGES: { code: BlogLanguage; name: string; flag: string }[] = [
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'nl', name: 'Nederlands', flag: '🇳🇱' },
+]
 
 const categoryColors: Record<string, string> = {
   destinations: 'bg-purple-100 text-purple-800',
@@ -241,14 +251,18 @@ interface DisplayPost {
   excerpt?: string
   category?: { name: string; slug: string } | string
   tags?: string[]
+  availableLanguages?: BlogLanguage[]
+  currentLanguage?: BlogLanguage
 }
 
 export default function BlogPostPage() {
   const params = useParams()
   const slug = params.slug as string
+  const locale = useLocale() as BlogLanguage
   const [post, setPost] = useState<DisplayPost | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentLang, setCurrentLang] = useState<BlogLanguage>(locale || 'en')
 
   useEffect(() => {
     async function fetchPost() {
@@ -267,19 +281,33 @@ export default function BlogPostPage() {
             excerpt: staticPost.excerpt,
             category: { name: staticPost.category, slug: staticPost.categorySlug },
             tags: [],
+            availableLanguages: ['en'], // Static posts only in English
+            currentLanguage: 'en',
           })
           setLoading(false)
           return
         }
 
         // If not in static data, try API (for new posts from Supabase)
-        const response = await fetch(`/api/blog/posts?slug=${slug}`)
+        // Fetch with language parameter for translated content
+        const response = await fetch(`/api/blog/posts?slug=${slug}&lang=${currentLang}`)
         const data = await response.json()
 
         if (data.error) {
           setError(data.error)
         } else if (data.data && data.data.length > 0) {
           const dbPost = data.data[0]
+
+          // Determine which languages have translations
+          const availableLangs: BlogLanguage[] = ['en'] // Primary always available
+          if (dbPost.translations) {
+            Object.keys(dbPost.translations).forEach((lang) => {
+              if (dbPost.translations[lang]?.title && dbPost.translations[lang]?.content) {
+                availableLangs.push(lang as BlogLanguage)
+              }
+            })
+          }
+
           setPost({
             title: dbPost.title,
             content: dbPost.content,
@@ -289,6 +317,8 @@ export default function BlogPostPage() {
             excerpt: dbPost.excerpt,
             category: dbPost.category,
             tags: dbPost.tags,
+            availableLanguages: availableLangs,
+            currentLanguage: currentLang,
           })
         } else {
           setError('Post not found')
@@ -303,7 +333,7 @@ export default function BlogPostPage() {
     if (slug) {
       fetchPost()
     }
-  }, [slug])
+  }, [slug, currentLang])
 
   if (loading) {
     return (
@@ -358,7 +388,7 @@ export default function BlogPostPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
         {/* Back Button */}
-        <div className="absolute top-8 left-8">
+        <div className="absolute top-8 left-8 z-[60]">
           <Link href="/blog">
             <Button variant="secondary" size="sm" className="bg-white/90 hover:bg-white">
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -419,6 +449,30 @@ export default function BlogPostPage() {
                   <Badge key={tag} variant="secondary" className="bg-gray-100 text-gray-700">
                     {tag}
                   </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Language Switcher */}
+          {post.availableLanguages && post.availableLanguages.length > 1 && (
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase mb-4 flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                Read in another language
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {LANGUAGES.filter(lang => post.availableLanguages?.includes(lang.code)).map((lang) => (
+                  <Button
+                    key={lang.code}
+                    variant={currentLang === lang.code ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentLang(lang.code)}
+                    className={currentLang === lang.code ? "bg-[var(--primary-teal)]" : ""}
+                  >
+                    <span className="mr-1">{lang.flag}</span>
+                    {lang.name}
+                  </Button>
                 ))}
               </div>
             </div>

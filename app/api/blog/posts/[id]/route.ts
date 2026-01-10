@@ -2,9 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkAdminAuth } from '@/lib/settings'
 import type { BlogPost, BlogPostInsert, ApiResponse } from '@/lib/types/database'
+import { SUPPORTED_LANGUAGES, type SupportedLanguageCode } from '@/lib/deepseek'
 
 interface RouteParams {
   params: Promise<{ id: string }>
+}
+
+// Helper to get localized post content
+function getLocalizedPost(post: BlogPost, lang: SupportedLanguageCode): BlogPost {
+  if (!lang || lang === post.primary_language || !post.translations || Object.keys(post.translations).length === 0) {
+    return post
+  }
+
+  const translation = post.translations[lang]
+  if (!translation) {
+    return post
+  }
+
+  return {
+    ...post,
+    title: translation.title || post.title,
+    slug: translation.slug || post.slug,
+    excerpt: translation.excerpt || post.excerpt,
+    content: translation.content || post.content,
+    meta_title: translation.meta_title || post.meta_title,
+    meta_description: translation.meta_description || post.meta_description,
+  }
 }
 
 // GET /api/blog/posts/[id] - Get a single blog post
@@ -14,6 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const supabase = await createClient()
     const { searchParams } = new URL(request.url)
     const incrementViews = searchParams.get('view') === 'true'
+    const lang = searchParams.get('lang') as SupportedLanguageCode | null
 
     const { data, error } = await supabase
       .from('blog_posts')
@@ -43,7 +67,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       await supabase.rpc('increment_blog_views', { post_id: id })
     }
 
-    return NextResponse.json<ApiResponse<BlogPost>>({ data: data as BlogPost })
+    // Apply localization if language is specified
+    const localizedData = lang && SUPPORTED_LANGUAGES[lang]
+      ? getLocalizedPost(data as BlogPost, lang)
+      : data as BlogPost
+
+    return NextResponse.json<ApiResponse<BlogPost>>({ data: localizedData })
   } catch (error) {
     console.error('Error fetching blog post:', error)
     return NextResponse.json<ApiResponse<null>>(

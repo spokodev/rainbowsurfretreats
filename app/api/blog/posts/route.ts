@@ -2,6 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkAdminAuth } from '@/lib/settings'
 import type { BlogPost, BlogPostInsert, ApiResponse } from '@/lib/types/database'
+import { SUPPORTED_LANGUAGES, type SupportedLanguageCode } from '@/lib/deepseek'
+
+// Helper to get localized post content
+function getLocalizedPost(post: BlogPost, lang: SupportedLanguageCode): BlogPost {
+  // If requesting primary language or no translations, return as-is
+  if (!lang || lang === post.primary_language || !post.translations || Object.keys(post.translations).length === 0) {
+    return post
+  }
+
+  // Get translation for requested language
+  const translation = post.translations[lang]
+  if (!translation) {
+    return post // Fallback to primary language
+  }
+
+  // Merge translation with post data
+  return {
+    ...post,
+    title: translation.title || post.title,
+    slug: translation.slug || post.slug,
+    excerpt: translation.excerpt || post.excerpt,
+    content: translation.content || post.content,
+    meta_title: translation.meta_title || post.meta_title,
+    meta_description: translation.meta_description || post.meta_description,
+  }
+}
 
 // GET /api/blog/posts - List all blog posts
 export async function GET(request: NextRequest) {
@@ -15,6 +41,7 @@ export async function GET(request: NextRequest) {
     const offset = searchParams.get('offset')
     const search = searchParams.get('search')
     const slug = searchParams.get('slug')
+    const lang = (searchParams.get('lang') || 'en') as SupportedLanguageCode
 
     // New pagination params
     const page = parseInt(searchParams.get('page') || '1')
@@ -37,8 +64,14 @@ export async function GET(request: NextRequest) {
     query = query.order(sortColumn, { ascending, nullsFirst: false })
 
     // Filter by slug (for single post lookup)
+    // Also search in translations if language is specified
     if (slug) {
-      query = query.eq('slug', slug)
+      if (lang && lang !== 'en') {
+        // Search in translations.{lang}.slug or primary slug
+        query = query.or(`slug.eq.${slug},translations->>${lang}->>slug.eq.${slug}`)
+      } else {
+        query = query.eq('slug', slug)
+      }
     }
 
     // Filter by status
@@ -91,8 +124,13 @@ export async function GET(request: NextRequest) {
     const total = count || 0
     const totalPages = Math.ceil(total / pageSize)
 
+    // Apply localization if language is specified
+    const localizedData = lang && SUPPORTED_LANGUAGES[lang]
+      ? (data as BlogPost[]).map(post => getLocalizedPost(post, lang))
+      : data as BlogPost[]
+
     return NextResponse.json({
-      data: data as BlogPost[],
+      data: localizedData,
       count: total,
       pagination: {
         page,
@@ -158,6 +196,10 @@ export async function POST(request: NextRequest) {
     const insertData: BlogPostInsert = {
       ...body,
       author_id: user.id,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      primary_language: (body as any).primary_language || 'en',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      translations: (body as any).translations || {},
     }
 
     if (body.status === 'published' && !body.published_at) {

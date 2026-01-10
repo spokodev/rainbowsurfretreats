@@ -58,17 +58,17 @@ export function BlogCard({ post }: BlogCardProps) {
         {/* Content */}
         <CardContent className="p-5">
           {/* Title */}
-          <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-[var(--primary-teal)] transition-colors">
+          <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-2 group-hover:text-[var(--primary-teal)] transition-colors">
             {post.title}
           </h3>
 
           {/* Excerpt */}
-          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+          <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
             {post.excerpt}
           </p>
 
           {/* Footer */}
-          <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <User className="w-3.5 h-3.5" />
               <span>{post.author.name}</span>
