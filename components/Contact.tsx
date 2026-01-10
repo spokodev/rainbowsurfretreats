@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import ImageWithFallback from '@/components/ImageWithFallback'
 import { HOME_SLIDER } from '@/lib/images'
 import type { SingleImage } from '@/lib/validations/page-images'
-import { SeaShell, WavePattern, Surfer } from '@/components/illustrations'
+import { SeaShell, WavePattern, Surfer, Surfboard } from '@/components/illustrations'
 import { illustrationOpacity } from '@/lib/animations'
 
 interface FormData {
@@ -380,6 +380,11 @@ export default function Contact({ headerImage }: ContactProps) {
         <Surfer
           className="absolute top-12 right-8 w-24 h-24 md:w-32 md:h-32 text-[var(--earth-brown)] pointer-events-none hidden lg:block"
           style={{ opacity: illustrationOpacity.contactSurfer }}
+        />
+        <Surfboard
+          animated
+          className="absolute -left-6 bottom-24 w-16 h-auto text-[var(--soft-gold)] rotate-[-20deg] pointer-events-none hidden lg:block"
+          style={{ opacity: illustrationOpacity.surfboard }}
         />
 
         <div className="container mx-auto px-4 relative z-10">

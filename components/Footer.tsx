@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Instagram, Facebook, Youtube } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Logo } from '@/components/Logo';
-import { WavePattern, ShakaHand } from '@/components/illustrations';
+import { WavePattern, ShakaHand, FlipFlops } from '@/components/illustrations';
 import { illustrationOpacity } from '@/lib/animations';
 
 interface FooterRetreat {
@@ -72,9 +72,16 @@ export default function Footer({ initialRetreats = [] }: FooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Logo and Description */}
           <div className="lg:col-span-1">
-            <Link href="/" className="inline-block mb-4">
-              <Logo variant="light" className="w-40 h-auto" />
-            </Link>
+            <div className="relative inline-block mb-4">
+              <Link href="/" className="inline-block">
+                <Logo variant="light" className="w-40 h-auto" />
+              </Link>
+              {/* FlipFlops - casual beach accent */}
+              <FlipFlops
+                className="absolute -right-6 -bottom-2 w-8 h-8 text-gray-600 rotate-[-20deg]"
+                style={{ opacity: illustrationOpacity.flipFlops }}
+              />
+            </div>
             <p className="text-sm text-gray-300 mb-6 max-w-xs leading-relaxed">
               {t('tagline')}
             </p>

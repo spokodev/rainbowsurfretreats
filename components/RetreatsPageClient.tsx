@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { SunBurst, Bird, SeaShell, Starfish } from '@/components/illustrations'
+import { SunBurst, Bird, SeaShell, Starfish, Surfboard } from '@/components/illustrations'
 import { illustrationOpacity } from '@/lib/animations'
 
 interface RetreatRoom {
@@ -353,8 +353,19 @@ export default function RetreatsPageClient({ initialRetreats, headerImage }: Ret
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4 text-center">
+      <section className="py-16 bg-white relative overflow-hidden">
+        {/* Decorative Surfboard */}
+        <Surfboard
+          animated
+          className="absolute -left-8 top-1/2 -translate-y-1/2 w-24 h-auto text-[var(--primary-teal)] rotate-[-25deg] hidden lg:block"
+          style={{ opacity: illustrationOpacity.surfboard }}
+        />
+        <Surfboard
+          animated
+          className="absolute -right-8 top-1/2 -translate-y-1/2 w-24 h-auto text-[var(--coral-accent)] rotate-[25deg] hidden lg:block scale-x-[-1]"
+          style={{ opacity: illustrationOpacity.surfboard }}
+        />
+        <div className="container mx-auto px-4 text-center relative z-10">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
             {t('cta.title')}
           </h2>

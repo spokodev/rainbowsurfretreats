@@ -46,6 +46,11 @@ export const illustrationOpacity = {
   bookingWave: 0.15,
   bookingShell: 0.12,
 
+  // Additional elements (palm, surfboard, flipflops)
+  palm: 0.15,
+  surfboard: 0.12,
+  flipFlops: 0.10,
+
   // Admin section
   adminShaka: 0.30,
 };

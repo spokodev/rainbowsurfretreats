@@ -5,3 +5,6 @@ export { SeaShell } from './SeaShell';
 export { Starfish } from './Starfish';
 export { Surfer } from './Surfer';
 export { ShakaHand } from './ShakaHand';
+export { Palm } from './Palm';
+export { Surfboard } from './Surfboard';
+export { FlipFlops } from './FlipFlops';

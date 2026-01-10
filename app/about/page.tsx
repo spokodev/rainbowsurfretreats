@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ABOUT_IMAGES } from '@/lib/images'
 import { getAboutHeaderImage } from '@/lib/page-images'
-import { SeaShell, Starfish, WavePattern } from '@/components/illustrations'
+import { SeaShell, Starfish, WavePattern, Palm, Surfboard } from '@/components/illustrations'
 import { illustrationOpacity } from '@/lib/animations'
 
 export const revalidate = 3600 // Revalidate every hour
@@ -139,8 +139,14 @@ export default async function AboutPage() {
       </section>
 
       {/* Story Section */}
-      <section className="py-16 md:py-24 bg-white">
-        <div className="container mx-auto px-4">
+      <section className="py-16 md:py-24 bg-white relative overflow-hidden">
+        {/* Decorative Palm */}
+        <Palm
+          animated
+          className="absolute -right-12 top-8 h-48 md:h-64 text-[var(--primary-teal)] rotate-[15deg] pointer-events-none hidden lg:block"
+          style={{ opacity: illustrationOpacity.palm }}
+        />
+        <div className="container mx-auto px-4 relative z-10">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-2xl">
               <Image
@@ -241,8 +247,13 @@ export default async function AboutPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-[var(--earth-brown)]">
-        <div className="container mx-auto px-4 text-center">
+      <section className="py-16 md:py-24 bg-[var(--earth-brown)] relative overflow-hidden">
+        {/* Decorative Surfboards */}
+        <Surfboard
+          className="absolute -left-4 bottom-8 w-16 h-auto text-white/20 rotate-[-30deg] hidden md:block"
+          style={{ opacity: illustrationOpacity.surfboard }}
+        />
+        <div className="container mx-auto px-4 text-center relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Ready to Join Our Community?
           </h2>
