@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Eye, Mail, Calendar, User, MapPin } from 'lucide-react'
+import { Eye, Mail, Calendar, User, MapPin, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -15,7 +15,9 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { SendEmailDialog } from '@/components/admin/send-email-dialog'
 import { AdminSortHeader } from '@/components/admin/table'
+import { getPaymentStatusConfig } from '@/lib/utils/payment-status'
 import type { SortOrder } from '@/hooks/use-admin-table-state'
+import type { PaymentStatus } from '@/lib/types/database'
 
 interface Booking {
   id: string
@@ -62,20 +64,6 @@ const getStatusBadgeVariant = (status: string) => {
   }
 }
 
-const getPaymentBadgeVariant = (status: string) => {
-  switch (status) {
-    case 'paid':
-      return 'default'
-    case 'deposit':
-      return 'secondary'
-    case 'unpaid':
-      return 'outline'
-    case 'refunded':
-      return 'destructive'
-    default:
-      return 'outline'
-  }
-}
 
 export function BookingsTableWithSort({
   bookings,
@@ -219,9 +207,16 @@ export function BookingsTableWithSort({
                   </Badge>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
-                  <Badge variant={getPaymentBadgeVariant(booking.payment_status)}>
-                    {booking.payment_status}
-                  </Badge>
+                  {(() => {
+                    const paymentConfig = getPaymentStatusConfig(booking.payment_status as PaymentStatus)
+                    const PaymentIcon = paymentConfig.icon
+                    return (
+                      <Badge variant="outline" className={paymentConfig.className}>
+                        <PaymentIcon className="w-3 h-3 mr-1" />
+                        {paymentConfig.label}
+                      </Badge>
+                    )
+                  })()}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">

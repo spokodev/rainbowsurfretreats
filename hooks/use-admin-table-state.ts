@@ -58,17 +58,20 @@ export function useAdminTableState(
   const sortBy = searchParams.get('sort') || defaultSortBy
   const sortOrder = (searchParams.get('order') as SortOrder) || defaultSortOrder
 
+  // Stabilize filterKeys to prevent infinite re-renders
+  const stableFilterKeys = useMemo(() => filterKeys, [filterKeys.join(',')])
+
   // Parse filters from URL
   const filters = useMemo(() => {
     const result: Record<string, string> = {}
-    filterKeys.forEach((key) => {
+    stableFilterKeys.forEach((key) => {
       const value = searchParams.get(key)
       if (value && value !== 'all') {
         result[key] = value
       }
     })
     return result
-  }, [searchParams, filterKeys])
+  }, [searchParams, stableFilterKeys])
 
   // Check if any filters are active
   const hasActiveFilters = useMemo(() => {

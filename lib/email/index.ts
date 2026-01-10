@@ -36,6 +36,7 @@ export interface EmailLogData {
   status: 'sent' | 'failed'
   errorMessage?: string | null
   metadata?: Record<string, unknown>
+  htmlContent?: string | null
 }
 
 /**
@@ -56,6 +57,7 @@ export async function logEmailSent(data: EmailLogData): Promise<void> {
       status: data.status,
       error_message: data.errorMessage || null,
       metadata: data.metadata || {},
+      html_content: data.htmlContent || null,
     })
 
     if (error) {
@@ -67,9 +69,104 @@ export async function logEmailSent(data: EmailLogData): Promise<void> {
   }
 }
 
-export const FROM_EMAIL = process.env.FROM_EMAIL || 'Rainbow Surf Retreats <noreply@rainbowsurfretreats.com>'
-export const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || 'info@rainbowsurfretreats.com'
+export const FROM_EMAIL = process.env.FROM_EMAIL || 'Rainbow Surf Retreats <noreply@rainbowsurfretreats.spoko.dev>'
+export const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || 'spoko.dev@gmail.com'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rainbowsurfretreats.com'
+
+// BUG-020 FIX: Translated email subjects for all email types
+// Used as fallback when database templates are not available
+type SupportedLanguage = 'en' | 'de' | 'es' | 'fr' | 'nl'
+
+export const emailSubjectTranslations: Record<SupportedLanguage, Record<string, string>> = {
+  en: {
+    bookingConfirmed: 'Booking Confirmed',
+    paymentReceived: 'Payment Received',
+    paymentFailed: 'Action Required: Payment Failed',
+    paymentReminder: 'Payment Reminder',
+    retreatReminder: 'Days Until Your Surf Retreat',
+    bookingCancelled: 'Booking Cancelled',
+    refundProcessed: 'Refund Processed',
+    bookingRestored: 'Your booking has been restored',
+    waitlistJoined: "You're on the Waitlist",
+    waitlistSpotAvailable: 'A Spot is Available!',
+    waitlistBookingReminder: 'Complete Your Booking',
+    waitlistCancelled: "We'll Miss You",
+    waitlistExpired: 'Waitlist Offer Expired',
+    allPaymentsComplete: 'All payments complete',
+  },
+  de: {
+    bookingConfirmed: 'Buchung bestätigt',
+    paymentReceived: 'Zahlung erhalten',
+    paymentFailed: 'Handlung erforderlich: Zahlung fehlgeschlagen',
+    paymentReminder: 'Zahlungserinnerung',
+    retreatReminder: 'Tage bis zu Ihrem Surf-Retreat',
+    bookingCancelled: 'Buchung storniert',
+    refundProcessed: 'Rückerstattung bearbeitet',
+    bookingRestored: 'Ihre Buchung wurde wiederhergestellt',
+    waitlistJoined: 'Sie sind auf der Warteliste',
+    waitlistSpotAvailable: 'Ein Platz ist verfügbar!',
+    waitlistBookingReminder: 'Schließen Sie Ihre Buchung ab',
+    waitlistCancelled: 'Wir werden Sie vermissen',
+    waitlistExpired: 'Wartelisten-Angebot abgelaufen',
+    allPaymentsComplete: 'Alle Zahlungen abgeschlossen',
+  },
+  es: {
+    bookingConfirmed: 'Reserva confirmada',
+    paymentReceived: 'Pago recibido',
+    paymentFailed: 'Acción requerida: Pago fallido',
+    paymentReminder: 'Recordatorio de pago',
+    retreatReminder: 'Días hasta tu retiro de surf',
+    bookingCancelled: 'Reserva cancelada',
+    refundProcessed: 'Reembolso procesado',
+    bookingRestored: 'Tu reserva ha sido restaurada',
+    waitlistJoined: 'Estás en la lista de espera',
+    waitlistSpotAvailable: '¡Un lugar está disponible!',
+    waitlistBookingReminder: 'Completa tu reserva',
+    waitlistCancelled: 'Te echaremos de menos',
+    waitlistExpired: 'Oferta de lista de espera expirada',
+    allPaymentsComplete: 'Todos los pagos completados',
+  },
+  fr: {
+    bookingConfirmed: 'Réservation confirmée',
+    paymentReceived: 'Paiement reçu',
+    paymentFailed: 'Action requise: Paiement échoué',
+    paymentReminder: 'Rappel de paiement',
+    retreatReminder: 'Jours avant votre retraite de surf',
+    bookingCancelled: 'Réservation annulée',
+    refundProcessed: 'Remboursement traité',
+    bookingRestored: 'Votre réservation a été restaurée',
+    waitlistJoined: 'Vous êtes sur la liste d\'attente',
+    waitlistSpotAvailable: 'Une place est disponible!',
+    waitlistBookingReminder: 'Complétez votre réservation',
+    waitlistCancelled: 'Vous nous manquerez',
+    waitlistExpired: 'Offre de liste d\'attente expirée',
+    allPaymentsComplete: 'Tous les paiements effectués',
+  },
+  nl: {
+    bookingConfirmed: 'Boeking bevestigd',
+    paymentReceived: 'Betaling ontvangen',
+    paymentFailed: 'Actie vereist: Betaling mislukt',
+    paymentReminder: 'Betalingsherinnering',
+    retreatReminder: 'Dagen tot je surf retreat',
+    bookingCancelled: 'Boeking geannuleerd',
+    refundProcessed: 'Terugbetaling verwerkt',
+    bookingRestored: 'Je boeking is hersteld',
+    waitlistJoined: 'Je staat op de wachtlijst',
+    waitlistSpotAvailable: 'Er is een plek beschikbaar!',
+    waitlistBookingReminder: 'Voltooi je boeking',
+    waitlistCancelled: 'We zullen je missen',
+    waitlistExpired: 'Wachtlijst-aanbieding verlopen',
+    allPaymentsComplete: 'Alle betalingen voltooid',
+  },
+}
+
+// Helper to get translated subject with fallback to English
+export function getTranslatedSubject(key: string, language: string = 'en'): string {
+  const lang = (language as SupportedLanguage) in emailSubjectTranslations
+    ? (language as SupportedLanguage)
+    : 'en'
+  return emailSubjectTranslations[lang][key] || emailSubjectTranslations.en[key] || key
+}
 
 // XSS Prevention: Escape HTML entities in user-provided data
 export function escapeHtml(unsafe: string | null | undefined): string {
@@ -132,6 +229,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
           status: 'failed',
           errorMessage: error.message,
           metadata: options.logContext.metadata,
+          htmlContent: options.html,
         })
       }
 
@@ -152,6 +250,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
         resendEmailId: data?.id || null,
         status: 'sent',
         metadata: options.logContext.metadata,
+        htmlContent: options.html,
       })
     }
 

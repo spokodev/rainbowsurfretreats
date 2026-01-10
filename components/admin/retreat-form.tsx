@@ -396,7 +396,7 @@ export function RetreatForm({ retreat, isEdit = false }: RetreatFormProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Duration</Label>
-                <div className="flex items-center h-10 px-3 rounded-md border bg-muted text-muted-foreground">
+                <div className="flex items-center h-10 px-3 rounded-md border bg-orange-100 text-orange-700 border-orange-200">
                   {calculatedDuration || 'Select start and end dates'}
                 </div>
                 <p className="text-xs text-muted-foreground">Auto-calculated from dates</p>

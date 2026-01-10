@@ -41,16 +41,37 @@ export interface RateLimitResult {
 }
 
 /**
+ * Check if request should bypass rate limiting (for load testing)
+ * Only works in development mode with X-Load-Test header
+ */
+export function shouldBypassRateLimit(request: Request): boolean {
+  const isLoadTest = request.headers.get('X-Load-Test') === 'true'
+  const isDevelopment = process.env.NODE_ENV !== 'production'
+  return isLoadTest && isDevelopment
+}
+
+/**
  * Check rate limit for an identifier (typically IP + route)
  *
  * @param identifier - Unique identifier (e.g., IP address)
  * @param config - Rate limit configuration
+ * @param request - Optional request object for load test bypass
  * @returns Rate limit result
  */
 export function checkRateLimit(
   identifier: string,
-  config: RateLimitConfig
+  config: RateLimitConfig,
+  request?: Request
 ): RateLimitResult {
+  // LOAD TEST BYPASS: Skip rate limiting in development with X-Load-Test header
+  if (request && shouldBypassRateLimit(request)) {
+    return {
+      success: true,
+      limit: config.limit,
+      remaining: config.limit,
+      reset: Math.ceil(Date.now() / 1000) + config.windowSec,
+    }
+  }
   const key = `${config.id}:${identifier}`
   const now = Date.now()
   const windowMs = config.windowSec * 1000

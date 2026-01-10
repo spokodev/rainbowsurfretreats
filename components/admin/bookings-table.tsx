@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Eye, Mail, Calendar, User, MapPin } from 'lucide-react'
+import { Eye, Mail, Calendar, User, MapPin, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { SendEmailDialog } from '@/components/admin/send-email-dialog'
+import { getPaymentStatusConfig } from '@/lib/utils/payment-status'
+import type { PaymentStatus } from '@/lib/types/database'
 
 interface Booking {
   id: string
@@ -56,20 +58,6 @@ const getStatusBadgeVariant = (status: string) => {
   }
 }
 
-const getPaymentBadgeVariant = (status: string) => {
-  switch (status) {
-    case 'paid':
-      return 'default'
-    case 'deposit':
-      return 'secondary'
-    case 'unpaid':
-      return 'outline'
-    case 'refunded':
-      return 'destructive'
-    default:
-      return 'outline'
-  }
-}
 
 export function BookingsTable({ bookings }: BookingsTableProps) {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false)
@@ -87,15 +75,15 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
           <TableRow>
             <TableHead>Booking ID</TableHead>
             <TableHead>Guest</TableHead>
-            <TableHead>Retreat</TableHead>
-            <TableHead>Room</TableHead>
-            <TableHead>Dates</TableHead>
-            <TableHead>Guests</TableHead>
-            <TableHead className="text-right">Paid</TableHead>
-            <TableHead className="text-right">Balance</TableHead>
+            <TableHead className="hidden md:table-cell">Retreat</TableHead>
+            <TableHead className="hidden lg:table-cell">Room</TableHead>
+            <TableHead className="hidden sm:table-cell">Dates</TableHead>
+            <TableHead className="hidden lg:table-cell">Guests</TableHead>
+            <TableHead className="hidden md:table-cell text-right">Paid</TableHead>
+            <TableHead className="hidden lg:table-cell text-right">Balance</TableHead>
             <TableHead className="text-right">Total</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Payment</TableHead>
+            <TableHead className="hidden sm:table-cell">Payment</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -118,14 +106,14 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
                   </span>
                 </div>
               </TableCell>
-              <TableCell>
+              <TableCell className="hidden md:table-cell">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                   <span>{booking.retreat?.destination || 'N/A'}</span>
                 </div>
               </TableCell>
-              <TableCell>{booking.room?.name || 'Standard'}</TableCell>
-              <TableCell>
+              <TableCell className="hidden lg:table-cell">{booking.room?.name || 'Standard'}</TableCell>
+              <TableCell className="hidden sm:table-cell">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div className="text-sm">
@@ -145,13 +133,13 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
                   </div>
                 </div>
               </TableCell>
-              <TableCell>{booking.guests_count}</TableCell>
-              <TableCell className="text-right">
+              <TableCell className="hidden lg:table-cell">{booking.guests_count}</TableCell>
+              <TableCell className="hidden md:table-cell text-right">
                 <span className="text-green-600 font-medium">
                   €{booking.deposit_amount?.toFixed(2) || '0.00'}
                 </span>
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="hidden lg:table-cell text-right">
                 <span
                   className={
                     booking.balance_due > 0
@@ -172,10 +160,17 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
                   {booking.status}
                 </Badge>
               </TableCell>
-              <TableCell>
-                <Badge variant={getPaymentBadgeVariant(booking.payment_status)}>
-                  {booking.payment_status}
-                </Badge>
+              <TableCell className="hidden sm:table-cell">
+                {(() => {
+                  const paymentConfig = getPaymentStatusConfig(booking.payment_status as PaymentStatus)
+                  const PaymentIcon = paymentConfig.icon
+                  return (
+                    <Badge variant="outline" className={paymentConfig.className}>
+                      <PaymentIcon className="w-3 h-3 mr-1" />
+                      {paymentConfig.label}
+                    </Badge>
+                  )
+                })()}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
