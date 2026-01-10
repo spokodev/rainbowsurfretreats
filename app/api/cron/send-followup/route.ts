@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
+import { generateFeedbackUrl } from '@/lib/feedback-token'
 
 function getSupabase() {
   return createClient(
@@ -182,7 +183,8 @@ async function sendFollowUpEmail(data: {
   const lang = (data.language as keyof typeof translations) || 'en'
   const t = translations[lang] || translations.en
 
-  const feedbackUrl = `${SITE_URL}/feedback?booking=${data.bookingId}`
+  // Generate signed feedback URL to verify user identity
+  const feedbackUrl = generateFeedbackUrl(data.bookingId, SITE_URL)
   const googleReviewUrl = 'https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review' // TODO: Replace with actual Google review link
 
   const html = `

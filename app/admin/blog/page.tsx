@@ -280,12 +280,12 @@ function BlogPageContent() {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
               <Globe className="h-5 w-5 text-green-600" />
-              <div className="text-2xl font-bold">{publishedCount}</div>
+              <div className="text-2xl font-bold tabular-nums">{publishedCount}</div>
             </div>
             <p className="text-xs text-muted-foreground">Published</p>
           </CardContent>
@@ -294,7 +294,7 @@ function BlogPageContent() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-gray-600" />
-              <div className="text-2xl font-bold">{draftCount}</div>
+              <div className="text-2xl font-bold tabular-nums">{draftCount}</div>
             </div>
             <p className="text-xs text-muted-foreground">Drafts</p>
           </CardContent>
@@ -303,7 +303,7 @@ function BlogPageContent() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-blue-600" />
-              <div className="text-2xl font-bold">{scheduledCount}</div>
+              <div className="text-2xl font-bold tabular-nums">{scheduledCount}</div>
             </div>
             <p className="text-xs text-muted-foreground">Scheduled</p>
           </CardContent>
@@ -312,7 +312,7 @@ function BlogPageContent() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
               <Eye className="h-5 w-5 text-purple-600" />
-              <div className="text-2xl font-bold">{totalViews.toLocaleString()}</div>
+              <div className="text-2xl font-bold tabular-nums">{totalViews.toLocaleString()}</div>
             </div>
             <p className="text-xs text-muted-foreground">Total Views</p>
           </CardContent>
@@ -371,7 +371,8 @@ function BlogPageContent() {
             </div>
           ) : (
             <>
-              <Table>
+              <div className="overflow-x-auto">
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <AdminSortHeader
@@ -381,8 +382,8 @@ function BlogPageContent() {
                       currentOrder={sortOrder}
                       onSort={handleSort}
                     />
-                    <TableHead>Author</TableHead>
-                    <TableHead>Category</TableHead>
+                    <TableHead className="hidden md:table-cell">Author</TableHead>
+                    <TableHead className="hidden lg:table-cell">Category</TableHead>
                     <TableHead>Status</TableHead>
                     <AdminSortHeader
                       column="published_at"
@@ -390,6 +391,7 @@ function BlogPageContent() {
                       currentSort={sortBy}
                       currentOrder={sortOrder}
                       onSort={handleSort}
+                      className="hidden sm:table-cell"
                     />
                     <AdminSortHeader
                       column="views"
@@ -397,6 +399,7 @@ function BlogPageContent() {
                       currentSort={sortBy}
                       currentOrder={sortOrder}
                       onSort={handleSort}
+                      className="hidden lg:table-cell"
                     />
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -412,13 +415,13 @@ function BlogPageContent() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-muted-foreground" />
                           <span>{post.author_name}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         {post.category ? (
                           <span
                             className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
@@ -436,7 +439,7 @@ function BlogPageContent() {
                           {post.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         {post.published_at ? (
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -446,7 +449,7 @@ function BlogPageContent() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <div className="flex items-center gap-2">
                           <Eye className="h-4 w-4 text-muted-foreground" />
                           <span>{post.views.toLocaleString()}</span>
@@ -517,6 +520,7 @@ function BlogPageContent() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
 
               {/* Pagination */}
               <AdminPagination

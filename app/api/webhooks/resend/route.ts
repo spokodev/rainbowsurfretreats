@@ -124,10 +124,15 @@ function mapEventToStatus(eventType: ResendEventType): string {
 export async function POST(request: NextRequest) {
   const body = await request.text()
   const signature = request.headers.get('svix-signature') || request.headers.get('webhook-signature')
+  const isLoadTest = request.headers.get('X-Load-Test') === 'true'
 
   // SECURITY: Always require webhook secret - no open webhooks allowed
   const webhookSecret = process.env.RESEND_WEBHOOK_SECRET
-  if (!webhookSecret) {
+
+  // LOAD TEST BYPASS: Allow skipping verification in development with X-Load-Test header
+  if (isLoadTest && process.env.NODE_ENV !== 'production') {
+    console.warn('[Resend Webhook] LOAD TEST MODE - Skipping signature verification')
+  } else if (!webhookSecret) {
     console.error('[Resend Webhook] RESEND_WEBHOOK_SECRET not configured')
     // In production, this should fail. In development, allow for testing.
     if (process.env.NODE_ENV === 'production') {
@@ -247,8 +252,9 @@ function getTimestampField(eventType: ResendEventType): string | null {
     case 'email.clicked':
       return 'clicked_at'
     case 'email.bounced':
-    case 'email.complained':
       return 'bounced_at'
+    case 'email.complained':
+      return 'complained_at'
     default:
       return null
   }
@@ -299,41 +305,17 @@ async function updateEmailAuditLog(supabase: SupabaseClient, event: ResendWebhoo
         break
 
       case 'email.opened':
-        // Get current record to update counts properly
-        const { data: openedRecord } = await supabase
-          .from('email_audit_log')
-          .select('open_count, opened_at')
-          .eq('resend_email_id', emailId)
-          .single()
-
-        if (openedRecord) {
-          await supabase
-            .from('email_audit_log')
-            .update({
-              opened_at: openedRecord.opened_at || new Date().toISOString(),
-              open_count: (openedRecord.open_count || 0) + 1,
-            })
-            .eq('resend_email_id', emailId)
-        }
+        // Use atomic increment to prevent race conditions
+        await supabase.rpc('increment_email_open_count', {
+          p_resend_email_id: emailId,
+        })
         break
 
       case 'email.clicked':
-        // Get current record to update counts properly
-        const { data: clickedRecord } = await supabase
-          .from('email_audit_log')
-          .select('click_count, clicked_at')
-          .eq('resend_email_id', emailId)
-          .single()
-
-        if (clickedRecord) {
-          await supabase
-            .from('email_audit_log')
-            .update({
-              clicked_at: clickedRecord.clicked_at || new Date().toISOString(),
-              click_count: (clickedRecord.click_count || 0) + 1,
-            })
-            .eq('resend_email_id', emailId)
-        }
+        // Use atomic increment to prevent race conditions
+        await supabase.rpc('increment_email_click_count', {
+          p_resend_email_id: emailId,
+        })
         break
 
       default:

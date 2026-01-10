@@ -260,13 +260,13 @@ function WaitlistPageContent() {
 
       {/* Stats Cards */}
       {data?.stats && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.stats.total}</div>
+              <div className="text-2xl font-bold tabular-nums">{data.stats.total}</div>
             </CardContent>
           </Card>
           <Card>
@@ -276,7 +276,7 @@ function WaitlistPageContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{data.stats.waiting}</div>
+              <div className="text-2xl font-bold tabular-nums text-blue-600">{data.stats.waiting}</div>
             </CardContent>
           </Card>
           <Card>
@@ -286,7 +286,7 @@ function WaitlistPageContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{data.stats.notified}</div>
+              <div className="text-2xl font-bold tabular-nums text-orange-500">{data.stats.notified}</div>
             </CardContent>
           </Card>
           <Card>
@@ -296,7 +296,7 @@ function WaitlistPageContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{data.stats.accepted}</div>
+              <div className="text-2xl font-bold tabular-nums text-green-600">{data.stats.accepted}</div>
             </CardContent>
           </Card>
           <Card>
@@ -306,7 +306,7 @@ function WaitlistPageContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{data.stats.declined}</div>
+              <div className="text-2xl font-bold tabular-nums text-red-600">{data.stats.declined}</div>
             </CardContent>
           </Card>
           <Card>
@@ -316,7 +316,7 @@ function WaitlistPageContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-500">{data.stats.expired}</div>
+              <div className="text-2xl font-bold tabular-nums text-gray-500">{data.stats.expired}</div>
             </CardContent>
           </Card>
         </div>
@@ -338,9 +338,11 @@ function WaitlistPageContent() {
       <Card>
         <CardHeader>
           <CardTitle>Waitlist Entries</CardTitle>
-          <CardDescription>
-            {data?.pagination?.total || 0} entries found
-          </CardDescription>
+          {(data?.pagination?.total || 0) > 0 && (
+            <CardDescription>
+              {data?.pagination?.total} entries found
+            </CardDescription>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Search and Filters */}
@@ -371,16 +373,22 @@ function WaitlistPageContent() {
               <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
           ) : !data?.entries?.length ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>{hasActiveFilters ? 'No entries match your filters' : 'No waitlist entries found'}</p>
+            <div className="text-center py-16 text-muted-foreground">
+              <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
+              <h3 className="text-lg font-medium text-foreground mb-1">No waitlist entries yet</h3>
+              <p className="text-sm max-w-sm mx-auto">
+                {hasActiveFilters
+                  ? 'No entries match your filters. Try adjusting or clearing them.'
+                  : 'Guests who join the waitlist for sold-out retreats will appear here.'}
+              </p>
               {hasActiveFilters && (
                 <Button
                   variant="outline"
+                  size="sm"
                   className="mt-4"
                   onClick={() => updateParams({ search: null, status: null, page: null })}
                 >
-                  Clear filters
+                  Clear all filters
                 </Button>
               )}
             </div>
@@ -447,15 +455,23 @@ function WaitlistPageContent() {
                             <span className="text-muted-foreground text-sm">Any room</span>
                           )}
                         </TableCell>
-                        <TableCell className="hidden xl:table-cell">
+                        {/* BUG-021 FIX: Notes column with proper truncation and tooltip */}
+                        <TableCell className="hidden xl:table-cell max-w-[200px]">
                           {entry.notes ? (
-                            <div className="max-w-[200px]">
-                              <div className="flex items-start gap-1">
-                                <MessageSquare className="w-3 h-3 mt-1 text-blue-500 shrink-0" />
-                                <span className="text-sm text-muted-foreground line-clamp-2" title={entry.notes}>
+                            <div
+                              className="group relative flex items-start gap-1 cursor-help"
+                              title={entry.notes}
+                            >
+                              <MessageSquare className="w-3 h-3 mt-0.5 text-blue-500 shrink-0" />
+                              <span className="text-sm text-muted-foreground truncate block overflow-hidden">
+                                {entry.notes.length > 50 ? `${entry.notes.slice(0, 50)}...` : entry.notes}
+                              </span>
+                              {/* Hover tooltip for full text */}
+                              {entry.notes.length > 50 && (
+                                <div className="invisible group-hover:visible absolute z-50 bottom-full left-0 mb-2 p-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border max-w-xs whitespace-pre-wrap">
                                   {entry.notes}
-                                </span>
-                              </div>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <span className="text-muted-foreground text-sm">-</span>

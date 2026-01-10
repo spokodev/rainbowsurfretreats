@@ -28,6 +28,8 @@ import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/server";
 import { checkAdminAuth } from "@/lib/settings";
 import { BookingActions } from "@/components/admin/booking-actions";
+import { getPaymentStatusConfig } from "@/lib/utils/payment-status";
+import type { PaymentStatus } from "@/lib/types/database";
 
 interface BookingDetails {
   id: string;
@@ -263,9 +265,16 @@ export default async function BookingDetailsPage({ params }: RouteParams) {
             <Badge variant={getStatusBadgeVariant(booking.status)}>
               {booking.status}
             </Badge>
-            <Badge variant={getPaymentStatusBadgeVariant(booking.payment_status)}>
-              {booking.payment_status}
-            </Badge>
+{(() => {
+              const paymentConfig = getPaymentStatusConfig(booking.payment_status as PaymentStatus);
+              const PaymentIcon = paymentConfig.icon;
+              return (
+                <Badge variant="outline" className={paymentConfig.className}>
+                  <PaymentIcon className="w-3 h-3 mr-1" />
+                  {paymentConfig.label}
+                </Badge>
+              );
+            })()}
           </div>
           <p className="text-muted-foreground">
             Created {formatDateTime(booking.created_at)}

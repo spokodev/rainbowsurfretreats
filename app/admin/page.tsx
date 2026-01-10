@@ -192,7 +192,7 @@ export default async function AdminDashboard() {
                 <Icon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
+                <div className="text-2xl font-bold tabular-nums">{stat.value}</div>
               </CardContent>
             </Card>
           );
@@ -212,34 +212,36 @@ export default async function AdminDashboard() {
                 No bookings yet
               </p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Guest</TableHead>
-                    <TableHead>Retreat</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentBookings.map((booking) => (
-                    <TableRow key={booking.id}>
-                      <TableCell className="font-medium">
-                        {booking.first_name} {booking.last_name}
-                      </TableCell>
-                      <TableCell>
-                        {booking.retreat?.destination || "N/A"}
-                      </TableCell>
-                      <TableCell>€{booking.total_amount?.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusBadgeVariant(booking.status)}>
-                          {booking.status}
-                        </Badge>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Guest</TableHead>
+                      <TableHead className="hidden sm:table-cell">Retreat</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {recentBookings.map((booking) => (
+                      <TableRow key={booking.id}>
+                        <TableCell className="font-medium">
+                          {booking.first_name} {booking.last_name}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          {booking.retreat?.destination || "N/A"}
+                        </TableCell>
+                        <TableCell>€{booking.total_amount?.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusBadgeVariant(booking.status)}>
+                            {booking.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>

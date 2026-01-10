@@ -119,7 +119,7 @@ const defaultFormData: PromoCodeFormData = {
   scope: 'global',
   retreat_id: '',
   room_id: '',
-  valid_from: new Date().toISOString().split('T')[0],
+  valid_from: '', // Set dynamically in component to avoid hydration mismatch
   valid_until: '',
   max_uses: '',
   min_order_amount: '',
@@ -289,7 +289,10 @@ function PromoCodesPageContent() {
       }
     } else {
       setEditingId(null)
-      setFormData(defaultFormData)
+      setFormData({
+        ...defaultFormData,
+        valid_from: new Date().toISOString().split('T')[0],
+      })
     }
     setDialogOpen(true)
   }
@@ -675,14 +678,14 @@ function PromoCodesPageContent() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Codes</CardTitle>
             <Tag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalCodes}</div>
+            <div className="text-2xl font-bold tabular-nums">{totalCodes}</div>
           </CardContent>
         </Card>
         <Card>
@@ -691,7 +694,7 @@ function PromoCodesPageContent() {
             <Check className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeCodes}</div>
+            <div className="text-2xl font-bold tabular-nums">{activeCodes}</div>
           </CardContent>
         </Card>
         <Card>
@@ -700,7 +703,7 @@ function PromoCodesPageContent() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalRedemptions}</div>
+            <div className="text-2xl font-bold tabular-nums">{totalRedemptions}</div>
           </CardContent>
         </Card>
         <Card>
@@ -709,7 +712,7 @@ function PromoCodesPageContent() {
             <Euro className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">€{totalDiscountGiven.toFixed(0)}</div>
+            <div className="text-2xl font-bold tabular-nums">€{totalDiscountGiven.toFixed(0)}</div>
           </CardContent>
         </Card>
       </div>

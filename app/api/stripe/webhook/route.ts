@@ -237,17 +237,28 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
   // Send confirmation email using multilingual email functions
   const isFirstPayment = !paymentNumber || paymentNumber === '1'
 
-  // Decrement room availability (only on first payment / initial booking confirmation)
+  // Decrement room availability atomically (only on first payment / initial booking confirmation)
+  // Use atomic try_decrement to prevent race condition overbooking
   if (isFirstPayment && booking.room_id) {
-    const { error: decrementError } = await supabase.rpc('decrement_room_availability', {
+    const { data: decrementSuccess, error: decrementError } = await supabase.rpc('try_decrement_room_availability', {
       room_uuid: booking.room_id,
-      decrement_count: 1
+      decrement_count: booking.guests_count || 1
     })
 
     if (decrementError) {
       console.error('Error decrementing room availability:', decrementError)
+    } else if (!decrementSuccess) {
+      // Room was already booked by another concurrent transaction
+      console.error(`Room ${booking.room_id} no longer available - overbooking prevented`)
+      // Cancel the booking and refund
+      await supabase.from('bookings').update({
+        status: 'cancelled',
+        internal_notes: `[${new Date().toISOString()}] Auto-cancelled: Room no longer available due to concurrent booking`
+      }).eq('id', bookingId)
+      // Note: Stripe refund should be triggered separately or via admin
+      return
     } else {
-      console.log(`Room ${booking.room_id} availability decremented`)
+      console.log(`Room ${booking.room_id} availability decremented atomically`)
     }
   }
   const bookingLanguage = booking.language || language || 'en'
@@ -582,10 +593,10 @@ async function handleRefund(charge: Stripe.Charge) {
   const supabase = getSupabase()
   const paymentIntentId = charge.payment_intent as string
 
-  // Find the original payment with booking room_id
+  // Find the original payment with booking room_id and guests_count
   const { data: originalPayment, error: findError } = await supabase
     .from('payments')
-    .select('booking_id, booking:bookings(room_id)')
+    .select('booking_id, booking:bookings(room_id, guests_count)')
     .eq('stripe_payment_intent_id', paymentIntentId)
     .single()
 
@@ -623,14 +634,14 @@ async function handleRefund(charge: Stripe.Charge) {
     console.error('Error updating booking on refund:', bookingError)
   }
 
-  // If FULL refund, return room availability
+  // If FULL refund, return room availability (using actual guests_count)
   // Supabase returns nested join as array, extract first element
-  const bookingArray = originalPayment.booking as Array<{ room_id: string | null }> | null
+  const bookingArray = originalPayment.booking as Array<{ room_id: string | null; guests_count: number }> | null
   const bookingData = Array.isArray(bookingArray) ? bookingArray[0] : bookingArray
   if (charge.refunded && bookingData?.room_id) {
     const { error: incrementError } = await supabase.rpc('increment_room_availability', {
       room_uuid: bookingData.room_id,
-      increment_count: 1
+      increment_count: bookingData.guests_count || 1
     })
 
     if (incrementError) {

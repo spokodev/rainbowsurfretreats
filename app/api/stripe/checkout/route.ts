@@ -10,9 +10,9 @@ import type { ApiResponse, BookingInsert, DiscountSource } from '@/lib/types/dat
 
 // POST /api/stripe/checkout - Create Stripe checkout session
 export async function POST(request: NextRequest) {
-  // Rate limiting - 10 requests per minute per IP
+  // Rate limiting - 10 requests per minute per IP (bypassed for load tests in dev)
   const clientIp = getClientIp(request)
-  const rateLimitResult = checkRateLimit(clientIp, rateLimitPresets.checkout)
+  const rateLimitResult = checkRateLimit(clientIp, rateLimitPresets.checkout, request)
 
   if (!rateLimitResult.success) {
     return NextResponse.json<ApiResponse<null>>(
@@ -297,6 +297,25 @@ export async function POST(request: NextRequest) {
     // Record promo code redemption if promo code was used
     // This uses atomic increment to prevent race conditions
     if (discountSource === 'promo_code' && validatedPromoCode) {
+      // BUG-010 FIX: Re-validate promo code expiry before recording redemption
+      // This catches cases where promo expired during checkout processing
+      const revalidation = await validatePromoCode(
+        validatedPromoCode.code,
+        retreat.id,
+        body.roomId,
+        basePrice
+      )
+
+      if (!revalidation.valid) {
+        // Promo code expired or became invalid during checkout - clean up and return error
+        console.warn('Promo code became invalid during checkout:', revalidation.error)
+        await supabase.from('bookings').delete().eq('id', booking.id)
+        return NextResponse.json<ApiResponse<null>>(
+          { error: revalidation.error || 'Promo code is no longer valid. Please try again without the promo code.' },
+          { status: 400 }
+        )
+      }
+
       try {
         await recordPromoCodeRedemption(
           validatedPromoCode.id,

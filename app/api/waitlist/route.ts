@@ -14,9 +14,9 @@ function getSupabase() {
 
 // POST /api/waitlist - Join waitlist
 export async function POST(request: NextRequest) {
-  // Rate limiting - 5 requests per hour per IP
+  // Rate limiting - 5 requests per hour per IP (bypassed for load tests in dev)
   const clientIp = getClientIp(request)
-  const rateLimitResult = checkRateLimit(clientIp, rateLimitPresets.waitlist)
+  const rateLimitResult = checkRateLimit(clientIp, rateLimitPresets.waitlist, request)
 
   if (!rateLimitResult.success) {
     return NextResponse.json<ApiResponse<null>>(
@@ -306,7 +306,7 @@ export async function GET(request: NextRequest) {
 
   const { data: entry, error } = await supabase
     .from('waitlist_entries')
-    .select('id, position, status, created_at')
+    .select('id, status, created_at')
     .eq('retreat_id', retreatId)
     .eq('email', email.toLowerCase())
     .single()
@@ -318,9 +318,18 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  // BUG-008 FIX: Use dynamic position calculation instead of stored value
+  let position = 0
+  if (entry.status === 'waiting' || entry.status === 'notified') {
+    const { data: positionData } = await supabase.rpc('get_waitlist_position', {
+      entry_id: entry.id
+    })
+    position = positionData || 0
+  }
+
   return NextResponse.json<ApiResponse<{ position: number; status: string }>>({
     data: {
-      position: entry.position,
+      position,
       status: entry.status
     }
   })

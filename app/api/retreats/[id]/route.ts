@@ -23,7 +23,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .eq('id', id)
       .single()
 
-    if (error) {
+    // BUG-022 FIX: Return 404 for nonexistent retreat
+    if (error || !data) {
+      // Check if it's a "not found" error (PGRST116 from .single())
+      if (error?.code === 'PGRST116' || !data) {
+        return NextResponse.json<ApiResponse<null>>(
+          { error: 'Retreat not found' },
+          { status: 404 }
+        )
+      }
       const errorResponse = handleDatabaseError(error, 'GET /api/retreats/[id]')
       if (errorResponse) return errorResponse
     }

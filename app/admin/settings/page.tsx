@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Save,
   Mail,
@@ -13,6 +14,7 @@ import {
   FileText,
   Loader2,
 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -115,11 +117,19 @@ const defaultAdminNotifications: AdminNotificationsSettings = {
   notifyOnSupportRequest: true,
 };
 
-export default function AdminSettingsPage() {
+function SettingsContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const activeTab = searchParams.get("tab") || "general";
+
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
   const [adminNotifications, setAdminNotifications] = useState<AdminNotificationsSettings>(defaultAdminNotifications);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleTabChange = (value: string) => {
+    router.push(`/admin/settings?tab=${value}`, { scroll: false });
+  };
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -244,7 +254,7 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
@@ -262,447 +272,485 @@ export default function AdminSettingsPage() {
         </Button>
       </div>
 
-      <div className="grid gap-6">
-        {/* General Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Building className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>General Settings</CardTitle>
-            </div>
-            <CardDescription>
-              Basic information about your business
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="siteName">Site Name</Label>
-                <Input
-                  id="siteName"
-                  value={settings.general.siteName}
-                  onChange={(e) => updateGeneral("siteName", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Phone Number</Label>
-                <Input
-                  id="phoneNumber"
-                  value={settings.general.phoneNumber}
-                  onChange={(e) => updateGeneral("phoneNumber", e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="siteDescription">Site Description</Label>
-              <Textarea
-                id="siteDescription"
-                value={settings.general.siteDescription}
-                onChange={(e) => updateGeneral("siteDescription", e.target.value)}
-                rows={3}
-              />
-            </div>
-          </CardContent>
-        </Card>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="general">
+            <Building className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">General</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications">
+            <Bell className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Notifications</span>
+          </TabsTrigger>
+          <TabsTrigger value="operations">
+            <CreditCard className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Operations</span>
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Email Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Mail className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Email Settings</CardTitle>
-            </div>
-            <CardDescription>
-              Configure email addresses for communication
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="contactEmail">Contact Email</Label>
-                <Input
-                  id="contactEmail"
-                  type="email"
-                  value={settings.email.contactEmail}
-                  onChange={(e) => updateEmail("contactEmail", e.target.value)}
-                />
+        {/* General Tab */}
+        <TabsContent value="general" className="space-y-6">
+          {/* General Settings */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Building className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>General Settings</CardTitle>
+              </div>
+              <CardDescription>
+                Basic information about your business
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="siteName">Site Name</Label>
+                  <Input
+                    id="siteName"
+                    value={settings.general.siteName}
+                    onChange={(e) => updateGeneral("siteName", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phoneNumber">Phone Number</Label>
+                  <Input
+                    id="phoneNumber"
+                    value={settings.general.phoneNumber}
+                    onChange={(e) => updateGeneral("phoneNumber", e.target.value)}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="supportEmail">Support Email</Label>
-                <Input
-                  id="supportEmail"
-                  type="email"
-                  value={settings.email.supportEmail}
-                  onChange={(e) => updateEmail("supportEmail", e.target.value)}
+                <Label htmlFor="siteDescription">Site Description</Label>
+                <Textarea
+                  id="siteDescription"
+                  value={settings.general.siteDescription}
+                  onChange={(e) => updateGeneral("siteDescription", e.target.value)}
+                  rows={3}
                 />
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Email Templates Link */}
-            <Link
-              href="/admin/settings/emails"
-              className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <FileText className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <div className="font-medium">Email Templates</div>
-                  <div className="text-sm text-muted-foreground">
-                    Customize the content of automated emails
+          {/* Email Settings */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>Email Settings</CardTitle>
+              </div>
+              <CardDescription>
+                Configure email addresses for communication
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">Contact Email</Label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    value={settings.email.contactEmail}
+                    onChange={(e) => updateEmail("contactEmail", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="supportEmail">Support Email</Label>
+                  <Input
+                    id="supportEmail"
+                    type="email"
+                    value={settings.email.supportEmail}
+                    onChange={(e) => updateEmail("supportEmail", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Email Templates Link */}
+              <Link
+                href="/admin/settings/emails"
+                className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">Email Templates</div>
+                    <div className="text-sm text-muted-foreground">
+                      Customize the content of automated emails
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </Link>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Notifications Tab */}
+        <TabsContent value="notifications" className="space-y-6">
+          {/* User Notification Preferences */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>User Preferences</CardTitle>
+              </div>
+              <CardDescription>
+                What notifications customers receive
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Email Notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive email notifications for important updates
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.notifications.emailNotifications}
+                  onCheckedChange={(checked) => updateNotifications("emailNotifications", checked)}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Booking Alerts</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified when new bookings are made
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.notifications.bookingAlerts}
+                  onCheckedChange={(checked) => updateNotifications("bookingAlerts", checked)}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Payment Alerts</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified when payments are received
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.notifications.paymentAlerts}
+                  onCheckedChange={(checked) => updateNotifications("paymentAlerts", checked)}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Marketing Emails</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive marketing and promotional emails
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.notifications.marketingEmails}
+                  onCheckedChange={(checked) => updateNotifications("marketingEmails", checked)}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Weekly Reports</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive weekly summary reports via email
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.notifications.weeklyReports}
+                  onCheckedChange={(checked) => updateNotifications("weeklyReports", checked)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Admin Notifications Settings */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>Admin Email Alerts</CardTitle>
+              </div>
+              <CardDescription>
+                Configure email addresses and toggle notifications for admin alerts
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Email addresses */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium">Notification Email Addresses</h4>
+                <p className="text-sm text-muted-foreground">
+                  Leave blank to use the general email for that category. Falls back to ADMIN_EMAIL environment variable if none set.
+                </p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="adminGeneralEmail">General Email</Label>
+                    <Input
+                      id="adminGeneralEmail"
+                      type="email"
+                      placeholder="admin@example.com"
+                      value={adminNotifications.generalEmail}
+                      onChange={(e) => updateAdminNotificationsEmail("generalEmail", e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">Default email for all notifications</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="adminBookingsEmail">Bookings Email</Label>
+                    <Input
+                      id="adminBookingsEmail"
+                      type="email"
+                      placeholder="bookings@example.com"
+                      value={adminNotifications.bookingsEmail}
+                      onChange={(e) => updateAdminNotificationsEmail("bookingsEmail", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="adminPaymentsEmail">Payments Email</Label>
+                    <Input
+                      id="adminPaymentsEmail"
+                      type="email"
+                      placeholder="payments@example.com"
+                      value={adminNotifications.paymentsEmail}
+                      onChange={(e) => updateAdminNotificationsEmail("paymentsEmail", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="adminWaitlistEmail">Waitlist Email</Label>
+                    <Input
+                      id="adminWaitlistEmail"
+                      type="email"
+                      placeholder="waitlist@example.com"
+                      value={adminNotifications.waitlistEmail}
+                      onChange={(e) => updateAdminNotificationsEmail("waitlistEmail", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="adminSupportEmail">Support Email</Label>
+                    <Input
+                      id="adminSupportEmail"
+                      type="email"
+                      placeholder="support@example.com"
+                      value={adminNotifications.supportEmail}
+                      onChange={(e) => updateAdminNotificationsEmail("supportEmail", e.target.value)}
+                    />
                   </div>
                 </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </Link>
-          </CardContent>
-        </Card>
 
-        {/* Notification Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Notifications</CardTitle>
-            </div>
-            <CardDescription>
-              Configure notification preferences
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Email Notifications</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive email notifications for important updates
-                </p>
+              {/* Toggle switches */}
+              <div className="space-y-4 pt-4 border-t">
+                <h4 className="text-sm font-medium">Notification Types</h4>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>New Booking</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive email when a new booking is created
+                    </p>
+                  </div>
+                  <Switch
+                    checked={adminNotifications.notifyOnNewBooking}
+                    onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnNewBooking", checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Payment Received</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive email when a payment is successfully processed
+                    </p>
+                  </div>
+                  <Switch
+                    checked={adminNotifications.notifyOnPaymentReceived}
+                    onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnPaymentReceived", checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Payment Failed</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive email when a payment fails
+                    </p>
+                  </div>
+                  <Switch
+                    checked={adminNotifications.notifyOnPaymentFailed}
+                    onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnPaymentFailed", checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Waitlist Join</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive email when someone joins the waitlist
+                    </p>
+                  </div>
+                  <Switch
+                    checked={adminNotifications.notifyOnWaitlistJoin}
+                    onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnWaitlistJoin", checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Waitlist Response</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive email when someone accepts or declines a waitlist offer
+                    </p>
+                  </div>
+                  <Switch
+                    checked={adminNotifications.notifyOnWaitlistResponse}
+                    onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnWaitlistResponse", checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Support Request</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive email when a support request is submitted
+                    </p>
+                  </div>
+                  <Switch
+                    checked={adminNotifications.notifyOnSupportRequest}
+                    onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnSupportRequest", checked)}
+                  />
+                </div>
               </div>
-              <Switch
-                checked={settings.notifications.emailNotifications}
-                onCheckedChange={(checked) => updateNotifications("emailNotifications", checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Booking Alerts</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified when new bookings are made
-                </p>
-              </div>
-              <Switch
-                checked={settings.notifications.bookingAlerts}
-                onCheckedChange={(checked) => updateNotifications("bookingAlerts", checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Payment Alerts</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified when payments are received
-                </p>
-              </div>
-              <Switch
-                checked={settings.notifications.paymentAlerts}
-                onCheckedChange={(checked) => updateNotifications("paymentAlerts", checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Marketing Emails</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive marketing and promotional emails
-                </p>
-              </div>
-              <Switch
-                checked={settings.notifications.marketingEmails}
-                onCheckedChange={(checked) => updateNotifications("marketingEmails", checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Weekly Reports</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive weekly summary reports via email
-                </p>
-              </div>
-              <Switch
-                checked={settings.notifications.weeklyReports}
-                onCheckedChange={(checked) => updateNotifications("weeklyReports", checked)}
-              />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-        {/* Admin Notifications Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Mail className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Admin Email Alerts</CardTitle>
-            </div>
-            <CardDescription>
-              Configure email addresses and toggle notifications for admin alerts
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Email addresses */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium">Notification Email Addresses</h4>
-              <p className="text-sm text-muted-foreground">
-                Leave blank to use the general email for that category. Falls back to ADMIN_EMAIL environment variable if none set.
-              </p>
+        {/* Operations Tab */}
+        <TabsContent value="operations" className="space-y-6">
+          {/* Payment Settings */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>Payment Settings</CardTitle>
+              </div>
+              <CardDescription>
+                Configure payment options and methods
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="adminGeneralEmail">General Email</Label>
+                  <Label htmlFor="currency">Default Currency</Label>
                   <Input
-                    id="adminGeneralEmail"
-                    type="email"
-                    placeholder="admin@example.com"
-                    value={adminNotifications.generalEmail}
-                    onChange={(e) => updateAdminNotificationsEmail("generalEmail", e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">Default email for all notifications</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="adminBookingsEmail">Bookings Email</Label>
-                  <Input
-                    id="adminBookingsEmail"
-                    type="email"
-                    placeholder="bookings@example.com"
-                    value={adminNotifications.bookingsEmail}
-                    onChange={(e) => updateAdminNotificationsEmail("bookingsEmail", e.target.value)}
+                    id="currency"
+                    value={settings.payment.currency}
+                    onChange={(e) => updatePayment("currency", e.target.value)}
+                    placeholder="EUR"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="adminPaymentsEmail">Payments Email</Label>
+                  <Label htmlFor="depositPercentage">Deposit Percentage</Label>
                   <Input
-                    id="adminPaymentsEmail"
-                    type="email"
-                    placeholder="payments@example.com"
-                    value={adminNotifications.paymentsEmail}
-                    onChange={(e) => updateAdminNotificationsEmail("paymentsEmail", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="adminWaitlistEmail">Waitlist Email</Label>
-                  <Input
-                    id="adminWaitlistEmail"
-                    type="email"
-                    placeholder="waitlist@example.com"
-                    value={adminNotifications.waitlistEmail}
-                    onChange={(e) => updateAdminNotificationsEmail("waitlistEmail", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="adminSupportEmail">Support Email</Label>
-                  <Input
-                    id="adminSupportEmail"
-                    type="email"
-                    placeholder="support@example.com"
-                    value={adminNotifications.supportEmail}
-                    onChange={(e) => updateAdminNotificationsEmail("supportEmail", e.target.value)}
+                    id="depositPercentage"
+                    type="number"
+                    value={settings.payment.depositPercentage}
+                    onChange={(e) => updatePayment("depositPercentage", parseInt(e.target.value) || 0)}
+                    placeholder="30"
                   />
                 </div>
               </div>
-            </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Stripe Payments</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Accept credit card payments via Stripe
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.payment.stripeEnabled}
+                  onCheckedChange={(checked) => updatePayment("stripeEnabled", checked)}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Toggle switches */}
-            <div className="space-y-4 pt-4 border-t">
-              <h4 className="text-sm font-medium">Notification Types</h4>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>New Booking</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive email when a new booking is created
+          {/* Booking Settings */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>Booking Settings</CardTitle>
+              </div>
+              <CardDescription>
+                Configure booking rules and policies
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="cancellationDays">
+                    Cancellation Period (days)
+                  </Label>
+                  <Input
+                    id="cancellationDays"
+                    type="number"
+                    value={settings.booking.cancellationDays}
+                    onChange={(e) => updateBooking("cancellationDays", parseInt(e.target.value) || 0)}
+                    placeholder="30"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Days before retreat for full refund
                   </p>
                 </div>
-                <Switch
-                  checked={adminNotifications.notifyOnNewBooking}
-                  onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnNewBooking", checked)}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="maxParticipants">
+                    Default Max Participants
+                  </Label>
+                  <Input
+                    id="maxParticipants"
+                    type="number"
+                    value={settings.booking.maxParticipants}
+                    onChange={(e) => updateBooking("maxParticipants", parseInt(e.target.value) || 0)}
+                    placeholder="14"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Maximum participants per retreat
+                  </p>
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Payment Received</Label>
+                  <Label>Auto-Confirm Bookings</Label>
                   <p className="text-sm text-muted-foreground">
-                    Receive email when a payment is successfully processed
+                    Automatically confirm bookings when payment is received
                   </p>
                 </div>
                 <Switch
-                  checked={adminNotifications.notifyOnPaymentReceived}
-                  onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnPaymentReceived", checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Payment Failed</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive email when a payment fails
-                  </p>
-                </div>
-                <Switch
-                  checked={adminNotifications.notifyOnPaymentFailed}
-                  onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnPaymentFailed", checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Waitlist Join</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive email when someone joins the waitlist
-                  </p>
-                </div>
-                <Switch
-                  checked={adminNotifications.notifyOnWaitlistJoin}
-                  onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnWaitlistJoin", checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Waitlist Response</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive email when someone accepts or declines a waitlist offer
-                  </p>
-                </div>
-                <Switch
-                  checked={adminNotifications.notifyOnWaitlistResponse}
-                  onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnWaitlistResponse", checked)}
+                  checked={settings.booking.autoConfirm}
+                  onCheckedChange={(checked) => updateBooking("autoConfirm", checked)}
                 />
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Support Request</Label>
+                  <Label>Require Deposit</Label>
                   <p className="text-sm text-muted-foreground">
-                    Receive email when a support request is submitted
+                    Require deposit payment to confirm booking
                   </p>
                 </div>
                 <Switch
-                  checked={adminNotifications.notifyOnSupportRequest}
-                  onCheckedChange={(checked) => updateAdminNotificationsToggle("notifyOnSupportRequest", checked)}
+                  checked={settings.booking.requireDeposit}
+                  onCheckedChange={(checked) => updateBooking("requireDeposit", checked)}
                 />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Payment Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Payment Settings</CardTitle>
-            </div>
-            <CardDescription>
-              Configure payment options and methods
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="currency">Default Currency</Label>
-                <Input
-                  id="currency"
-                  value={settings.payment.currency}
-                  onChange={(e) => updatePayment("currency", e.target.value)}
-                  placeholder="EUR"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="depositPercentage">Deposit Percentage</Label>
-                <Input
-                  id="depositPercentage"
-                  type="number"
-                  value={settings.payment.depositPercentage}
-                  onChange={(e) => updatePayment("depositPercentage", parseInt(e.target.value) || 0)}
-                  placeholder="30"
-                />
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Stripe Payments</Label>
-                <p className="text-sm text-muted-foreground">
-                  Accept credit card payments via Stripe
-                </p>
-              </div>
-              <Switch
-                checked={settings.payment.stripeEnabled}
-                onCheckedChange={(checked) => updatePayment("stripeEnabled", checked)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Booking Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Booking Settings</CardTitle>
-            </div>
-            <CardDescription>
-              Configure booking rules and policies
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="cancellationDays">
-                  Cancellation Period (days)
-                </Label>
-                <Input
-                  id="cancellationDays"
-                  type="number"
-                  value={settings.booking.cancellationDays}
-                  onChange={(e) => updateBooking("cancellationDays", parseInt(e.target.value) || 0)}
-                  placeholder="30"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Days before retreat for full refund
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="maxParticipants">
-                  Default Max Participants
-                </Label>
-                <Input
-                  id="maxParticipants"
-                  type="number"
-                  value={settings.booking.maxParticipants}
-                  onChange={(e) => updateBooking("maxParticipants", parseInt(e.target.value) || 0)}
-                  placeholder="14"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Maximum participants per retreat
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Auto-Confirm Bookings</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically confirm bookings when payment is received
-                </p>
-              </div>
-              <Switch
-                checked={settings.booking.autoConfirm}
-                onCheckedChange={(checked) => updateBooking("autoConfirm", checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Require Deposit</Label>
-                <p className="text-sm text-muted-foreground">
-                  Require deposit payment to confirm booking
-                </p>
-              </div>
-              <Switch
-                checked={settings.booking.requireDeposit}
-                onCheckedChange={(checked) => updateBooking("requireDeposit", checked)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+}
+
+export default function AdminSettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <SettingsContent />
+    </Suspense>
   );
 }

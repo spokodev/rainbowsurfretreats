@@ -288,9 +288,17 @@ function FeedbackPageContent() {
       if (search) params.set('search', search)
       if (retreatFilter !== 'all') params.set('retreatId', retreatFilter)
       if (ratingFilter !== 'all') {
-        if (ratingFilter === 'high') params.set('minRating', '4')
-        else if (ratingFilter === 'medium') params.set('minRating', '3')
-        else if (ratingFilter === 'low') params.set('minRating', '1')
+        // BUG-FIX: Use both minRating and maxRating for proper range filtering
+        if (ratingFilter === 'high') {
+          params.set('minRating', '4')
+          params.set('maxRating', '5')
+        } else if (ratingFilter === 'medium') {
+          params.set('minRating', '3')
+          params.set('maxRating', '3')
+        } else if (ratingFilter === 'low') {
+          params.set('minRating', '1')
+          params.set('maxRating', '2')
+        }
       }
       if (dateFrom) params.set('dateFrom', dateFrom)
       if (dateTo) params.set('dateTo', dateTo)
@@ -404,11 +412,11 @@ function FeedbackPageContent() {
   }
 
   return (
-    <div className="container py-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Guest Feedback</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-bold tracking-tight">Guest Feedback</h1>
+          <p className="text-muted-foreground">
             View and analyze feedback from retreat guests
           </p>
         </div>
@@ -598,9 +606,11 @@ function FeedbackPageContent() {
       <Card>
         <CardHeader>
           <CardTitle>Feedback Responses</CardTitle>
-          <CardDescription>
-            {total > 0 ? `Showing ${displayedFeedback.length} of ${total} responses` : 'No responses'}
-          </CardDescription>
+          {total > 0 && (
+            <CardDescription>
+              Showing {displayedFeedback.length} of {total} responses
+            </CardDescription>
+          )}
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -608,12 +618,17 @@ function FeedbackPageContent() {
               <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
           ) : !displayedFeedback.length ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No feedback found</p>
+            <div className="text-center py-16 text-muted-foreground">
+              <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-30" />
+              <h3 className="text-lg font-medium text-foreground mb-1">No feedback yet</h3>
+              <p className="text-sm max-w-sm mx-auto">
+                {hasActiveFilters
+                  ? 'No feedback matches your filters. Try adjusting or clearing them.'
+                  : 'Feedback from guests will appear here after they complete their retreat experience.'}
+              </p>
               {hasActiveFilters && (
-                <Button variant="link" onClick={clearFilters} className="mt-2">
-                  Clear filters to see all feedback
+                <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4">
+                  Clear all filters
                 </Button>
               )}
             </div>
@@ -743,7 +758,7 @@ function FeedbackPageContent() {
                       <TableRow className="bg-muted/30">
                         <TableCell colSpan={7}>
                           <div className="py-4 space-y-4">
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                               <div>
                                 <span className="text-sm text-muted-foreground">Surfing</span>
                                 <StarRating rating={entry.surfing_rating} />

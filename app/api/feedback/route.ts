@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkAdminAuth } from '@/lib/settings'
+import { verifyFeedbackToken } from '@/lib/feedback-token'
 
 function getSupabase() {
   return createClient(
@@ -15,6 +16,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       bookingId,
+      token,
       ratings,
       npsScore,
       highlights,
@@ -25,6 +27,13 @@ export async function POST(request: NextRequest) {
 
     if (!bookingId) {
       return NextResponse.json({ error: 'Missing booking ID' }, { status: 400 })
+    }
+
+    // SECURITY: Verify the feedback token to ensure the request is from the actual guest
+    // This prevents unauthorized users from submitting feedback for bookings they don't own
+    if (!token || !verifyFeedbackToken(bookingId, token)) {
+      console.warn(`[Feedback] Invalid token attempt for booking ${bookingId}`)
+      return NextResponse.json({ error: 'Invalid or missing feedback token' }, { status: 401 })
     }
 
     const supabase = getSupabase()
@@ -103,6 +112,7 @@ export async function GET(request: NextRequest) {
     // Filters
     const retreatId = searchParams.get('retreatId')
     const minRating = searchParams.get('minRating')
+    const maxRating = searchParams.get('maxRating')
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
     const search = searchParams.get('search')
@@ -135,6 +145,13 @@ export async function GET(request: NextRequest) {
       const rating = parseInt(minRating)
       if (!isNaN(rating) && rating >= 1 && rating <= 5) {
         query = query.gte('overall_rating', rating)
+      }
+    }
+
+    if (maxRating) {
+      const rating = parseInt(maxRating)
+      if (!isNaN(rating) && rating >= 1 && rating <= 5) {
+        query = query.lte('overall_rating', rating)
       }
     }
 

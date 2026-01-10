@@ -493,7 +493,7 @@ function PaymentsPageContent() {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -502,7 +502,7 @@ function PaymentsPageContent() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold tabular-nums">
               {formatCurrency(totalRevenue)}
             </div>
             <div className="flex items-center text-xs text-green-600">
@@ -519,7 +519,7 @@ function PaymentsPageContent() {
             <ArrowDownLeft className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold tabular-nums text-red-600">
               {formatCurrency(totalRefunds)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -535,7 +535,7 @@ function PaymentsPageContent() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold tabular-nums">
               {formatCurrency(pendingAmount)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -551,7 +551,7 @@ function PaymentsPageContent() {
             <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold tabular-nums">
               {formatCurrency(totalRevenue - totalRefunds)}
             </div>
             <p className="text-xs text-muted-foreground">After refunds</p>
@@ -615,14 +615,14 @@ function PaymentsPageContent() {
                 </div>
               ) : (
                 <>
-                  <div className="rounded-md border">
+                  <div className="rounded-md border overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Booking</TableHead>
+                          <TableHead className="hidden lg:table-cell">Booking</TableHead>
                           <TableHead>Guest</TableHead>
-                          <TableHead>Retreat</TableHead>
-                          <TableHead>Type</TableHead>
+                          <TableHead className="hidden md:table-cell">Retreat</TableHead>
+                          <TableHead className="hidden sm:table-cell">Type</TableHead>
                           <AdminSortHeader
                             column="amount"
                             label="Amount"
@@ -637,6 +637,7 @@ function PaymentsPageContent() {
                             currentSort={sortBy}
                             currentOrder={sortOrder}
                             onSort={handleSort}
+                            className="hidden sm:table-cell"
                           />
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -644,7 +645,7 @@ function PaymentsPageContent() {
                       <TableBody>
                         {payments.map((payment) => (
                           <TableRow key={payment.id}>
-                            <TableCell>
+                            <TableCell className="hidden lg:table-cell">
                               {payment.booking?.booking_number ? (
                                 <Link
                                   href={`/admin/bookings/${payment.booking_id}`}
@@ -661,10 +662,10 @@ function PaymentsPageContent() {
                                 ? `${payment.booking.first_name} ${payment.booking.last_name}`
                                 : '-'}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden md:table-cell">
                               {payment.booking?.retreat?.destination || '-'}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden sm:table-cell">
                               <Badge variant={getTypeBadgeVariant(payment.payment_type)}>
                                 {payment.payment_type}
                               </Badge>
@@ -686,7 +687,7 @@ function PaymentsPageContent() {
                                 {payment.status}
                               </Badge>
                             </TableCell>
-                            <TableCell>{formatDate(payment.created_at)}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{formatDate(payment.created_at)}</TableCell>
                             <TableCell className="text-right">
                               {payment.status === 'succeeded' &&
                                 payment.payment_type !== 'refund' && (
@@ -861,7 +862,7 @@ function PaymentsPageContent() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Original Amount</Label>
-              <p className="text-2xl font-bold">
+              <p className="text-2xl font-bold tabular-nums">
                 {refundDialog.payment &&
                   formatCurrency(
                     refundDialog.payment.amount,
@@ -948,7 +949,7 @@ function PaymentsPageContent() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Scheduled Amount</Label>
-              <p className="text-2xl font-bold">
+              <p className="text-2xl font-bold tabular-nums">
                 {cancelDialog.schedule &&
                   formatCurrency(cancelDialog.schedule.amount)}
               </p>

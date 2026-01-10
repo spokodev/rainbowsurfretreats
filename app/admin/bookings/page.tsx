@@ -157,28 +157,28 @@ function BookingsPageContent() {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{stats.confirmed}</div>
+            <div className="text-2xl font-bold tabular-nums">{stats.confirmed}</div>
             <p className="text-xs text-muted-foreground">Confirmed</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{stats.pending}</div>
+            <div className="text-2xl font-bold tabular-nums">{stats.pending}</div>
             <p className="text-xs text-muted-foreground">Pending</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{stats.cancelled}</div>
+            <div className="text-2xl font-bold tabular-nums">{stats.cancelled}</div>
             <p className="text-xs text-muted-foreground">Cancelled</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-2xl font-bold tabular-nums">{stats.total}</div>
             <p className="text-xs text-muted-foreground">Total Bookings</p>
           </CardContent>
         </Card>
