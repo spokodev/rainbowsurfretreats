@@ -125,10 +125,12 @@ export default function BlogPageClient({ headerImage }: BlogPageClientProps) {
       <section className="py-12 md:py-16 bg-[var(--sand-light)] relative overflow-hidden">
         {/* Decorative Illustrations */}
         <SeaShell
+          animated
           className="absolute top-16 left-4 w-14 h-14 md:w-20 md:h-20 text-[var(--primary-teal)] rotate-[-10deg] pointer-events-none"
           style={{ opacity: illustrationOpacity.blogShell }}
         />
         <Starfish
+          animated
           className="absolute bottom-20 right-8 w-16 h-16 md:w-24 md:h-24 text-[var(--coral-accent)] rotate-[25deg] pointer-events-none hidden md:block"
           style={{ opacity: illustrationOpacity.blogStarfish }}
         />

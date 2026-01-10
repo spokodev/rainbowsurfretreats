@@ -208,14 +208,17 @@ export default function RetreatsPageClient({ initialRetreats, headerImage }: Ret
       <section className="py-12 md:py-16 bg-[var(--sand-light)] relative overflow-hidden">
         {/* Decorative Illustrations */}
         <SeaShell
+          animated
           className="absolute top-8 left-4 w-16 h-16 md:w-24 md:h-24 text-[var(--primary-teal)] rotate-[-15deg] pointer-events-none"
           style={{ opacity: illustrationOpacity.retreatsShell }}
         />
         <Starfish
+          animated
           className="absolute bottom-12 right-8 w-20 h-20 md:w-28 md:h-28 text-[var(--coral-accent)] rotate-[20deg] pointer-events-none"
           style={{ opacity: illustrationOpacity.retreatsStarfish }}
         />
         <SeaShell
+          animated
           variant={2}
           className="absolute top-1/2 right-4 w-12 h-12 md:w-16 md:h-16 text-[var(--soft-gold)] rotate-[30deg] pointer-events-none hidden lg:block"
           style={{ opacity: illustrationOpacity.retreatsShell }}

@@ -12,6 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import type { BlogPost, BlogLanguage } from '@/lib/types/database'
 import { getBlogPostBySlug } from '@/lib/blog-data'
 import type { BlogPost as StaticBlogPost } from '@/components/BlogCard'
+import { Flowers, TropicalLeaves, SeaShell } from '@/components/illustrations'
+import { illustrationOpacity } from '@/lib/animations'
 
 // Available languages for language switcher
 const LANGUAGES: { code: BlogLanguage; name: string; flag: string }[] = [
@@ -425,8 +427,26 @@ export default function BlogPostPage() {
       </div>
 
       {/* Content */}
-      <article className="container mx-auto px-4 py-12">
-        <div className="max-w-3xl mx-auto">
+      <article className="container mx-auto px-4 py-12 relative">
+        {/* Decorative Illustrations */}
+        <Flowers
+          animated
+          className="absolute -left-12 top-32 w-28 h-28 text-[var(--primary-coral)] hidden lg:block"
+          style={{ opacity: illustrationOpacity.blogPostFlowers }}
+        />
+        <TropicalLeaves
+          variant={2}
+          animated
+          className="absolute -right-16 top-1/4 w-36 h-36 text-[var(--primary-teal)] hidden lg:block"
+          style={{ opacity: illustrationOpacity.blogPostLeaves }}
+        />
+        <SeaShell
+          variant={2}
+          className="absolute left-8 bottom-32 w-20 h-20 text-[var(--primary-coral)] hidden lg:block rotate-12"
+          style={{ opacity: illustrationOpacity.blogPostShell }}
+        />
+
+        <div className="max-w-3xl mx-auto relative z-10">
           {/* Excerpt */}
           {post.excerpt && (
             <p className="text-xl text-gray-600 mb-8 leading-relaxed font-medium">

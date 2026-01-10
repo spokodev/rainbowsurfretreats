@@ -4,10 +4,17 @@ import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 
 interface SeaShellProps {
+  animated?: boolean;
   variant?: 1 | 2 | 3;
   className?: string;
   style?: React.CSSProperties;
 }
+
+// Gentle wobble animation for shells
+const wobbleAnimation = {
+  animate: { rotate: [-3, 3, -3], scale: [1, 1.02, 1] },
+  transition: { duration: 5, repeat: Infinity, ease: 'easeInOut' as const },
+};
 
 const shellPaths = {
   1: [
@@ -37,12 +44,14 @@ const viewBoxes = {
   3: '0 0 992.27 900',
 };
 
-export function SeaShell({ variant = 1, className, style }: SeaShellProps) {
+export function SeaShell({ animated = false, variant = 1, className, style }: SeaShellProps) {
   return (
     <motion.svg
       viewBox={viewBoxes[variant]}
       className={cn('fill-current', className)}
       style={style}
+      animate={animated ? wobbleAnimation.animate : undefined}
+      transition={animated ? wobbleAnimation.transition : undefined}
     >
       {shellPaths[variant].map((d, i) => (
         <path key={i} d={d} />

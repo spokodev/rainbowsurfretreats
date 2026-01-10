@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { CheckCircle, Calendar, MapPin, CreditCard, ArrowRight, Loader2, Mail, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Surfer, SeaShell, WavePattern } from '@/components/illustrations'
 
 interface BookingDetails {
   booking_number: string
@@ -80,8 +81,24 @@ export default function BookingSuccessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-ochre py-12 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-gradient-ochre py-12 px-4 relative overflow-hidden">
+      {/* Decorative Illustrations */}
+      <Surfer
+        className="absolute -left-8 bottom-8 w-40 h-40 text-[var(--primary-teal)] hidden md:block"
+        style={{ opacity: 0.15 }}
+      />
+      <SeaShell
+        variant={1}
+        className="absolute right-4 top-20 w-24 h-24 text-[var(--primary-coral)] hidden md:block rotate-12"
+        style={{ opacity: 0.12 }}
+      />
+      <WavePattern
+        variant={2}
+        className="absolute bottom-0 left-0 right-0 h-24 text-[var(--primary-teal)]"
+        style={{ opacity: 0.1 }}
+      />
+
+      <div className="max-w-2xl mx-auto relative z-10">
         <div className="bg-white rounded-2xl shadow-lg p-8">
           {/* Success Header */}
           <div className="text-center mb-8">

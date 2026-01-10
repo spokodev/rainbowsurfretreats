@@ -24,11 +24,13 @@ export default function Features() {
       {/* Decorative Illustrations */}
       <div className="absolute inset-0 pointer-events-none">
         <SeaShell
+          animated
           variant={2}
           className="absolute -top-8 -left-8 w-32 h-32 md:w-48 md:h-48 text-[var(--sand-dark)] rotate-12"
           style={{ opacity: illustrationOpacity.featuresShell }}
         />
         <Starfish
+          animated
           className="absolute -bottom-8 -right-8 w-32 h-32 md:w-48 md:h-48 text-[var(--primary-teal)] -rotate-12"
           style={{ opacity: illustrationOpacity.featuresStarfish }}
         />

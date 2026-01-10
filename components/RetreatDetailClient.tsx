@@ -17,6 +17,8 @@ import { RetreatMap } from '@/components/retreat-map'
 import { WaitlistForm } from '@/components/waitlist-form'
 import RetreatGallery from '@/components/RetreatGallery'
 import { Calendar, Users, Clock, Utensils, Waves, Check, X, Bell } from 'lucide-react'
+import { Fin, Flowers, TropicalLeaves, WavePattern } from '@/components/illustrations'
+import { illustrationOpacity } from '@/lib/animations'
 
 interface RetreatRoom {
   id: string
@@ -167,8 +169,26 @@ export default function RetreatDetailClient({ retreat }: RetreatDetailClientProp
       </section>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] lg:grid-cols-3 gap-8">
+      <div className="container mx-auto px-4 py-12 relative">
+        {/* Decorative Illustrations */}
+        <TropicalLeaves
+          variant={1}
+          animated
+          className="absolute -left-16 top-24 w-40 h-40 text-[var(--primary-teal)] hidden lg:block"
+          style={{ opacity: illustrationOpacity.retreatDetailLeaves }}
+        />
+        <Flowers
+          animated
+          className="absolute -right-8 top-1/3 w-32 h-32 text-[var(--primary-coral)] hidden lg:block"
+          style={{ opacity: illustrationOpacity.retreatDetailFlowers }}
+        />
+        <Fin
+          animated
+          className="absolute left-4 bottom-24 w-24 h-24 text-[var(--primary-teal)] hidden lg:block rotate-[-15deg]"
+          style={{ opacity: illustrationOpacity.retreatDetailFin }}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] lg:grid-cols-3 gap-8 relative z-10">
           {/* Left Column - Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Intro */}

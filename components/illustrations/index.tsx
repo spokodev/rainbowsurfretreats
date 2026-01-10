@@ -8,3 +8,6 @@ export { ShakaHand } from './ShakaHand';
 export { Palm } from './Palm';
 export { Surfboard } from './Surfboard';
 export { FlipFlops } from './FlipFlops';
+export { Fin } from './Fin';
+export { Flowers } from './Flowers';
+export { TropicalLeaves } from './TropicalLeaves';

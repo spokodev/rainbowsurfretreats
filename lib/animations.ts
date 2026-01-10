@@ -51,6 +51,22 @@ export const illustrationOpacity = {
   surfboard: 0.12,
   flipFlops: 0.10,
 
+  // New illustrations (fin, flowers, tropicalLeaves)
+  fin: 0.12,
+  flowers: 0.15,
+  tropicalLeaves: 0.12,
+
+  // Retreat detail page
+  retreatDetailFin: 0.15,
+  retreatDetailFlowers: 0.12,
+  retreatDetailLeaves: 0.10,
+  retreatDetailWave: 0.15,
+
+  // Blog post page
+  blogPostFlowers: 0.12,
+  blogPostLeaves: 0.10,
+  blogPostShell: 0.12,
+
   // Admin section
   adminShaka: 0.30,
 };

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { SeaShell, Starfish, WavePattern, ShakaHand } from '@/components/illustrations'
 
 interface RatingCategory {
   id: string
@@ -154,8 +155,25 @@ function FeedbackContent() {
 
   if (isComplete) {
     return (
-      <div className="min-h-screen bg-gradient-ochre flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
+      <div className="min-h-screen bg-gradient-ochre flex items-center justify-center px-4 relative overflow-hidden">
+        {/* Decorative Illustrations */}
+        <ShakaHand
+          animated
+          className="absolute -left-8 top-1/4 w-32 h-32 text-[var(--primary-teal)] rotate-[-15deg] hidden md:block"
+          style={{ opacity: 0.15 }}
+        />
+        <Starfish
+          animated
+          className="absolute right-4 bottom-1/4 w-24 h-24 text-[var(--primary-coral)] rotate-[20deg] hidden md:block"
+          style={{ opacity: 0.12 }}
+        />
+        <WavePattern
+          variant={2}
+          className="absolute bottom-0 left-0 right-0 h-20 text-[var(--primary-teal)]"
+          style={{ opacity: 0.1 }}
+        />
+
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center relative z-10">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
@@ -199,8 +217,31 @@ function FeedbackContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-ochre py-12 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-gradient-ochre py-12 px-4 relative overflow-hidden">
+      {/* Decorative Illustrations */}
+      <SeaShell
+        animated
+        className="absolute -left-8 top-24 w-28 h-28 text-[var(--primary-teal)] rotate-[-15deg] hidden md:block"
+        style={{ opacity: 0.12 }}
+      />
+      <Starfish
+        animated
+        className="absolute right-4 top-1/3 w-24 h-24 text-[var(--primary-coral)] rotate-[25deg] hidden md:block"
+        style={{ opacity: 0.10 }}
+      />
+      <SeaShell
+        animated
+        variant={2}
+        className="absolute left-8 bottom-32 w-20 h-20 text-[var(--soft-gold)] rotate-[15deg] hidden lg:block"
+        style={{ opacity: 0.10 }}
+      />
+      <WavePattern
+        variant={1}
+        className="absolute bottom-0 left-0 right-0 h-16 text-[var(--primary-teal)]"
+        style={{ opacity: 0.08 }}
+      />
+
+      <div className="max-w-2xl mx-auto relative z-10">
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-ocean p-8 text-center text-white">
