@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import ImageWithFallback from '@/components/ImageWithFallback'
 import { HOME_SLIDER } from '@/lib/images'
+import type { SingleImage } from '@/lib/validations/page-images'
 
 interface FormData {
   name: string
@@ -85,7 +86,15 @@ const socialLinks = [
   }
 ]
 
-export default function Contact() {
+// Default header image fallback
+const defaultHeaderImage = { url: HOME_SLIDER.surfersSunset, alt: 'Contact Rainbow Surf Retreats' }
+
+interface ContactProps {
+  headerImage?: SingleImage
+}
+
+export default function Contact({ headerImage }: ContactProps) {
+  const displayHeaderImage = headerImage || defaultHeaderImage
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -140,14 +149,15 @@ export default function Contact() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[40vh] md:h-[50vh] min-h-[300px] md:min-h-[400px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <ImageWithFallback
-            src={HOME_SLIDER.surfersSunset}
-            alt="Contact Rainbow Surf Retreats"
+            src={displayHeaderImage.url}
+            alt={displayHeaderImage.alt}
             fill
             className="object-cover"
             priority
+            unoptimized={displayHeaderImage.url.includes('googleusercontent.com') || displayHeaderImage.url.includes('drive.google.com')}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
         </div>
@@ -161,7 +171,7 @@ export default function Contact() {
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
             Get in Touch
           </h1>
-          <p className="text-lg md:text-xl max-w-2xl mx-auto opacity-90">
+          <p className="text-lg md:text-xl max-w-2xl mx-auto opacity-90 leading-relaxed">
             Have questions about our retreats? We&apos;d love to hear from you.
             Reach out and let&apos;s start your surf adventure together.
           </p>
@@ -171,7 +181,7 @@ export default function Contact() {
       {/* Main Content */}
       <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16">
             {/* Contact Info & Social - LEFT COLUMN */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
@@ -182,10 +192,10 @@ export default function Contact() {
             >
               {/* Contact Information */}
               <div>
-                <h2 className="text-3xl font-bold mb-2">
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">
                   Let&apos;s <span className="text-[var(--primary-teal)]">Connect</span>
                 </h2>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-muted-foreground mb-6 leading-relaxed">
                   Whether you have questions about our retreats, need help choosing the right destination, or just want to say hi - we&apos;re here for you!
                 </p>
                 <div className="space-y-4">
@@ -246,7 +256,7 @@ export default function Contact() {
               transition={{ duration: 0.6 }}
               className="order-1 lg:order-2"
             >
-              <div className="bg-white rounded-2xl shadow-lg p-8">
+              <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8">
                 <h2 className="text-2xl font-bold mb-6">Send Us a Message</h2>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -356,10 +366,10 @@ export default function Contact() {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               Frequently Asked Questions
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Find answers to common questions about our surf retreats.
               Can&apos;t find what you&apos;re looking for? Reach out to us directly!
             </p>

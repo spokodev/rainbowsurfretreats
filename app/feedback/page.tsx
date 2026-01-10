@@ -82,6 +82,7 @@ function FeedbackContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const bookingId = searchParams.get('booking')
+  const token = searchParams.get('token')
 
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -116,6 +117,7 @@ function FeedbackContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bookingId,
+          token, // Include token for security verification
           ratings: ratings.reduce((acc, r) => ({ ...acc, [r.id]: r.value }), {}),
           npsScore,
           highlights,
@@ -135,7 +137,8 @@ function FeedbackContent() {
     }
   }
 
-  if (!bookingId) {
+  // Require both booking ID and token for security
+  if (!bookingId || !token) {
     return (
       <div className="min-h-screen bg-gradient-ochre flex items-center justify-center px-4">
         <div className="text-center">

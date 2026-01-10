@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Contact from '@/components/Contact'
+import { getContactHeaderImage } from '@/lib/page-images'
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -12,6 +13,10 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default function ContactPage() {
-  return <Contact />
+export const revalidate = 3600 // Revalidate every hour
+
+export default async function ContactPage() {
+  const headerImage = await getContactHeaderImage()
+
+  return <Contact headerImage={headerImage} />
 }

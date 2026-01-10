@@ -127,7 +127,7 @@ export default function NewsletterPopup() {
               aria-label="Close newsletter popup"
               className="absolute top-4 right-4 p-3 hover:bg-gray-100 rounded-full transition-colors z-10"
             >
-              <X className="w-6 h-6 text-gray-500" aria-hidden="true" />
+              <X className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
             </button>
 
             {/* Header image/gradient */}
@@ -145,7 +145,7 @@ export default function NewsletterPopup() {
                     <CheckCircle className="w-8 h-8 text-green-600" />
                   </div>
                   <h3 className="text-xl font-bold mb-2">{t('success')}</h3>
-                  <p className="text-gray-600">
+                  <p className="text-muted-foreground">
                     {t('confirmMessage')}
                   </p>
                 </div>
@@ -154,7 +154,7 @@ export default function NewsletterPopup() {
                   <h2 id="newsletter-popup-title" className="text-2xl font-bold text-center mb-2">
                     {t('popupTitle')}
                   </h2>
-                  <p className="text-gray-600 text-center mb-6">
+                  <p className="text-muted-foreground text-center mb-6">
                     {t('subtitle')}
                   </p>
 
@@ -179,7 +179,7 @@ export default function NewsletterPopup() {
                         onCheckedChange={(c) => setAccepted(c === true)}
                         className="mt-1"
                       />
-                      <label htmlFor="popup-terms" className="text-sm text-gray-600">
+                      <label htmlFor="popup-terms" className="text-sm text-muted-foreground">
                         {t('terms')}{' '}
                         <Link href="/privacy-policy" className="text-[var(--primary-teal)] underline" onClick={handleClose}>
                           {t('privacyPolicy')}
@@ -207,7 +207,7 @@ export default function NewsletterPopup() {
                     </Button>
                   </form>
 
-                  <p className="text-xs text-gray-500 text-center mt-4">
+                  <p className="text-xs text-muted-foreground text-center mt-4">
                     {t('noSpam')}
                   </p>
                 </>

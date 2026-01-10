@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Instagram, Facebook, Youtube } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -12,6 +11,10 @@ interface FooterRetreat {
   destination: string;
   start_date: string;
   availability_status: 'available' | 'sold_out' | 'few_spots';
+}
+
+interface FooterProps {
+  initialRetreats?: FooterRetreat[];
 }
 
 const socialLinks = [
@@ -32,36 +35,9 @@ const socialLinks = [
   },
 ];
 
-export default function Footer() {
+export default function Footer({ initialRetreats = [] }: FooterProps) {
   const t = useTranslations('footer');
   const currentYear = new Date().getFullYear();
-  const [upcomingRetreats, setUpcomingRetreats] = useState<FooterRetreat[]>([]);
-
-  useEffect(() => {
-    async function fetchUpcomingRetreats() {
-      try {
-        const response = await fetch('/api/retreats?published=true');
-        const data = await response.json();
-        if (data.data) {
-          const now = new Date();
-          now.setHours(0, 0, 0, 0);
-
-          // Filter: future retreats, not sold out, limit 5
-          const filtered = data.data
-            .filter((retreat: FooterRetreat) => {
-              const startDate = new Date(retreat.start_date);
-              return startDate >= now && retreat.availability_status !== 'sold_out';
-            })
-            .slice(0, 5);
-
-          setUpcomingRetreats(filtered);
-        }
-      } catch (error) {
-        console.error('Failed to fetch retreats for footer:', error);
-      }
-    }
-    fetchUpcomingRetreats();
-  }, []);
 
   const companyLinks = [
     { href: '/about', labelKey: 'aboutUs' },
@@ -84,7 +60,7 @@ export default function Footer() {
             <Link href="/" className="inline-block mb-4">
               <Logo variant="light" className="w-40 h-auto" />
             </Link>
-            <p className="text-sm text-gray-400 mb-6 max-w-xs">
+            <p className="text-sm text-gray-300 mb-6 max-w-xs leading-relaxed">
               {t('tagline')}
             </p>
             {/* Social Links */}
@@ -108,19 +84,19 @@ export default function Footer() {
           <div>
             <h3 className="text-white font-semibold mb-4">{t('upcomingRetreats')}</h3>
             <ul className="space-y-2">
-              {upcomingRetreats.length > 0 ? (
-                upcomingRetreats.map((retreat) => (
+              {initialRetreats.length > 0 ? (
+                initialRetreats.map((retreat) => (
                   <li key={retreat.id}>
                     <Link
                       href={`/retreats/${retreat.slug}`}
-                      className="text-sm text-gray-400 hover:text-white transition-colors"
+                      className="text-sm text-gray-300 hover:text-white transition-colors"
                     >
                       {retreat.destination}
                     </Link>
                   </li>
                 ))
               ) : (
-                <li className="text-sm text-gray-500">{t('noUpcomingRetreats')}</li>
+                <li className="text-sm text-gray-400">{t('noUpcomingRetreats')}</li>
               )}
             </ul>
           </div>
@@ -133,7 +109,7 @@ export default function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
+                    className="text-sm text-gray-300 hover:text-white transition-colors"
                   >
                     {t(link.labelKey)}
                   </Link>
@@ -150,7 +126,7 @@ export default function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
+                    className="text-sm text-gray-300 hover:text-white transition-colors"
                   >
                     {t(link.labelKey)}
                   </Link>
@@ -163,25 +139,25 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-400">
               {t('copyright', { year: currentYear })}
             </p>
-            <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-4 sm:space-x-6">
               <Link
                 href="/privacy-policy"
-                className="text-sm text-gray-500 hover:text-white transition-colors"
+                className="text-sm text-gray-400 hover:text-white transition-colors"
               >
                 {t('privacy')}
               </Link>
               <Link
                 href="/terms"
-                className="text-sm text-gray-500 hover:text-white transition-colors"
+                className="text-sm text-gray-400 hover:text-white transition-colors"
               >
                 {t('terms')}
               </Link>
               <Link
                 href="/cookies"
-                className="text-sm text-gray-500 hover:text-white transition-colors"
+                className="text-sm text-gray-400 hover:text-white transition-colors"
               >
                 {t('cookies')}
               </Link>

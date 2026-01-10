@@ -5,6 +5,9 @@ import { Award, Heart, Camera, Users, MapPin, Mail, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ABOUT_IMAGES } from '@/lib/images'
+import { getAboutHeaderImage } from '@/lib/page-images'
+
+export const revalidate = 3600 // Revalidate every hour
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -41,17 +44,20 @@ const features = [
   },
 ]
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const headerImage = await getAboutHeaderImage()
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[60vh] min-h-[400px] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[40vh] md:h-[50vh] lg:h-[60vh] min-h-[300px] md:min-h-[400px] flex items-center justify-center overflow-hidden">
         <Image
-          src={ABOUT_IMAGES.surfersPosing}
-          alt="Rainbow Surf Retreats group on the beach"
+          src={headerImage.url}
+          alt={headerImage.alt}
           fill
           className="object-cover"
           priority
+          unoptimized={headerImage.url.includes('googleusercontent.com') || headerImage.url.includes('drive.google.com')}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40" />
         <div className="relative z-10 text-center text-white px-4">
@@ -94,7 +100,7 @@ export default function AboutPage() {
       {/* Features Section */}
       <section className="py-16 md:py-20 bg-[var(--sand-light)]">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
             {features.map((feature) => {
               const Icon = feature.icon
               return (
@@ -167,7 +173,7 @@ export default function AboutPage() {
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Rich */}
             <Card className="bg-white border-0 shadow-lg overflow-hidden">
-              <div className="relative h-64">
+              <div className="relative h-48 md:h-64">
                 <Image
                   src={ABOUT_IMAGES.rich}
                   alt="Rich - Co-founder"
@@ -188,7 +194,7 @@ export default function AboutPage() {
 
             {/* Steven */}
             <Card className="bg-white border-0 shadow-lg overflow-hidden">
-              <div className="relative h-64">
+              <div className="relative h-48 md:h-64">
                 <Image
                   src={ABOUT_IMAGES.steven}
                   alt="Steven - Co-founder"

@@ -12,13 +12,28 @@ import { AnimatedCounter } from '@/components/AnimatedCounter';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import { Logo } from '@/components/Logo';
 
-const sliderImages = [
+// Default slider images (fallback)
+const defaultSliderImages = [
   { src: HOME_SLIDER.silhouetteSunset, alt: 'Surfer silhouette at sunset' },
   { src: HOME_SLIDER.surfersSunset, alt: 'Surfers enjoying sunset' },
   { src: HOME_SLIDER.surfersWaves, alt: 'Surfers riding waves' },
 ];
 
-export default function Hero() {
+interface SliderImage {
+  url: string;
+  alt: string;
+  sort_order: number;
+}
+
+interface HeroProps {
+  sliderImages?: SliderImage[];
+}
+
+export default function Hero({ sliderImages: propImages }: HeroProps) {
+  // Convert prop images to the format used by the component, or use defaults
+  const sliderImages = propImages && propImages.length > 0
+    ? propImages.map(img => ({ src: img.url, alt: img.alt }))
+    : defaultSliderImages;
   const t = useTranslations('hero');
 
   const stats = [
@@ -92,8 +107,9 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="max-w-4xl"
         >
-          {/* Logo */}
+          {/* Logo with visually hidden h1 for SEO/accessibility */}
           <div className="mb-8 mx-auto w-full max-w-md">
+            <h1 className="sr-only">Rainbow Surf Retreats - LGBTQ+ Surf Adventures</h1>
             <Logo variant="light" className="w-full h-auto" />
           </div>
 
@@ -101,7 +117,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="mx-auto mb-8 max-w-2xl text-lg text-white/90 sm:text-xl"
+            className="mx-auto mb-8 max-w-2xl text-lg text-white/90 sm:text-xl leading-relaxed"
           >
             {t('subtitle')} 🌈
           </motion.p>
@@ -116,7 +132,7 @@ export default function Hero() {
             <Button
               asChild
               size="lg"
-              className="bg-[var(--primary-teal)] px-8 py-6 text-lg font-semibold text-white hover:bg-[var(--primary-teal-hover)]"
+              className="bg-[var(--primary-teal)] px-8 py-6 text-base font-semibold text-white hover:bg-[var(--primary-teal-hover)]"
             >
               <Link href="/about" className="flex items-center">
                 <Users className="mr-2 h-5 w-5" />
@@ -127,7 +143,7 @@ export default function Hero() {
               asChild
               variant="outline"
               size="lg"
-              className="border-white/50 bg-white/10 px-8 py-6 text-lg font-semibold text-white backdrop-blur-sm hover:bg-white/20"
+              className="border-white/50 bg-white/10 px-8 py-6 text-base font-semibold text-white backdrop-blur-sm hover:bg-white/20"
             >
               <Link href="/retreats" className="flex items-center">
                 <Compass className="mr-2 h-5 w-5" />

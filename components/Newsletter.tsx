@@ -121,7 +121,7 @@ export default function Newsletter() {
           <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">
             {t('title')}
           </h2>
-          <p className="mb-8 text-lg text-white/90">
+          <p className="mb-8 text-lg text-white/90 leading-relaxed">
             {t('subtitle')}
           </p>
 

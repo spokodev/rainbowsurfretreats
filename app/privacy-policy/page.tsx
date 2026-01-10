@@ -1,9 +1,14 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useLocale } from 'next-intl'
-import { Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
+import { getLocale } from 'next-intl/server'
 import Link from 'next/link'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy - Rainbow Surf Retreats',
+  description: 'How we collect, use, and protect your personal information.',
+}
+
+export const revalidate = 3600 // Revalidate every hour
 
 interface PrivacyContent {
   introTitle?: string
@@ -28,32 +33,30 @@ interface PolicySection {
   content: PrivacyContent
 }
 
-export default function PrivacyPolicyPage() {
-  const locale = useLocale()
-  const [policy, setPolicy] = useState<PolicySection | null>(null)
-  const [loading, setLoading] = useState(true)
+export default async function PrivacyPolicyPage() {
+  const supabase = await createClient()
+  const locale = await getLocale()
 
-  useEffect(() => {
-    fetchPolicy()
-  }, [locale])
+  // Try to fetch privacy policy for current locale
+  let { data: policies } = await supabase
+    .from('policies')
+    .select('*')
+    .eq('language', locale)
+    .eq('section_key', 'privacy')
+    .single()
 
-  const fetchPolicy = async () => {
-    try {
-      const response = await fetch(`/api/policies?language=${locale}`)
-      const data = await response.json()
-      if (data.data) {
-        const privacySection = data.data.find(
-          (p: PolicySection) => p.section_key === 'privacy'
-        )
-        setPolicy(privacySection || null)
-      }
-    } catch (error) {
-      console.error('Error fetching privacy policy:', error)
-    } finally {
-      setLoading(false)
-    }
+  // Fallback to English if no policy for current locale
+  if (!policies) {
+    const { data: enPolicy } = await supabase
+      .from('policies')
+      .select('*')
+      .eq('language', 'en')
+      .eq('section_key', 'privacy')
+      .single()
+    policies = enPolicy
   }
 
+  const policy = policies as PolicySection | null
   const content = policy?.content
 
   return (
@@ -64,11 +67,7 @@ export default function PrivacyPolicyPage() {
           How we collect, use, and protect your personal information.
         </p>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : !content ? (
+        {!content ? (
           <div className="bg-background rounded-lg p-6 shadow-sm">
             <p className="text-muted-foreground">
               Privacy policy content is being prepared. Please check back soon.

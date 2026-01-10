@@ -1,9 +1,14 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useLocale } from 'next-intl'
-import { Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
+import { getLocale } from 'next-intl/server'
 import Link from 'next/link'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Terms & Conditions - Rainbow Surf Retreats',
+  description: 'Please read these terms carefully before booking a retreat.',
+}
+
+export const revalidate = 3600 // Revalidate every hour
 
 interface PolicyContent {
   depositTitle?: string
@@ -21,35 +26,30 @@ interface PolicySection {
   content: PolicyContent
 }
 
-export default function TermsPage() {
-  const locale = useLocale()
-  const [policies, setPolicies] = useState<PolicySection[]>([])
-  const [loading, setLoading] = useState(true)
+export default async function TermsPage() {
+  const supabase = await createClient()
+  const locale = await getLocale()
 
-  useEffect(() => {
-    fetchPolicies()
-  }, [locale])
+  // Try to fetch policies for current locale
+  let { data: policies } = await supabase
+    .from('policies')
+    .select('*')
+    .eq('language', locale)
+    .in('section_key', ['paymentTerms', 'legal'])
 
-  const fetchPolicies = async () => {
-    try {
-      const response = await fetch(`/api/policies?language=${locale}`)
-      const data = await response.json()
-      if (data.data) {
-        // Filter for paymentTerms and legal sections
-        const relevantSections = data.data.filter(
-          (p: PolicySection) => p.section_key === 'paymentTerms' || p.section_key === 'legal'
-        )
-        setPolicies(relevantSections)
-      }
-    } catch (error) {
-      console.error('Error fetching policies:', error)
-    } finally {
-      setLoading(false)
-    }
+  // Fallback to English if no policies for current locale
+  if (!policies || policies.length === 0) {
+    const { data: enPolicies } = await supabase
+      .from('policies')
+      .select('*')
+      .eq('language', 'en')
+      .in('section_key', ['paymentTerms', 'legal'])
+    policies = enPolicies
   }
 
-  const paymentTerms = policies.find(p => p.section_key === 'paymentTerms')
-  const legal = policies.find(p => p.section_key === 'legal')
+  const typedPolicies = (policies || []) as PolicySection[]
+  const paymentTerms = typedPolicies.find(p => p.section_key === 'paymentTerms')
+  const legal = typedPolicies.find(p => p.section_key === 'legal')
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -59,83 +59,86 @@ export default function TermsPage() {
           Please read these terms carefully before booking a retreat.
         </p>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {/* Payment Terms Section */}
-            {paymentTerms && (
-              <section className="bg-background rounded-lg p-6 shadow-sm">
-                <h2 className="text-2xl font-semibold mb-4">{paymentTerms.title}</h2>
-                <div className="space-y-4 text-muted-foreground">
-                  {paymentTerms.content.depositTitle && (
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-2">
-                        {paymentTerms.content.depositTitle}
-                      </h3>
-                      <p>{paymentTerms.content.depositText}</p>
-                    </div>
-                  )}
-                  {paymentTerms.content.scheduleTitle && (
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-2">
-                        {paymentTerms.content.scheduleTitle}
-                      </h3>
-                      <ul className="list-disc list-inside space-y-1">
-                        {paymentTerms.content.scheduleItems?.map((item, i) => (
-                          <li key={i}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {paymentTerms.content.methodsTitle && (
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-2">
-                        {paymentTerms.content.methodsTitle}
-                      </h3>
-                      <p>{paymentTerms.content.methodsText}</p>
-                    </div>
-                  )}
-                </div>
-              </section>
-            )}
-
-            {/* Legal Section */}
-            {legal && (
-              <section className="bg-background rounded-lg p-6 shadow-sm">
-                <h2 className="text-2xl font-semibold mb-4">{legal.title}</h2>
-                <p className="text-muted-foreground">{legal.content.text}</p>
-              </section>
-            )}
-
-            {/* Related Links */}
-            <div className="bg-background rounded-lg p-6 shadow-sm">
-              <h2 className="text-lg font-semibold mb-3">Related Policies</h2>
-              <div className="flex flex-wrap gap-4">
-                <Link
-                  href="/cancellation-policy"
-                  className="text-[var(--primary-teal)] hover:underline"
-                >
-                  Cancellation Policy
-                </Link>
-                <Link
-                  href="/privacy-policy"
-                  className="text-[var(--primary-teal)] hover:underline"
-                >
-                  Privacy Policy
-                </Link>
-                <Link
-                  href="/policies"
-                  className="text-[var(--primary-teal)] hover:underline"
-                >
-                  All Policies
-                </Link>
+        <div className="space-y-8">
+          {/* Payment Terms Section */}
+          {paymentTerms && (
+            <section className="bg-background rounded-lg p-6 shadow-sm">
+              <h2 className="text-2xl font-semibold mb-4">{paymentTerms.title}</h2>
+              <div className="space-y-4 text-muted-foreground">
+                {paymentTerms.content.depositTitle && (
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-2">
+                      {paymentTerms.content.depositTitle}
+                    </h3>
+                    <p>{paymentTerms.content.depositText}</p>
+                  </div>
+                )}
+                {paymentTerms.content.scheduleTitle && (
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-2">
+                      {paymentTerms.content.scheduleTitle}
+                    </h3>
+                    <ul className="list-disc list-inside space-y-1">
+                      {paymentTerms.content.scheduleItems?.map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {paymentTerms.content.methodsTitle && (
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-2">
+                      {paymentTerms.content.methodsTitle}
+                    </h3>
+                    <p>{paymentTerms.content.methodsText}</p>
+                  </div>
+                )}
               </div>
+            </section>
+          )}
+
+          {/* Legal Section */}
+          {legal && (
+            <section className="bg-background rounded-lg p-6 shadow-sm">
+              <h2 className="text-2xl font-semibold mb-4">{legal.title}</h2>
+              <p className="text-muted-foreground">{legal.content.text}</p>
+            </section>
+          )}
+
+          {/* Fallback if no content */}
+          {!paymentTerms && !legal && (
+            <div className="bg-background rounded-lg p-6 shadow-sm">
+              <p className="text-muted-foreground">
+                Terms & Conditions content is being prepared. Please check back soon.
+              </p>
+            </div>
+          )}
+
+          {/* Related Links */}
+          <div className="bg-background rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-semibold mb-3">Related Policies</h2>
+            <div className="flex flex-wrap gap-4">
+              <Link
+                href="/cancellation-policy"
+                className="text-[var(--primary-teal)] hover:underline"
+              >
+                Cancellation Policy
+              </Link>
+              <Link
+                href="/privacy-policy"
+                className="text-[var(--primary-teal)] hover:underline"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                href="/policies"
+                className="text-[var(--primary-teal)] hover:underline"
+              >
+                All Policies
+              </Link>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )

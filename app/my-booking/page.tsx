@@ -128,7 +128,7 @@ function getStatusColor(status: string): string {
       return "text-green-600 bg-green-100";
     case "pending":
     case "processing":
-      return "text-yellow-600 bg-yellow-100";
+      return "text-orange-600 bg-orange-100";
     case "failed":
     case "cancelled":
     case "refunded":

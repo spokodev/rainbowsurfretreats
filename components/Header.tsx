@@ -204,7 +204,7 @@ export default function Header() {
 
                 {/* Mobile Language Selector */}
                 <div className="mt-8 px-4">
-                  <p className="text-sm font-medium text-gray-500 mb-2">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">
                     Language
                   </p>
                   <div className="flex flex-wrap gap-2">
