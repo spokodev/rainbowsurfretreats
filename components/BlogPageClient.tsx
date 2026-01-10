@@ -11,6 +11,8 @@ import { blogPosts, blogCategories } from '@/lib/blog-data'
 import ImageWithFallback from '@/components/ImageWithFallback'
 import { BLOG_IMAGES } from '@/lib/images'
 import type { SingleImage } from '@/lib/validations/page-images'
+import { SeaShell, Starfish, Bird } from '@/components/illustrations'
+import { illustrationOpacity } from '@/lib/animations'
 
 const POSTS_PER_PAGE = 6
 
@@ -89,6 +91,14 @@ export default function BlogPageClient({ headerImage }: BlogPageClientProps) {
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
         </div>
+
+        {/* Decorative Illustration */}
+        <Bird
+          animated
+          className="absolute top-12 right-8 md:right-16 w-12 h-12 md:w-16 md:h-16 text-white pointer-events-none"
+          style={{ opacity: illustrationOpacity.blogBird }}
+        />
+
         <div className="container relative z-10 mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
             {t('title')}
@@ -112,8 +122,18 @@ export default function BlogPageClient({ headerImage }: BlogPageClientProps) {
       </section>
 
       {/* Categories & Content */}
-      <section className="py-12 md:py-16 bg-[var(--sand-light)]">
-        <div className="container mx-auto px-4">
+      <section className="py-12 md:py-16 bg-[var(--sand-light)] relative overflow-hidden">
+        {/* Decorative Illustrations */}
+        <SeaShell
+          className="absolute top-16 left-4 w-14 h-14 md:w-20 md:h-20 text-[var(--primary-teal)] rotate-[-10deg] pointer-events-none"
+          style={{ opacity: illustrationOpacity.blogShell }}
+        />
+        <Starfish
+          className="absolute bottom-20 right-8 w-16 h-16 md:w-24 md:h-24 text-[var(--coral-accent)] rotate-[25deg] pointer-events-none hidden md:block"
+          style={{ opacity: illustrationOpacity.blogStarfish }}
+        />
+
+        <div className="container mx-auto px-4 relative z-10">
           {/* Category Tabs */}
           <Tabs
             value={activeCategory}

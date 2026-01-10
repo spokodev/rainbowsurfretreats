@@ -35,6 +35,8 @@ import {
 import { countries, vatRates, isEUCountry, COMPANY_COUNTRY } from "@/lib/stripe";
 import { monthsBetween } from "@/lib/payment-schedule";
 import { WaitlistForm } from "@/components/waitlist-form";
+import { WavePattern, SeaShell } from "@/components/illustrations";
+import { illustrationOpacity } from "@/lib/animations";
 
 interface RetreatRoom {
   id: string;
@@ -584,8 +586,24 @@ function BookingContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-ochre pt-24 pb-12 px-6">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gradient-ochre pt-24 pb-12 px-6 relative overflow-hidden">
+      {/* Decorative Illustrations */}
+      <WavePattern
+        variant={2}
+        className="absolute bottom-0 left-0 right-0 h-16 md:h-24 text-[var(--primary-teal)] pointer-events-none"
+        style={{ opacity: illustrationOpacity.bookingWave }}
+      />
+      <SeaShell
+        className="absolute top-32 right-4 w-14 h-14 md:w-20 md:h-20 text-[var(--primary-teal)] rotate-[15deg] pointer-events-none hidden lg:block"
+        style={{ opacity: illustrationOpacity.bookingShell }}
+      />
+      <SeaShell
+        variant={2}
+        className="absolute bottom-32 left-4 w-12 h-12 md:w-16 md:h-16 text-[var(--coral-accent)] rotate-[-20deg] pointer-events-none hidden lg:block"
+        style={{ opacity: illustrationOpacity.bookingShell }}
+      />
+
+      <div className="max-w-5xl mx-auto relative z-10">
         {/* Header */}
         <div className="mb-8">
           <Button

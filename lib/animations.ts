@@ -1,25 +1,50 @@
 // Illustration opacity configuration - change these values to adjust visibility globally
 export const illustrationOpacity = {
-  // Hero section
+  // Homepage - Hero section
   heroSun: 0.25,
   heroBird: 0.30,
   heroWave: 0.20,
 
-  // Features section
+  // Homepage - Features section
   featuresShell: 0.25,
   featuresStarfish: 0.20,
 
-  // Testimonials section
+  // Homepage - Testimonials section
   testimonialsShell: 0.20,
   testimonialsStarfish: 0.15,
 
-  // Newsletter section
+  // Homepage - Newsletter section
   newsletterWave: 0.20,
   newsletterSurfer: 0.25,
 
-  // Footer section
+  // Footer section (all pages)
   footerWave: 0.50,
   footerShaka: 0.15,
+
+  // Retreats page
+  retreatsSun: 0.20,
+  retreatsBird: 0.25,
+  retreatsShell: 0.15,
+  retreatsStarfish: 0.12,
+
+  // About page
+  aboutShell: 0.20,
+  aboutStarfish: 0.15,
+  aboutWave: 0.15,
+
+  // Contact page
+  contactShell: 0.20,
+  contactWave: 0.15,
+  contactSurfer: 0.20,
+
+  // Blog page
+  blogShell: 0.15,
+  blogStarfish: 0.12,
+  blogBird: 0.20,
+
+  // Booking page
+  bookingWave: 0.15,
+  bookingShell: 0.12,
 
   // Admin section
   adminShaka: 0.30,

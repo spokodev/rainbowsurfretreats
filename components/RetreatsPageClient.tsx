@@ -29,6 +29,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { SunBurst, Bird, SeaShell, Starfish } from '@/components/illustrations'
+import { illustrationOpacity } from '@/lib/animations'
 
 interface RetreatRoom {
   id: string
@@ -143,6 +145,19 @@ export default function RetreatsPageClient({ initialRetreats, headerImage }: Ret
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
         </div>
+
+        {/* Decorative Illustrations */}
+        <SunBurst
+          animated
+          className="absolute -top-12 -left-12 w-40 h-40 md:w-56 md:h-56 text-white pointer-events-none"
+          style={{ opacity: illustrationOpacity.retreatsSun }}
+        />
+        <Bird
+          animated
+          className="absolute top-16 right-8 md:right-16 w-12 h-12 md:w-20 md:h-20 text-white pointer-events-none"
+          style={{ opacity: illustrationOpacity.retreatsBird }}
+        />
+
         <div className="container relative z-10 mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -190,8 +205,23 @@ export default function RetreatsPageClient({ initialRetreats, headerImage }: Ret
       </section>
 
       {/* Retreats Grid */}
-      <section className="py-12 md:py-16 bg-[var(--sand-light)]">
-        <div className="container mx-auto px-4">
+      <section className="py-12 md:py-16 bg-[var(--sand-light)] relative overflow-hidden">
+        {/* Decorative Illustrations */}
+        <SeaShell
+          className="absolute top-8 left-4 w-16 h-16 md:w-24 md:h-24 text-[var(--primary-teal)] rotate-[-15deg] pointer-events-none"
+          style={{ opacity: illustrationOpacity.retreatsShell }}
+        />
+        <Starfish
+          className="absolute bottom-12 right-8 w-20 h-20 md:w-28 md:h-28 text-[var(--coral-accent)] rotate-[20deg] pointer-events-none"
+          style={{ opacity: illustrationOpacity.retreatsStarfish }}
+        />
+        <SeaShell
+          variant={2}
+          className="absolute top-1/2 right-4 w-12 h-12 md:w-16 md:h-16 text-[var(--soft-gold)] rotate-[30deg] pointer-events-none hidden lg:block"
+          style={{ opacity: illustrationOpacity.retreatsShell }}
+        />
+
+        <div className="container mx-auto px-4 relative z-10">
           {filteredRetreats.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredRetreats.map((retreat, index) => (

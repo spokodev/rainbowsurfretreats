@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button'
 import ImageWithFallback from '@/components/ImageWithFallback'
 import { HOME_SLIDER } from '@/lib/images'
 import type { SingleImage } from '@/lib/validations/page-images'
+import { SeaShell, WavePattern, Surfer } from '@/components/illustrations'
+import { illustrationOpacity } from '@/lib/animations'
 
 interface FormData {
   name: string
@@ -179,8 +181,19 @@ export default function Contact({ headerImage }: ContactProps) {
       </section>
 
       {/* Main Content */}
-      <section className="py-16 md:py-24 bg-background">
-        <div className="container mx-auto px-4">
+      <section className="py-16 md:py-24 bg-background relative overflow-hidden">
+        {/* Decorative Illustrations */}
+        <SeaShell
+          className="absolute top-12 left-4 w-20 h-20 md:w-28 md:h-28 text-[var(--primary-teal)] rotate-[-20deg] pointer-events-none"
+          style={{ opacity: illustrationOpacity.contactShell }}
+        />
+        <SeaShell
+          variant={2}
+          className="absolute bottom-24 right-8 w-16 h-16 md:w-24 md:h-24 text-[var(--coral-accent)] rotate-[15deg] pointer-events-none hidden md:block"
+          style={{ opacity: illustrationOpacity.contactShell }}
+        />
+
+        <div className="container mx-auto px-4 relative z-10">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16">
             {/* Contact Info & Social - LEFT COLUMN */}
             <motion.div
@@ -357,8 +370,19 @@ export default function Contact({ headerImage }: ContactProps) {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 md:py-24 bg-muted/30">
-        <div className="container mx-auto px-4">
+      <section className="py-16 md:py-24 bg-muted/30 relative overflow-hidden">
+        {/* Decorative Illustrations */}
+        <WavePattern
+          variant={2}
+          className="absolute bottom-0 left-0 right-0 h-16 md:h-24 text-[var(--primary-teal)] pointer-events-none"
+          style={{ opacity: illustrationOpacity.contactWave }}
+        />
+        <Surfer
+          className="absolute top-12 right-8 w-24 h-24 md:w-32 md:h-32 text-[var(--earth-brown)] pointer-events-none hidden lg:block"
+          style={{ opacity: illustrationOpacity.contactSurfer }}
+        />
+
+        <div className="container mx-auto px-4 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}

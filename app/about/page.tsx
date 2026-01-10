@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ABOUT_IMAGES } from '@/lib/images'
 import { getAboutHeaderImage } from '@/lib/page-images'
+import { SeaShell, Starfish, WavePattern } from '@/components/illustrations'
+import { illustrationOpacity } from '@/lib/animations'
 
 export const revalidate = 3600 // Revalidate every hour
 
@@ -71,8 +73,18 @@ export default async function AboutPage() {
       </section>
 
       {/* Mission Section */}
-      <section className="py-16 md:py-24 bg-[var(--sand-light)]">
-        <div className="container mx-auto px-4">
+      <section className="py-16 md:py-24 bg-[var(--sand-light)] relative overflow-hidden">
+        {/* Decorative Illustrations */}
+        <SeaShell
+          className="absolute top-8 left-4 w-16 h-16 md:w-24 md:h-24 text-[var(--primary-teal)] rotate-[-15deg] pointer-events-none"
+          style={{ opacity: illustrationOpacity.aboutShell }}
+        />
+        <Starfish
+          className="absolute bottom-8 right-8 w-20 h-20 md:w-28 md:h-28 text-[var(--coral-accent)] rotate-[20deg] pointer-events-none hidden md:block"
+          style={{ opacity: illustrationOpacity.aboutStarfish }}
+        />
+
+        <div className="container mx-auto px-4 relative z-10">
           <div className="flex items-center justify-center gap-3 mb-8">
             <Heart className="w-8 h-8 text-[var(--primary-teal)]" />
             <span className="w-8 h-8 flex items-center justify-center">
@@ -165,8 +177,20 @@ export default async function AboutPage() {
       </section>
 
       {/* Team Section */}
-      <section className="py-16 md:py-24 bg-[var(--sand-light)]">
-        <div className="container mx-auto px-4">
+      <section className="py-16 md:py-24 bg-[var(--sand-light)] relative overflow-hidden">
+        {/* Decorative Illustrations */}
+        <SeaShell
+          variant={2}
+          className="absolute top-12 right-8 w-14 h-14 md:w-20 md:h-20 text-[var(--soft-gold)] rotate-[25deg] pointer-events-none hidden lg:block"
+          style={{ opacity: illustrationOpacity.aboutShell }}
+        />
+        <WavePattern
+          variant={2}
+          className="absolute bottom-0 left-0 right-0 h-12 md:h-16 text-[var(--primary-teal)] pointer-events-none"
+          style={{ opacity: illustrationOpacity.aboutWave }}
+        />
+
+        <div className="container mx-auto px-4 relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             Meet the Team
           </h2>
