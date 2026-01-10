@@ -33,6 +33,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
+import { ShakaHand } from "@/components/illustrations";
+import { illustrationOpacity } from "@/lib/animations";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -68,8 +70,8 @@ function Sidebar({ className }: { className?: string }) {
   return (
     <aside className={className}>
       <div className="flex h-full flex-col bg-slate-900 text-white">
-        <div className="p-6 border-b border-slate-700">
-          <div className="flex items-center gap-3">
+        <div className="p-6 border-b border-slate-700 relative overflow-hidden">
+          <div className="flex items-center gap-3 relative z-10">
             <Image
               src="/images/logo/logo.png"
               alt="Rainbow Surf"
@@ -79,6 +81,11 @@ function Sidebar({ className }: { className?: string }) {
             />
             <h1 className="text-xl font-bold">Rainbow Surf Admin</h1>
           </div>
+          {/* Fun decorative element */}
+          <ShakaHand
+            className="absolute -right-6 -bottom-4 w-20 h-20 text-slate-700 rotate-[-20deg]"
+            style={{ opacity: illustrationOpacity.adminShaka }}
+          />
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
